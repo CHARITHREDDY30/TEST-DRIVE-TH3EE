@@ -1,4 +1,38 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import type {
+  Product,
+  ProductColor,
+  HeroSlide,
+  Order,
+  StoreBrandConfig,
+  UniverseCategory,
+  RouteState
+} from './types/store';
+import {
+  INITIAL_OFFICIAL_DOMAIN,
+  INITIAL_WHATSAPP_PHONE,
+  INITIAL_WHATSAPP_DISPLAY,
+  INITIAL_FREE_SHIPPING_LIMIT,
+  AVAILABLE_GLOBAL_SIZES,
+  INITIAL_STORE_BRAND,
+  INITIAL_UNIVERSE_CATEGORIES,
+  INITIAL_MASTER_PRODUCTS,
+  INITIAL_HERO_SLIDES
+} from './data/initialCatalog';
+import {
+  DEFAULT_R2_PUBLIC_BASE_URL,
+  GLOBAL_DEFAULT_IMAGE,
+  getR2PublicBaseUrl,
+  resolveProductImageUrl,
+  handleImageLoadError
+} from './lib/r2';
+import {
+  productsService,
+  ordersService,
+  heroService,
+  settingsService,
+  authService
+} from './services';
 
 // Self-contained zero-dependency inline SVG icons
 function ShoppingBag({ className = "w-4 h-4" }) {
@@ -209,626 +243,6 @@ function Layers({ className = "w-4 h-4" }) {
   );
 }
 
-/* Constants & Configuration Defaults */
-const INITIAL_OFFICIAL_DOMAIN = "th3ee.in";
-const INITIAL_WHATSAPP_PHONE = "919121798653";
-const INITIAL_WHATSAPP_DISPLAY = "+91 9121798653";
-const INITIAL_FREE_SHIPPING_LIMIT = 999;
-const AVAILABLE_GLOBAL_SIZES = ["S", "M", "L", "XL", "XXL"];
-
-// Public CDN Image Base URL
-const DEFAULT_R2_PUBLIC_BASE_URL = "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev";
-const GLOBAL_DEFAULT_IMAGE = "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045048099.png";
-
-function resolveProductImageUrl(imageRef) {
-  if (!imageRef || typeof imageRef !== "string" || imageRef.trim() === "") {
-    return GLOBAL_DEFAULT_IMAGE;
-  }
-  const cleanRef = imageRef.trim();
-
-  if (
-    cleanRef.indexOf("http://") === 0 || 
-    cleanRef.indexOf("https://") === 0 || 
-    cleanRef.indexOf("data:") === 0 || 
-    cleanRef.indexOf("blob:") === 0
-  ) {
-    return cleanRef;
-  }
-
-  let relativePath = cleanRef.replace(/^\/+/, "");
-
-  const knownTshirtsFiles = [
-    "IMg 1.jpeg", "img 2.jpeg", "img 4.jpeg", "img 5.jpeg", "img 6.jpeg", "img3.jpeg",
-    "21.jpeg", "22.jpeg", "23.jpeg", "24.jpeg", "25.jpeg", "27.jpeg", "29.jpeg"
-  ];
-  if (relativePath.indexOf("/") === -1 && knownTshirtsFiles.indexOf(relativePath) !== -1) {
-    relativePath = "tshirts/" + relativePath;
-  }
-
-  const encodedSegments = relativePath.split("/").map(function(seg) {
-    return encodeURIComponent(decodeURIComponent(seg));
-  });
-  return DEFAULT_R2_PUBLIC_BASE_URL.replace(/\/+$/, "") + "/" + encodedSegments.join("/");
-}
-
-function handleImageLoadError(e) {
-  if (e.target && e.target.src && e.target.src !== GLOBAL_DEFAULT_IMAGE) {
-    e.target.src = GLOBAL_DEFAULT_IMAGE;
-  }
-}
-
-/* Master Data Sets */
-const INITIAL_UNIVERSE_CATEGORIES = [
-  {
-    id: "tfi",
-    title: "TFI",
-    subtitle: "TELUGU CINEMA",
-    bgGradient: "from-amber-950/90 via-orange-950/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=600&auto=format&fit=crop&q=80",
-    subcategories: [
-      { name: "All TFI Cult", code: "TFI", color: "bg-amber-600", text: "text-white" },
-      { name: "Baahubali", code: "BAH", color: "bg-red-700", text: "text-white" },
-      { name: "Salaar", code: "SLR", color: "bg-neutral-900", text: "text-white" },
-      { name: "Spirit", code: "SPT", color: "bg-rose-700", text: "text-white" },
-      { name: "RRR Fire & Water", code: "RRR", color: "bg-orange-600", text: "text-white" },
-      { name: "Kalki 2898 AD", code: "KLK", color: "bg-indigo-700", text: "text-white" },
-      { name: "Pushpa Raw", code: "PSH", color: "bg-amber-800", text: "text-white" },
-      { name: "Devara", code: "DVR", color: "bg-sky-800", text: "text-white" }
-    ]
-  },
-  {
-    id: "anime",
-    title: "ANIME",
-    subtitle: "SHONEN SAGA",
-    bgGradient: "from-rose-950/90 via-red-900/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
-    subcategories: [
-      { name: "All Anime", code: "ALL", color: "bg-sky-500", text: "text-white" },
-      { name: "Demon Slayer", code: "KIM", color: "bg-red-600", text: "text-white" },
-      { name: "Naruto", code: "UZU", color: "bg-orange-500", text: "text-white" },
-      { name: "Attack On Titan", code: "SHI", color: "bg-amber-800", text: "text-white" },
-      { name: "One Piece", code: "STR", color: "bg-sky-600", text: "text-white" },
-      { name: "Jujutsu Kaisen", code: "SOR", color: "bg-purple-600", text: "text-white" }
-    ]
-  },
-  {
-    id: "marvel",
-    title: "MARVEL",
-    subtitle: "CINEMATIC COMICS",
-    bgGradient: "from-red-950/90 via-rose-900/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
-    subcategories: [
-      { name: "All Marvel", code: "MCU", color: "bg-red-600", text: "text-white" },
-      { name: "Spider-Man", code: "SPD", color: "bg-red-500", text: "text-white" },
-      { name: "Iron Man", code: "ARC", color: "bg-amber-600", text: "text-white" }
-    ]
-  },
-  {
-    id: "dc",
-    title: "DC",
-    subtitle: "JUSTICE & GOTHAM",
-    bgGradient: "from-blue-950/90 via-sky-950/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=600&auto=format&fit=crop&q=80",
-    subcategories: [
-      { name: "All DC", code: "DCU", color: "bg-blue-600", text: "text-white" },
-      { name: "The Batman", code: "DKN", color: "bg-neutral-950", text: "text-white" }
-    ]
-  },
-  {
-    id: "harry-potter",
-    title: "HARRY POTTER",
-    subtitle: "WIZARDING WORLD",
-    bgGradient: "from-amber-950/90 via-yellow-950/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1598153346810-860daa814c4b?w=600&auto=format&fit=crop&q=80",
-    subcategories: [
-      { name: "All Wizarding", code: "HP", color: "bg-amber-600", text: "text-white" }
-    ]
-  },
-  {
-    id: "nanis-paradise",
-    title: "NANI'S PARADISE",
-    subtitle: "NATURAL STAR",
-    bgGradient: "from-stone-900/90 via-zinc-800/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80",
-    subcategories: [
-      { name: "All Nani Drops", code: "NPR", color: "bg-stone-700", text: "text-white" }
-    ]
-  },
-  {
-    id: "doomsday",
-    title: "DOOMSDAY",
-    subtitle: "AVENGERS SAGA",
-    bgGradient: "from-emerald-950/90 via-teal-950/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80",
-    subcategories: [
-      { name: "All Doomsday", code: "DMD", color: "bg-emerald-700", text: "text-white" }
-    ]
-  },
-  {
-    id: "memes",
-    title: "MEMES",
-    subtitle: "BRAINROT & IRONY",
-    bgGradient: "from-purple-950/90 via-pink-950/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&auto=format&fit=crop&q=80",
-    subcategories: [{ name: "All Memes", code: "MEM", color: "bg-purple-600", text: "text-white" }]
-  },
-  {
-    id: "game",
-    title: "GAME",
-    subtitle: "CONSOLE & PC",
-    bgGradient: "from-indigo-950/90 via-blue-950/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=600&auto=format&fit=crop&q=80",
-    subcategories: [{ name: "All Gaming", code: "GAM", color: "bg-indigo-600", text: "text-white" }]
-  },
-  {
-    id: "festival",
-    title: "FESTIVAL",
-    subtitle: "LIGHTS & KITES",
-    bgGradient: "from-rose-950/90 via-amber-950/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80",
-    subcategories: [{ name: "All Festival", code: "FST", color: "bg-rose-600", text: "text-white" }]
-  },
-  {
-    id: "customise",
-    title: "CUSTOMISE",
-    subtitle: "BESPOKE STUDIO",
-    bgGradient: "from-neutral-900/90 via-stone-900/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600&auto=format&fit=crop&q=80",
-    subcategories: [{ name: "All Custom", code: "CST", color: "bg-neutral-700", text: "text-white" }]
-  },
-  {
-    id: "college",
-    title: "COLLEGE",
-    subtitle: "CAMPUS NOSTALGIA",
-    bgGradient: "from-blue-950/90 via-slate-900/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop&q=80",
-    subcategories: [{ name: "All Campus", code: "CMP", color: "bg-blue-700", text: "text-white" }]
-  }
-];
-
-const INITIAL_MASTER_PRODUCTS = [
-  {
-    id: "th-bahubali-01",
-    sku: "th-bahubali-01",
-    slug: "baahubali-the-beginning-cult-graphic-tee",
-    name: "BAAHUBALI: THE BEGINNING CULT GRAPHIC TEE",
-    category: "T-Shirts",
-    subcategory: "Baahubali",
-    universeId: "tfi",
-    price: 499,
-    originalPrice: 799,
-    gsm: "290 GSM",
-    fabric: "100% Combed Terry Cotton",
-    fit: "Mahishmati Oversized Box Cut",
-    availableSizes: ["S", "M", "L", "XL", "XXL"],
-    colors: [
-      { 
-        name: "Washed Carbon Black", 
-        hex: "#1C1C1C", 
-        images: [
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/products/1792122621359-IMg_1.jpeg",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/products/1792122624943-img_2.jpeg",
-           "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/products/img3.jpeg",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/products/1792122631732-img_6.jpeg",
-          
-        ] 
-      },
-      { 
-        name: "Blood Ochre Red", 
-        hex: "#8B1E1E", 
-        images: [
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/tshirts/file_00000000e5d482089eb173017419586a.png",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/tshirts/file_00000000077c820887b61e1ee64c4d7f.png"
-        ] 
-      },
-      { 
-        name: "Antique Sand", 
-        hex: "#D4C5B9", 
-        images: [
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/tshirts/file_0000000022c88208929371af34120bb7.png",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/tshirts/file_00000000284c8208815effc4db5f38bc.png"
-        ] 
-      }
-    ],
-    inventory: {
-      "Washed Carbon Black": { S: 14, M: 22, L: 35, XL: 18, XXL: 8 },
-      "Blood Ochre Red": { S: 10, M: 16, L: 20, XL: 12, XXL: 5 },
-      "Antique Sand": { S: 8, M: 12, L: 15, XL: 9, XXL: 4 }
-    },
-    badge: "LIMITED EDITION",
-    rating: 5.0,
-    reviewsCount: 84,
-    inStock: true,
-    description: "Official @th3ee.verse drop. Heavyweight 290 GSM loopback cotton tee featuring the Shivudu Mahishmati ascension artwork rendered with high-density gold and crimson metallic screenprints. Finished with minimal 'PRABHAS / BAAHUBALI' chest insignia and signature 'TH3EE — WEAR THE SOUL' rear graphic.",
-    specs: [
-      "290 GSM Custom Milled Heavyweight Loopback Cotton",
-      "Metallic Gold & Crimson High-Density Foil Screenprint",
-      "Signature 'TH3EE — WEAR THE SOUL' Back Print",
-      "Pre-Washed Anti-Shrink Mahishmati Oversized Boxy Cut",
-      "Reinforced 1.25-inch Heavy Collar Ribbing"
-    ],
-    care: [
-      "Cold machine wash inside out",
-      "Do not iron directly on metallic and foil prints",
-      "Dry flat in shade"
-    ],
-    images: [
-      "tshirts/IMg 1.jpeg",
-      "tshirts/img 2.jpeg",
-      "tshirts/img 4.jpeg",
-      "tshirts/img 5.jpeg"
-    ]
-  },
-  {
-    id: "th-salaar-01",
-    sku: "th-salaar-01",
-    slug: "salaar-devaratha-cult-ringer-oversized-tee",
-    name: "SALAAR: DEVARATHA CULT RINGER OVERSIZED TEE",
-    category: "T-Shirts",
-    subcategory: "All TFI Cult",
-    universeId: "tfi",
-    price: 499,
-    originalPrice: 799,
-    gsm: "240 GSM",
-    fabric: "100% Combed Terry Cotton",
-    fit: "Khansaar Oversized Box Cut",
-    availableSizes: ["S", "M", "L", "XL", "XXL"],
-    colors: [
-      { 
-        name: "Vintage Chalk White & Crimson Rib", 
-        hex: "#F4F4F0", 
-        images: [
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/salar/%40th3ee.veese_20261010_192852_0000.png",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/salar/22.jpeg",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/salar/21.jpeg"
-        ] 
-      },
-      { 
-        name: "Washed Carbon Black", 
-        hex: "#1C1C1C", 
-        images: [
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/salar/22.jpeg",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/salar/21.jpeg"
-        ] 
-      }
-    ],
-    inventory: {
-      "Vintage Chalk White & Crimson Rib": { S: 12, M: 25, L: 40, XL: 22, XXL: 10 },
-      "Washed Carbon Black": { S: 15, M: 20, L: 30, XL: 16, XXL: 6 }
-    },
-    badge: "NEW DROP",
-    rating: 5.0,
-    reviewsCount: 92,
-    inStock: true,
-    description: "Official @th3ee.verse drop. Heavyweight 290 GSM loopback cotton ringer tee inspired by the ruthless warlord Devaratha of Khansaar. Features a front tribal warrior totem emblem and a high-density back print with bold SALAAR typography, scarlet script 'devaratha', and signature 'MAKE CODE TH3EE' atelier insignia.",
-    specs: [
-      "240 GSM Custom Milled Heavyweight Loopback Cotton",
-      "Signature Crimson Red Contrast Ribbed Collar & Cuffs",
-      "Front Chest: Intricate Tribal Battle Crest Screenprint",
-      "Back: High-Density Monolithic SALAAR Typography with Scarlet Devaratha Script",
-      "Official 'MAKE CODE TH3EE' Authentic Insignia Stamp",
-      "Pre-Washed Anti-Shrink Khansaar Oversized Box Silhouette"
-    ],
-    care: [
-      "Cold machine wash inside out",
-      "Do not iron directly on high-density graphics",
-      "Dry flat in shade"
-    ],
-    images: [
-      "tshirts/21.jpeg",
-      "tshirts/22.jpeg",
-      "tshirts/27.jpeg",
-      "tshirts/24.jpeg"
-    ]
-  },
-  {
-    id: "th-spirit-02",
-    sku: "th-spirit-02",
-    slug: "spirit-born-to-stand-out-oversized-tee",
-    name: "SPIRIT: BORN TO STAND OUT HEAVYWEIGHT TEE",
-    category: "T-Shirts",
-    subcategory: "All TFI Cult",
-    universeId: "tfi",
-    price: 499,
-    originalPrice: 799,
-    gsm: "240 GSM",
-    fabric: "100% Ring-Spun Compact Cotton",
-    fit: "Loose Architectural Drape",
-    availableSizes: ["S", "M", "L", "XL", "XXL"],
-    colors: [
-      { 
-        name: "Chalk White", 
-        hex: "#F9F9F7", 
-        images: [
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spirt%201/Spirit%202/1_20261016_140131_0000.jpg",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spirt%201/Spirit%202/2_20261016_140131_0001.jpg",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spirt%201/Spirit%202/3_20261016_140131_0002.jpg",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spirt%201/Spirit%202/4_20261016_140131_0003.jpg",
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spirt%201/Spirit%202/5_20261016_140131_0004.jpg"
-        ] 
-      }
-    ],
-    inventory: {
-      "Chalk White": { S: 9, M: 18, L: 28, XL: 14, XXL: 7 }
-    },
-    badge: "TRENDING DROP",
-    rating: 4.9,
-    reviewsCount: 64,
-    inStock: true,
-    description: "Official @th3ee.verse drop. 'BORN TO STAND OUT' Spirit oversized graphic tee crafted from 280 GSM premium ring-spun compact cotton. Features front 'ONE BAD HABIT' crimson block lettering and an iconic rear vintage artwork print with star accents and stylized Spirit branding.",
-    specs: [
-      "240 GSM Pre-Shrunk Compact Cotton",
-      "Front Chest: Crimson 'ONE BAD HABIT' Distressed Screenprint",
-      "Rear Spine: Full-Color 'SPIRIT / BORN TO STAND OUT' Signature Poster Artwork",
-      "Reinforced 1.25-inch Heavy Collar Ribbing",
-      "Drop-Shoulder Streetwear Silhouette"
-    ],
-    care: [
-      "Cold gentle cycle wash inside out",
-      "Do not bleach or tumble dry",
-      "Warm iron inside out"
-    ],
-    images: [
-      "tshirts/29.jpeg"
-    ]
-  },
- {
-  id: "th-01",
-  sku: "th-01",
-  slug: "batman-dark-knight-oversized-graphic-tee",
-  name: "BATMAN DARK KNIGHT OVERSIZED GRAPHIC TEE",
-  category: "T-Shirts",
-  subcategory: "Batman",
-  universeId: "dc",
-
-  price: 899,
-  originalPrice: 1299,
-
-  gsm: "240 GSM",
-  fabric: "100% Combed Terry Cotton",
-  fit: "Relaxed Boxy Cut",
-
-  availableSizes: ["S", "M", "L", "XL", "XXL"],
-
-  colors: [
-    {
-      name: "Washed Black",
-      hex: "#1F1F1F",
-      images: [
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045042513.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045048099.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045053896.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045058609.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045062219.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045065681.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045069445.png"
-      ]
-    }
-  ],
-
-  inventory: {
-    "Washed Black": {
-      S: 10,
-      M: 15,
-      L: 25,
-      XL: 10,
-      XXL: 4
-    }
-  },
-
-  badge: "BESTSELLER",
-  rating: 4.9,
-  reviewsCount: 38,
-  inStock: true,
-
-  description:
-    "Unleash the Dark Knight with this Batman-inspired oversized graphic T-shirt from TH3EE. Crafted from heavyweight 280 GSM loopback terry cotton, featuring a bold Batman graphic, premium print detailing, and a relaxed boxy silhouette for everyday streetwear.",
-
-  specs: [
-    "240 GSM Heavyweight Terry Cotton",
-    "100% Combed Terry Cotton",
-    "Anti-Shrink Pre-Washed Finish",
-    "Signature Drop Shoulder Cut",
-    "Batman Graphic Print"
-  ],
-
-  care: [
-    "Machine wash cold inside out",
-    "Wash with similar colours",
-    "Do not iron directly on the print",
-    "Tumble dry low"
-  ],
-
-  images: [
-    "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045048099.png"
-  ]
-},
-
-{
-  id: "th-02",
-  sku: "th-02",
-  slug: "spider-man-oversized-graphic-tee",
-  name: "SPIDER-MAN OVERSIZED GRAPHIC TEE",
-
-  category: "T-Shirts",
-  subcategory: "Spider-Man",
-  universeId: "marvel",
-
-  price: 499,
-  originalPrice: 799,
-
-  gsm: "240 GSM",
-  fabric: "100% Combed Terry Cotton",
-  fit: "Relaxed Boxy Cut",
-
-  availableSizes: ["S", "M", "L", "XL", "XXL"],
-
-  colors: [
-
-    { 
-      name: "Blood Ochre Red", 
-      hex: "#8B1E1E", 
-      images: [
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spiderman%201/First%20edition/1792045075644.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spiderman%201/First%20edition/1792045082281.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spiderman%201/First%20edition/1792045089479.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spiderman%201/First%20edition/1792045097744.png",
-        "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Spiderman%201/First%20edition/1792045110815.png"
-      ] 
-    },
-    
-    {
-      name: "Washed Black",
-      hex: "#1F1F1F",
-      images: [
-        ""
-      ]
-    }
-    
-  ],
-
-  inventory: {
-    "Washed Black": {
-      S: 10,
-      M: 15,
-      L: 25,
-      XL: 10,
-      XXL: 4
-    }
-  },
-
-  badge: "BESTSELLER",
-  rating: 4.9,
-  reviewsCount: 38,
-  inStock: true,
-
-  description:
-    "Swing into streetwear with the TH3EE Spider-Man oversized graphic tee. Crafted from heavyweight 280 GSM loopback terry cotton, featuring a bold Spider-Man-inspired graphic, premium print detailing, and a relaxed boxy silhouette.",
-
-  specs: [
-    "240 GSM Heavyweight Terry Cotton",
-    "100% Combed Terry Cotton",
-    "Anti-Shrink Pre-Washed Finish",
-    "Signature Drop Shoulder Cut",
-    "Spider-Man Graphic Print"
-  ],
-
-  care: [
-    "Machine wash cold inside out",
-    "Wash with similar colours",
-    "Do not iron directly on the print",
-    "Tumble dry low"
-  ],
-
-  images: [
-    "PASTE_YOUR_SPIDER_MAN_IMAGE_URL_HERE"
-  ]
-},
-  {
-    id: "th-04",
-    sku: "th-04",
-    slug: "500-gsm-ultimate-french-terry-hoodie",
-    name: "500 GSM ULTIMATE FRENCH TERRY HOODIE",
-    category: "Hoodies & Sweats",
-    subcategory: "All Campus",
-    universeId: "college",
-    price: 3499,
-    originalPrice: 4799,
-    gsm: "500 GSM",
-    fabric: "Double-Loop French Terry",
-    fit: "Oversized Heavy Drape",
-    availableSizes: ["S", "M", "L", "XL", "XXL"],
-    colors: [
-      { 
-        name: "Obsidian Black", 
-        hex: "#111111", 
-        images: [
-          "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045048099.png"
-        ] 
-      }
-    ],
-    inventory: {
-      "Obsidian Black": { S: 5, M: 8, L: 14, XL: 7, XXL: 3 }
-    },
-    badge: "GRAIL",
-    rating: 5.0,
-    reviewsCount: 51,
-    inStock: true,
-    description: "Our heaviest outerwear piece. Custom milled 500 GSM double-face French terry cotton with an articulated double-layered hood and zero drawstrings for a pure structural look.",
-    specs: ["500 GSM Double-Faced Terry", "Seamless Double-Layered Hood", "Pre-Shrunk 100% Combed Cotton"],
-    care: ["Dry clean recommended", "Cold gentle wash"],
-    images: [
-      "https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev/Batman/Batman%201%20edition/1792045048099.png"
-    ]
-  }
-];
-
-const INITIAL_HERO_SLIDES = [
-  {
-    id: "slide-1",
-    tag: "LEGENDARY CULT DROP",
-    title: "BAAHUBALI CULT TEE",
-    highlight: "THE EPIC OF MAHISHMATI",
-    desc: "Heavyweight 290 GSM loopback cotton tee with high-density gold and crimson metallic screenprints.",
-    cta: "SHOP BAAHUBALI",
-    target: "/products/baahubali-the-beginning-cult-graphic-tee",
-    bgGradient: "from-amber-950 via-orange-950 to-neutral-950",
-    image: resolveProductImageUrl("tshirts/IMg 1.jpeg"),
-    badgeColor: "bg-[#E51E2B]"
-  },
-  {
-    id: "slide-2",
-    tag: "NEW DROP",
-    title: "SALAAR DEVARATHA TEE",
-    highlight: "KHANSAAR WARRIOR",
-    desc: "Heavyweight 290 GSM loopback cotton ringer with contrast red ribbing and tribal battle crest.",
-    cta: "EXPLORE TFI DROPS",
-    target: "/shop?universe=tfi",
-    bgGradient: "from-neutral-950 via-neutral-900 to-neutral-950",
-    image: resolveProductImageUrl("tshirts/21.jpeg"),
-    badgeColor: "bg-red-700"
-  },
-  {
-    id: "slide-3",
-    tag: "TRENDING POSTER DROP",
-    title: "SPIRIT OVERSIZED TEE",
-    highlight: "BORN TO STAND OUT",
-    desc: "280 GSM compact cotton with 'ONE BAD HABIT' distressed lettering and iconic poster artwork.",
-    cta: "SHOP SPIRIT",
-    target: "/shop?universe=tfi",
-    bgGradient: "from-stone-950 via-zinc-900 to-neutral-950",
-    image: resolveProductImageUrl("tshirts/29.jpeg"),
-    badgeColor: "bg-amber-600"
-  }
-];
-
-const INITIAL_ORDERS = [
-  {
-    id: "TH3EE-9821",
-    customerName: "Rohan Varma",
-    phone: "+91 98480 12345",
-    items: "BAAHUBALI: THE BEGINNING CULT TEE (L, Washed Carbon Black) × 1",
-    total: 499,
-    status: "Dispatched",
-    courier: "Delhivery",
-    trackingNumber: "DL982176435IN",
-    trackingUrl: "https://www.delhivery.com/track/package/DL982176435IN",
-    date: "17 Oct 2026, 04:20 PM"
-  },
-  {
-    id: "TH3EE-7412",
-    customerName: "Sneha Reddy",
-    phone: "+91 97011 54321",
-    items: "SALAAR: DEVARATHA CULT RINGER TEE (M, Vintage Chalk White) × 1",
-    total: 499,
-    status: "In Production",
-    courier: "BlueDart",
-    trackingNumber: "BD74129088IN",
-    trackingUrl: "https://www.bluedart.com/tracking?track=BD74129088IN",
-    date: "17 Oct 2026, 08:45 PM"
-  }
-];
-
 function buildWhatsAppCartOrderUrl(cart, subtotal, discount, coupon, shipping, total, deliveryInfo, phoneNum, domain) {
   const targetPhone = phoneNum || INITIAL_WHATSAPP_PHONE;
   const siteDomain = domain || INITIAL_OFFICIAL_DOMAIN;
@@ -889,18 +303,18 @@ function Th3eeBrandLogo({ onClick, domain = INITIAL_OFFICIAL_DOMAIN }) {
   );
 }
 
-function parseCurrentRoute() {
+function parseCurrentRoute(): RouteState {
   if (typeof window === "undefined") return { view: "home", slug: null, query: {} };
   const path = window.location.pathname || "/";
   const searchStr = window.location.search || "";
-  const query = {};
+  const query: Record<string, string> = {};
   if (searchStr.indexOf("?") === 0) {
     const params = new URLSearchParams(searchStr.substring(1));
     params.forEach(function(v, k) { query[k] = v; });
   }
 
-  let view = "home";
-  let slug = null;
+  let view: RouteState["view"] = "home";
+  let slug: string | null = null;
 
   if (path.indexOf("/products/") === 0) {
     view = "product";
@@ -915,66 +329,41 @@ function parseCurrentRoute() {
 }
 
 export default function App() {
-  // Configurable Store Brand & Contact Information (Synced with LocalStorage)
-  const [storeBrand, setStoreBrand] = useState(function() {
-    try {
-      const saved = localStorage.getItem("th3ee_store_brand_config");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return {
-      domain: INITIAL_OFFICIAL_DOMAIN,
-      whatsappPhone: INITIAL_WHATSAPP_PHONE,
-      whatsappDisplay: INITIAL_WHATSAPP_DISPLAY,
-      freeShippingLimit: INITIAL_FREE_SHIPPING_LIMIT,
-      announcementText: "TH3EE HEAVYWEIGHT ARCHIVE • FREE EXPRESS SHIPPING OVER Rs.999"
-    };
-  });
+  // Configurable Store Brand & Contact Information
+  const [storeBrand, setStoreBrand] = useState<StoreBrandConfig>(INITIAL_STORE_BRAND);
 
-  // Dynamic Product Catalog
-  const [productsList, setProductsList] = useState(function() {
-    try {
-      const saved = localStorage.getItem("th3ee_products_catalog");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_MASTER_PRODUCTS;
-  });
+  // Dynamic Product Catalog (Initialized from baseline, hydrated via InsForge service)
+  const [productsList, setProductsList] = useState<Product[]>(INITIAL_MASTER_PRODUCTS);
 
   // Dynamic Hero Slides
-  const [heroSlides, setHeroSlides] = useState(function() {
-    try {
-      const saved = localStorage.getItem("th3ee_hero_slides");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_HERO_SLIDES;
-  });
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(INITIAL_HERO_SLIDES);
 
-  // Dynamic Orders & Tracking
-  const [ordersList, setOrdersList] = useState(function() {
-    try {
-      const saved = localStorage.getItem("th3ee_orders_list");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_ORDERS;
-  });
+  // Dynamic Orders & Tracking (Real InsForge database records, no mock orders)
+  const [ordersList, setOrdersList] = useState<Order[]>([]);
 
   const universeCategoriesList = INITIAL_UNIVERSE_CATEGORIES;
 
-  // Sync state changes to localStorage
+  // Asynchronously synchronize from InsForge service layer on mount
   useEffect(function() {
-    try { localStorage.setItem("th3ee_store_brand_config", JSON.stringify(storeBrand)); } catch (e) {}
-  }, [storeBrand]);
+    let isMounted = true;
+    productsService.getProducts().then(function(prods) {
+      if (isMounted && prods && prods.length > 0) setProductsList(prods);
+    }).catch(function(err) { console.warn('Products fetch notice:', err); });
 
-  useEffect(function() {
-    try { localStorage.setItem("th3ee_products_catalog", JSON.stringify(productsList)); } catch (e) {}
-  }, [productsList]);
+    heroService.getHeroSlides().then(function(slides) {
+      if (isMounted && slides && slides.length > 0) setHeroSlides(slides);
+    }).catch(function(err) { console.warn('Hero slides fetch notice:', err); });
 
-  useEffect(function() {
-    try { localStorage.setItem("th3ee_hero_slides", JSON.stringify(heroSlides)); } catch (e) {}
-  }, [heroSlides]);
+    settingsService.getStoreBrandConfig().then(function(cfg) {
+      if (isMounted && cfg) setStoreBrand(cfg);
+    }).catch(function(err) { console.warn('Settings fetch notice:', err); });
 
-  useEffect(function() {
-    try { localStorage.setItem("th3ee_orders_list", JSON.stringify(ordersList)); } catch (e) {}
-  }, [ordersList]);
+    ordersService.getOrders().then(function(ords) {
+      if (isMounted && ords) setOrdersList(ords);
+    }).catch(function(err) { console.warn('Orders fetch notice:', err); });
+
+    return function() { isMounted = false; };
+  }, []);
 
   const [routeState, setRouteState] = useState(function() { return parseCurrentRoute(); });
 
@@ -995,7 +384,7 @@ export default function App() {
       const params = new URLSearchParams(queryPart);
       params.forEach(function(v, k) { query[k] = v; });
     }
-    let view = "home";
+    let view: RouteState["view"] = "home";
     let slug = null;
     if (pathPart.indexOf("/products/") === 0) {
       view = "product";
@@ -2285,7 +1674,7 @@ function ShopAllView({
   );
 }
 
-function ProductCard({ product, navigate, addToBag, onQuickView }) {
+function ProductCard({ product, navigate, addToBag, onQuickView = function() {} }: any) {
   const [selectedColor, setSelectedColor] = useState((product.colors && product.colors[0] && product.colors[0].name) || "Standard");
   const [selectedSize, setSelectedSize] = useState("L");
   const colorObj = (product.colors && product.colors.find(function(c) { return c.name === selectedColor; })) || (product.colors && product.colors[0]);
@@ -2695,6 +2084,7 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
                   product={rp} 
                   navigate={navigate} 
                   addToBag={addToBag} 
+                  onQuickView={function() {}} 
                 />
               );
             })}
@@ -3089,40 +2479,48 @@ function SecretAtelierAdminView({
   navigate,
   showNotification
 }) {
-  const [isUnlocked, setIsUnlocked] = useState(function() {
-    try {
-      return sessionStorage.getItem("th3ee_admin_session_unlocked") === "true";
-    } catch (e) {
-      return false;
-    }
-  });
-
-  const [enteredPasscode, setEnteredPasscode] = useState("");
-  const [passcodeError, setPasscodeError] = useState("");
+  const [adminUser, setAdminUser] = useState<any>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [activeTab, setActiveTab] = useState("products"); // "products" | "inventory" | "banners" | "orders" | "settings"
 
-  const handlePasscodeSubmit = function(e) {
+  useEffect(function() {
+    let isMounted = true;
+    authService.getCurrentUser().then(function(user) {
+      if (isMounted && user) {
+        setAdminUser(user);
+        setIsUnlocked(true);
+      }
+    });
+    return function() { isMounted = false; };
+  }, []);
+
+  const handleAuthSubmit = async function(e: React.FormEvent) {
     if (e) e.preventDefault();
-    const clean = (enteredPasscode || "").trim();
-    if (clean === "th3ee2026" || clean === "admin" || clean === "th3ee" || clean === "tydq6399") {
-      setIsUnlocked(true);
-      try { sessionStorage.setItem("th3ee_admin_session_unlocked", "true"); } catch (err) {}
-      setPasscodeError("");
-      showNotification("Welcome back, Master Atelier Creator");
+    if (!adminEmail.trim() || !adminPassword.trim()) {
+      setAuthError("Enter admin email and password");
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError("");
+    const { user, error } = await authService.signIn(adminEmail.trim(), adminPassword);
+    setAuthLoading(false);
+    if (error || !user) {
+      setAuthError(error ? error.message : "Authentication failed. Check your InsForge credentials.");
     } else {
-      setPasscodeError("Invalid passcode. Enter 'th3ee2026' or 'admin'");
+      setAdminUser(user);
+      setIsUnlocked(true);
+      showNotification("Welcome back to Atelier Studio");
     }
   };
 
-  const handleInstantUnlock = function() {
-    setIsUnlocked(true);
-    try { sessionStorage.setItem("th3ee_admin_session_unlocked", "true"); } catch (err) {}
-    showNotification("Unlocked via Master Key");
-  };
-
-  const handleLock = function() {
+  const handleLock = async function() {
+    await authService.signOut();
+    setAdminUser(null);
     setIsUnlocked(false);
-    try { sessionStorage.removeItem("th3ee_admin_session_unlocked"); } catch (err) {}
     navigate("/");
     showNotification("Admin Console Locked");
   };
@@ -3149,36 +2547,47 @@ function SecretAtelierAdminView({
             </p>
           </div>
 
-          <form onSubmit={handlePasscodeSubmit} className="space-y-3">
+          {!authService.isConfigured() && (
+            <div className="p-3 bg-amber-50 border border-amber-200 text-left space-y-1">
+              <span className="text-[10px] font-bold text-amber-800 uppercase block">InsForge Backend Pending</span>
+              <p className="text-[11px] text-amber-700 leading-normal">
+                Set <code className="bg-amber-100 px-1 font-bold">VITE_INSFORGE_URL</code> and <code className="bg-amber-100 px-1 font-bold">VITE_INSFORGE_ANON_KEY</code> to enable live administrator authentication.
+              </p>
+            </div>
+          )}
+
+          <form onSubmit={handleAuthSubmit} className="space-y-3">
             <input 
-              type="password"
-              placeholder="Enter Atelier Passcode (th3ee2026)"
-              value={enteredPasscode}
-              onChange={function(e) { setEnteredPasscode(e.target.value); setPasscodeError(""); }}
-              className="w-full p-3 border border-neutral-300 text-xs text-center font-bold tracking-widest focus:outline-none focus:border-black bg-neutral-50"
+              type="email"
+              placeholder="Admin Email (e.g. admin@th3ee.in)"
+              value={adminEmail}
+              onChange={function(e) { setAdminEmail(e.target.value); setAuthError(""); }}
+              className="w-full p-3 border border-neutral-300 text-xs text-center font-bold tracking-normal focus:outline-none focus:border-black bg-neutral-50"
               autoFocus
             />
 
-            {passcodeError && (
-              <div className="text-[11px] text-red-600 font-bold">{passcodeError}</div>
+            <input 
+              type="password"
+              placeholder="Enter Password"
+              value={adminPassword}
+              onChange={function(e) { setAdminPassword(e.target.value); setAuthError(""); }}
+              className="w-full p-3 border border-neutral-300 text-xs text-center font-bold tracking-widest focus:outline-none focus:border-black bg-neutral-50"
+            />
+
+            {authError && (
+              <div className="text-[11px] text-red-600 font-bold">{authError}</div>
             )}
 
             <button
               type="submit"
-              className="w-full bg-neutral-950 hover:bg-[#E51E2B] text-white py-3 text-xs font-bold uppercase tracking-wider transition-colors shadow-xs"
+              disabled={authLoading}
+              className="w-full bg-neutral-950 hover:bg-[#E51E2B] disabled:bg-neutral-400 text-white py-3 text-xs font-bold uppercase tracking-wider transition-colors shadow-xs"
             >
-              Unlock Studio
+              {authLoading ? "Authenticating..." : "Unlock Studio"}
             </button>
           </form>
 
           <div className="pt-2 border-t border-neutral-100 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleInstantUnlock}
-              className="text-[11px] text-neutral-600 hover:text-black font-bold uppercase underline"
-            >
-              ⚡ Quick Unlock (Master Admin)
-            </button>
             <button
               type="button"
               onClick={function() { navigate("/"); }}
@@ -3191,6 +2600,7 @@ function SecretAtelierAdminView({
       </div>
     );
   }
+
 
   // Handle Product Deletion
   const handleDeleteProduct = function(productId) {
@@ -3249,14 +2659,8 @@ function SecretAtelierAdminView({
     if (confirm("Reset all products, banner images, and configurations to original factory presets?")) {
       setProductsList(INITIAL_MASTER_PRODUCTS);
       setHeroSlides(INITIAL_HERO_SLIDES);
-      setOrdersList(INITIAL_ORDERS);
-      setStoreBrand({
-        domain: INITIAL_OFFICIAL_DOMAIN,
-        whatsappPhone: INITIAL_WHATSAPP_PHONE,
-        whatsappDisplay: INITIAL_WHATSAPP_DISPLAY,
-        freeShippingLimit: INITIAL_FREE_SHIPPING_LIMIT,
-        announcementText: "TH3EE HEAVYWEIGHT ARCHIVE • FREE EXPRESS SHIPPING OVER Rs.999"
-      });
+      setOrdersList([]);
+      setStoreBrand(INITIAL_STORE_BRAND);
       showNotification("Factory presets restored across all sections.");
     }
   };
@@ -3999,7 +3403,7 @@ function ProductStudioModal({ product, universeCategoriesList, onClose, onSave }
         <div className="space-y-1 text-xs">
           <label className="font-bold text-neutral-700 uppercase">Garment Description</label>
           <textarea 
-            rows="3"
+            rows={3}
             value={form.description || ""}
             onChange={function(e) { handleChange("description", e.target.value); }}
             className="w-full p-2 border border-neutral-300 bg-neutral-50 text-xs leading-relaxed"

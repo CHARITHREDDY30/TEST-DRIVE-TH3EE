@@ -1,32 +1,56 @@
-# TH3EE Storefront — Deployment Package
+# TH3EE Storefront — Backend Rebuild (Phase 1)
 
-This package wraps the supplied storefront component in a Vite + React + TypeScript + Tailwind build setup. The existing `src/App.tsx` is preserved as the source of the storefront UI; no intentional UI/UX redesign was made.
+This project contains the production storefront for **TH3EE** (https://th3ee.in), built with React, Vite, TypeScript, and Tailwind CSS.
 
-## Requirements
-- Node.js 20.19+ or 22.12+
-- npm
+In **Phase 1**, all legacy fake persistence, mock orders, and hardcoded admin authentication were removed and replaced with a clean backend integration foundation prepared for a new InsForge project, Cloudflare R2 image storage, and Razorpay payments.
 
-## Run locally
+## Deployment Target
+- **Hosting:** GitHub + Vercel
+- **Backend:** InsForge Project
+- **CDN / Storage:** Cloudflare R2
+- **Payments:** Razorpay
+- **Development Branch:** `backend-rebuild`
+- **Production Baseline:** `main` (kept untouched)
+
+## Architecture & Service Layer
+The storefront communicates through modular services located in `src/services/`:
+- `products.service.ts`: Queries InsForge `products` table with graceful fallback to `src/data/initialCatalog.ts`.
+- `orders.service.ts`: Integrates with InsForge `orders` table; mock/demo orders removed.
+- `hero.service.ts`: Manages dynamic hero banner slides via InsForge `hero_slides` table.
+- `settings.service.ts`: Manages live store configuration and WhatsApp numbers via InsForge `store_settings`.
+- `auth.service.ts`: Authenticates administrators using InsForge Auth without hardcoded credentials or backdoor bypasses.
+- `src/lib/r2.ts`: Resolves Cloudflare R2 image assets with configurable public base URL.
+
+## Environment Configuration
+Copy `.env.example` to `.env`:
 ```bash
-npm install
-npm run dev
+cp .env.example .env
 ```
 
-## Production build
+Set your project variables:
+```env
+VITE_INSFORGE_URL=https://your-project.us-east.insforge.app
+VITE_INSFORGE_ANON_KEY=eyJhbGciOi...
+VITE_R2_PUBLIC_BASE_URL=https://pub-7f200224eefe4b0b9b167a01c3d7dabe.r2.dev
+VITE_RAZORPAY_KEY_ID=rzp_test_...
+```
+
+> **Security Note:** Only anonymous public keys belong in `VITE_*` frontend environment variables. Never expose InsForge service/API keys, database passwords, or Razorpay secret keys (`key_secret`) in frontend bundles.
+
+## Scripts
 ```bash
+# Install dependencies
+npm install
+
+# Run local development server
+npm run dev
+
+# Run TypeScript typecheck
+npm run typecheck
+
+# Production build
 npm run build
+
+# Preview build locally
 npm run preview
 ```
-The production files are generated in `dist/`.
-
-## Deploy
-- **Vercel:** Import the repository; build command `npm run build`, output directory `dist`. `vercel.json` provides SPA fallback for product URLs.
-- **Netlify:** Import the repository; `netlify.toml` configures the build and SPA fallback.
-- **Cloudflare Pages:** Build command `npm run build`, output directory `dist`; configure a SPA fallback if needed.
-
-## Important deployment limitations
-- The supplied app currently persists catalog, hero, orders, cart, and settings in browser `localStorage`. This is browser-specific and is not a shared, production database. Admin edits and orders will not sync across devices/users. A real InsForge backend and secure server-side payment flow are separate work and are not configured by this frontend-only package.
-- Do not put database connection strings, InsForge service-role keys, payment secret keys, or R2 secret access keys in frontend environment variables. Only public client keys belong in `VITE_*` variables.
-- Product images use public R2 URLs embedded in the source. Confirm every URL is public and the intended image before launch.
-- Demo order records, ratings/review counts, and stock values in the supplied source must be replaced with real data before taking live orders.
-- Test the WhatsApp order flow, product links, refresh on `/products/...`, mobile navigation, and admin UI after deployment.
