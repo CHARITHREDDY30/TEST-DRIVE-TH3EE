@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "test": "npx tsx scripts/verify-shopping-bag.ts"
+    "test": "npx tsx scripts/verify-all-requirements.ts"
   },
   "dependencies": {
     "@insforge/sdk": "^1.5.2",

@@ -46,6 +46,7 @@ export interface HeroSlide {
   target: string;
   bgGradient: string;
   image: string;
+  mobileImage?: string;
   badgeColor: string;
 }
 
@@ -85,6 +86,9 @@ export interface UniverseCategory {
   subtitle: string;
   bgGradient: string;
   image: string;
+  bgColor?: string;
+  focalPoint?: string;
+  overlayOpacity?: number;
   subcategories: Subcategory[];
 }
 
@@ -105,10 +109,34 @@ export interface CartItem {
 export interface DeliveryInfo {
   fullName: string;
   phone: string;
+  houseNo?: string;
+  street?: string;
+  area?: string;
+  landmark?: string;
   address: string;
   city: string;
   state: string;
   pincode: string;
+}
+
+export interface DeliveryPricingRule {
+  id: string;
+  name: string;
+  minDistanceKm: number;
+  maxDistanceKm: number;
+  fee: number;
+  isEnabled: boolean;
+}
+
+export interface DeliverySettings {
+  defaultFee: number;
+  distanceUnit: "km" | "miles";
+  distancePricingEnabled: boolean;
+  freeDeliveryThreshold: number;
+  maxServiceableDistanceKm: number;
+  allowManualOverrides: boolean;
+  pricingRules: DeliveryPricingRule[];
+  serviceableZones?: string[];
 }
 
 export interface RouteState {

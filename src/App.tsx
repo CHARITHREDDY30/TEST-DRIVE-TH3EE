@@ -8,7 +8,10 @@ import type {
   StoreBrandConfig,
   UniverseCategory,
   RouteState,
-  CartItem
+  CartItem,
+  DeliverySettings,
+  DeliveryPricingRule,
+  DeliveryInfo
 } from './types/store';
 import {
   INITIAL_OFFICIAL_DOMAIN,
@@ -39,6 +42,8 @@ import {
   couponsService,
   reportsService,
   cartService,
+  deliveryService,
+  DEFAULT_DELIVERY_SETTINGS,
   broadcastCatalogChange,
   onCatalogSync
 } from './services';
@@ -56,6 +61,30 @@ function Search({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+    </svg>
+  );
+}
+
+function Mail({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L1 7"/>
+    </svg>
+  );
+}
+
+function Globe({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
+    </svg>
+  );
+}
+
+function Upload({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
     </svg>
   );
 }
@@ -128,6 +157,14 @@ function Check({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  );
+}
+
+function ArrowLeft({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
     </svg>
   );
 }
@@ -415,6 +452,12 @@ export default function App() {
 
   const [universeCategoriesList, setUniverseCategoriesList] = useState<UniverseCategory[]>(INITIAL_UNIVERSE_CATEGORIES);
 
+  // Dynamic Delivery & Shipping Configuration (Default ₹49, distance-band pricing)
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
+
+  // Dedicated Mobile Search Overlay state
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+
   // Refresh catalog from database
   const refreshCatalog = useCallback(async function() {
     try {
@@ -445,6 +488,10 @@ export default function App() {
     settingsService.getStoreBrandConfig().then(function(cfg) {
       if (isMounted && cfg) setStoreBrand(cfg);
     }).catch(function(err) { console.warn('Settings fetch notice:', err); });
+
+    deliveryService.getDeliverySettings().then(function(deliv) {
+      if (isMounted && deliv) setDeliverySettings(deliv);
+    }).catch(function(err) { console.warn('Delivery settings fetch notice:', err); });
 
     ordersService.getOrders().then(function(ords) {
       if (isMounted && ords) setOrdersList(ords);
@@ -596,8 +643,11 @@ export default function App() {
     }, 0);
   }, [cart]);
 
-  const hasFreeShipping = cartSubtotal >= (storeBrand.freeShippingLimit || INITIAL_FREE_SHIPPING_LIMIT);
-  const deliveryCharge = hasFreeShipping || cart.length === 0 ? 0 : 149;
+  const hasFreeShipping = cartSubtotal >= (deliverySettings.freeDeliveryThreshold || storeBrand.freeShippingLimit || INITIAL_FREE_SHIPPING_LIMIT);
+  const deliveryCalculation = useMemo(function() {
+    return deliveryService.calculateFee(cartSubtotal, deliverySettings);
+  }, [cartSubtotal, deliverySettings]);
+  const deliveryCharge = hasFreeShipping || cart.length === 0 ? 0 : deliveryCalculation.fee;
   const estimatedCartTotal = cartSubtotal + deliveryCharge;
 
   const addToBag = useCallback(function(product: Product, size?: string, color?: string): boolean {
@@ -976,6 +1026,16 @@ export default function App() {
               <span>Order Support</span>
             </button>
 
+            {/* Mobile Search Button */}
+            <button 
+              type="button"
+              onClick={function() { setIsMobileSearchOpen(true); }}
+              className="md:hidden p-2 text-neutral-700 hover:text-black rounded-full hover:bg-neutral-100 transition-colors"
+              aria-label="Search silhouettes"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+
             <motion.button
               type="button"
               onClick={function() { setIsBagOpen(true); }}
@@ -1009,14 +1069,17 @@ export default function App() {
                 <button type="button" onClick={function() { setIsMobileNavOpen(false); }} className="p-1.5 text-neutral-600 hover:text-[#E51E2B]"><X className="w-5 h-5" /></button>
               </div>
 
-              <form onSubmit={function(e) { handleNavSearchSubmit(e); setIsMobileNavOpen(false); }} className="mt-4">
-                <div className="relative">
+              <form onSubmit={function(e) { e.preventDefault(); setIsMobileNavOpen(false); setIsMobileSearchOpen(true); }} className="mt-4">
+                <div 
+                  onClick={function() { setIsMobileNavOpen(false); setIsMobileSearchOpen(true); }}
+                  className="relative cursor-pointer"
+                >
                   <input 
                     type="text" 
+                    readOnly
                     placeholder="Search drops..." 
                     value={navSearchQuery}
-                    onChange={function(e) { setNavSearchQuery(e.target.value); }}
-                    className="w-full pl-9 pr-3 py-2 bg-neutral-50 border border-neutral-300 text-xs rounded-full focus:outline-none focus:border-black"
+                    className="w-full pl-9 pr-3 py-2 bg-neutral-50 border border-neutral-300 text-xs rounded-full focus:outline-none cursor-pointer"
                   />
                   <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
@@ -1108,6 +1171,9 @@ export default function App() {
             storeBrand={storeBrand}
             setStoreBrand={setStoreBrand}
             universeCategoriesList={universeCategoriesList}
+            setUniverseCategoriesList={setUniverseCategoriesList}
+            deliverySettings={deliverySettings}
+            setDeliverySettings={setDeliverySettings}
             navigate={navigate}
             showNotification={showNotification}
           />
@@ -1164,6 +1230,14 @@ export default function App() {
         />
       )}
 
+      {/* Dedicated Interactive Mobile Search Modal */}
+      <MobileSearchModal 
+        isOpen={isMobileSearchOpen}
+        onClose={function() { setIsMobileSearchOpen(false); }}
+        productsList={productsList}
+        navigate={navigate}
+      />
+
       {/* Shopping Bag Drawer */}
       <AnimatePresence>
         {isBagOpen && (
@@ -1179,88 +1253,18 @@ export default function App() {
             freeShippingLimit={storeBrand.freeShippingLimit}
             whatsappPhone={storeBrand.whatsappPhone}
             domain={storeBrand.domain}
+            deliverySettings={deliverySettings}
           />
         )}
       </AnimatePresence>
 
-      {/* Unified Single Footer */}
-      <footer className="bg-white border-t border-neutral-200 pt-8 sm:pt-10 pb-6 sm:pb-8 text-neutral-600 font-mono text-xs w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 pb-6 sm:pb-8 border-b border-neutral-200">
-            {/* Column 1: Brand & Identity */}
-            <div className="space-y-3">
-              <Th3eeBrandLogo onClick={function() { navigate("/"); }} domain={storeBrand.domain} />
-              <p className="text-neutral-600 text-xs max-w-sm leading-relaxed">
-                Independent Indian streetwear atelier crafting 180–350 GSM loopback cotton heavyweight silhouettes inspired by cult cinema, anime, and comic universes.
-              </p>
-              <div className="flex items-center gap-2 pt-1 text-xs text-[#E51E2B] font-semibold">
-                <Instagram className="w-4 h-4" />
-                <a href="https://instagram.com/th3ee.verse" target="_blank" rel="noreferrer" className="hover:underline">
-                  @th3ee.verse
-                </a>
-              </div>
-            </div>
-
-            {/* Column 2: Collections & Archive Navigation */}
-            <div className="space-y-2">
-              <span className="font-bold uppercase tracking-wider text-neutral-900 block mb-2 text-[11px]">Collections & Sagas</span>
-              <div className="flex flex-col space-y-2 text-neutral-600 font-medium">
-                <button type="button" onClick={function() { navigate("/shop?universe=tfi&subcategory=Baahubali"); }} className="text-left hover:text-[#E51E2B] transition-colors">Baahubali & TFI Cult Cinema</button>
-                <button type="button" onClick={function() { navigate("/shop?universe=anime"); }} className="text-left hover:text-[#E51E2B] transition-colors">Anime Shonen Saga Drops</button>
-                <button type="button" onClick={function() { navigate("/shop?category=T-Shirts"); }} className="text-left hover:text-[#E51E2B] transition-colors">Heavyweight T-Shirts (180–240 GSM)</button>
-                <button type="button" onClick={function() { navigate("/shop?category=Hoodies & Sweats"); }} className="text-left hover:text-[#E51E2B] transition-colors">French Terry Hoodies (300–350 GSM)</button>
-              </div>
-            </div>
-
-            {/* Column 3: Customer Desk & WhatsApp Hotline */}
-            <div className="space-y-3">
-              <span className="font-bold uppercase tracking-wider text-neutral-900 block text-[11px]">Customer Desk</span>
-              <p className="text-neutral-600 text-xs leading-relaxed">Need sizing guidance or order status assistance? Connect directly with our atelier on WhatsApp.</p>
-              <div className="space-y-2 pt-1">
-                <button 
-                  type="button"
-                  onClick={function() { window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE%20Support", "_blank"); }}
-                  className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white py-2.5 font-bold uppercase flex items-center justify-center gap-2 transition-colors text-xs tracking-wider"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white shrink-0" />
-                  <span className="truncate">WhatsApp: {storeBrand.whatsappDisplay}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={function() { window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE%2C%20track%20my%20order", "_blank"); }}
-                  className="text-neutral-700 hover:text-[#E51E2B] flex items-center gap-1.5 font-bold uppercase text-[11px] transition-colors pt-1"
-                >
-                  <Truck className="w-3.5 h-3.5 text-[#E51E2B]" />
-                  <span>Open Order Support</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="pt-5 sm:pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 text-[11px]">
-            <div 
-              onClick={handleFooterSecretClick}
-              className="font-medium text-neutral-500 text-center sm:text-left select-none cursor-pointer hover:text-neutral-700 transition-colors"
-              title="Stealth Trigger: Triple-click to open Atelier Master Studio"
-            >
-              © {new Date().getFullYear()} TH3EE ({storeBrand.domain}). ALL RIGHTS RESERVED.
-            </div>
-            <div className="flex flex-wrap items-center justify-center space-x-2 sm:space-x-4 font-semibold text-[9px] sm:text-[10px] tracking-wider uppercase text-neutral-400">
-              <span className="hover:text-black cursor-pointer">TERMS OF SERVICE</span>
-              <span>•</span>
-              <span className="hover:text-black cursor-pointer">PRIVACY POLICY</span>
-              <span>•</span>
-              <span 
-                onClick={function() { navigate("/atelier-admin"); }}
-                className="hover:text-[#E51E2B] cursor-pointer text-neutral-300"
-              >
-                ATELIER DESK [⌘+⇧+A]
-              </span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Route-Aware Single Storefront Footer */}
+      <StoreFooter 
+        isHomePage={routeState.view === "home"}
+        storeBrand={storeBrand}
+        navigate={navigate}
+        onSecretClick={handleFooterSecretClick}
+      />
     </div>
   );
 }
@@ -1325,7 +1329,7 @@ function HomePageView({
                 )}
               >
                 <img 
-                  src={resolveProductImageUrl(slide.image)} 
+                  src={resolveProductImageUrl(slide.mobileImage || slide.image)} 
                   onError={handleImageLoadError}
                   alt={slide.title} 
                   className="w-full h-full object-cover object-[center_20%]" 
@@ -1484,27 +1488,37 @@ function HomePageView({
 
           {/* MOBILE ONLY: 2x2 compact grid showing first 4 universes + More button */}
           <div className="block sm:hidden">
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2">
               {universeCategoriesList.slice(0, 4).map(function(univ) {
+                const focalClass = univ.focalPoint === 'top' ? 'object-top' : (univ.focalPoint === 'bottom' ? 'object-bottom' : 'object-center');
+                const overlayOp = typeof univ.overlayOpacity === 'number' ? univ.overlayOpacity : 0.85;
                 return (
                   <div
                     key={univ.id}
                     onClick={function() { setSelectedUniverseModal(univ); }}
-                    className="group relative h-22 rounded-2xl overflow-hidden cursor-pointer shadow-xs border border-neutral-200/80 active:scale-[0.98] transition-all duration-200"
+                    style={{ backgroundColor: univ.bgColor || '#171717' }}
+                    className="group relative h-17 xs:h-18 rounded-xl overflow-hidden cursor-pointer shadow-2xs border border-neutral-200/80 active:scale-[0.98] transition-all duration-200"
                   >
-                    <img 
-                      src={univ.image} 
-                      onError={handleImageLoadError}
-                      alt={univ.title} 
-                      className="w-full h-full object-cover object-center" 
+                    {univ.image ? (
+                      <img 
+                        src={resolveProductImageUrl(univ.image)} 
+                        onError={handleImageLoadError}
+                        alt={univ.title} 
+                        className={"w-full h-full object-cover " + focalClass} 
+                      />
+                    ) : (
+                      <div className="w-full h-full" style={{ backgroundColor: univ.bgColor || '#171717' }} />
+                    )}
+                    <div 
+                      className={"absolute inset-0 bg-gradient-to-t " + (univ.bgGradient || "from-neutral-950 via-neutral-900 to-neutral-950")} 
+                      style={{ opacity: overlayOp }}
                     />
-                    <div className={"absolute inset-0 bg-gradient-to-t " + univ.bgGradient + " opacity-85"} />
-                    <div className="absolute inset-0 p-2.5 flex flex-col justify-end text-white">
-                      <span className="text-[8px] font-mono uppercase tracking-widest text-neutral-300 font-semibold leading-none truncate">{univ.subtitle}</span>
-                      <h3 className="text-xs font-black uppercase tracking-tight text-white mt-0.5 leading-tight truncate">{univ.title}</h3>
-                      <div className="flex items-center justify-between text-[8px] font-mono text-neutral-400 mt-1 pt-1 border-t border-white/10">
+                    <div className="absolute inset-0 p-2 flex flex-col justify-end text-white">
+                      <span className="text-[7px] font-mono uppercase tracking-widest text-neutral-300 font-semibold leading-none truncate">{univ.subtitle}</span>
+                      <h3 className="text-[11px] font-black uppercase tracking-tight text-white mt-0.5 leading-tight truncate">{univ.title}</h3>
+                      <div className="flex items-center justify-between text-[7px] font-mono text-neutral-400 mt-0.5 pt-0.5 border-t border-white/10">
                         <span>{univ.subcategories ? univ.subcategories.length : 0} Sagas</span>
-                        <ChevronRight className="w-3 h-3 text-neutral-300 shrink-0" />
+                        <ChevronRight className="w-2.5 h-2.5 text-neutral-300 shrink-0" />
                       </div>
                     </div>
                   </div>
@@ -1515,7 +1529,7 @@ function HomePageView({
             <button
               type="button"
               onClick={function() { navigate("/shop"); }}
-              className="mt-3 w-full py-2.5 rounded-xl bg-white border border-neutral-300 hover:border-black active:bg-neutral-50 text-xs font-mono font-bold uppercase tracking-wider text-neutral-900 flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+              className="mt-2.5 w-full py-2 rounded-xl bg-white border border-neutral-300 hover:border-black active:bg-neutral-50 text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-900 flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
             >
               <span>More Universes ({universeCategoriesList.length})</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#E51E2B]" />
@@ -1525,19 +1539,29 @@ function HomePageView({
           {/* TABLET & DESKTOP: Full grid showing all universes */}
           <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-4">
             {universeCategoriesList.map(function(univ) {
+              const focalClass = univ.focalPoint === 'top' ? 'object-top' : (univ.focalPoint === 'bottom' ? 'object-bottom' : 'object-center');
+              const overlayOp = typeof univ.overlayOpacity === 'number' ? univ.overlayOpacity : 0.85;
               return (
                 <div
                   key={univ.id}
                   onClick={function() { setSelectedUniverseModal(univ); }}
+                  style={{ backgroundColor: univ.bgColor || '#171717' }}
                   className="group relative h-26 sm:h-32 rounded-2xl overflow-hidden cursor-pointer shadow-xs hover:shadow-md border border-neutral-200/80 hover:border-neutral-400 transition-all duration-300 transform hover:-translate-y-0.5"
                 >
-                  <img 
-                    src={univ.image} 
-                    onError={handleImageLoadError}
-                    alt={univ.title} 
-                    className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500" 
+                  {univ.image ? (
+                    <img 
+                      src={resolveProductImageUrl(univ.image)} 
+                      onError={handleImageLoadError}
+                      alt={univ.title} 
+                      className={"w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 " + focalClass} 
+                    />
+                  ) : (
+                    <div className="w-full h-full" style={{ backgroundColor: univ.bgColor || '#171717' }} />
+                  )}
+                  <div 
+                    className={"absolute inset-0 bg-gradient-to-t " + (univ.bgGradient || "from-neutral-950 via-neutral-900 to-neutral-950")} 
+                    style={{ opacity: overlayOp }}
                   />
-                  <div className={"absolute inset-0 bg-gradient-to-t " + univ.bgGradient + " opacity-85 group-hover:opacity-75 transition-opacity"} />
                   <div className="absolute inset-0 p-2.5 sm:p-3 flex flex-col justify-end text-white">
                     <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-widest text-neutral-300 font-semibold leading-none truncate">{univ.subtitle}</span>
                     <h3 className="text-xs sm:text-base font-black uppercase tracking-tight text-white mt-1 group-hover:text-[#E51E2B] transition-colors leading-tight truncate">{univ.title}</h3>
@@ -1571,15 +1595,16 @@ function HomePageView({
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 xs:gap-3.5 sm:gap-8 items-stretch">
-          {productsList.slice(0, 4).map(function(prod) {
+          {productsList.slice(0, 6).map(function(prod, idx) {
             return (
-              <ProductCard 
-                key={prod.id} 
-                product={prod} 
-                navigate={navigate} 
-                addToBag={addToBag} 
-                onQuickView={setQuickViewItem}
-              />
+              <div key={prod.id} className={idx >= 4 ? "block sm:hidden h-full" : "h-full"}>
+                <ProductCard 
+                  product={prod} 
+                  navigate={navigate} 
+                  addToBag={addToBag} 
+                  onQuickView={setQuickViewItem}
+                />
+              </div>
             );
           })}
         </div>
@@ -2662,6 +2687,356 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag }) {
   );
 }
 
+function MobileSearchModal({ 
+  isOpen, 
+  onClose, 
+  productsList, 
+  navigate 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  productsList: Product[]; 
+  navigate: (path: string) => void; 
+}) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(function() {
+    if (isOpen) {
+      setTimeout(function() {
+        if (inputRef.current) inputRef.current.focus();
+      }, 60);
+    } else {
+      setQuery("");
+    }
+  }, [isOpen]);
+
+  const searchResults = useMemo(function() {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return productsList.filter(function(p) {
+      const matchName = (p.name || "").toLowerCase().includes(q);
+      const matchId = (p.id || "").toLowerCase().includes(q) || (p.sku || "").toLowerCase().includes(q);
+      const matchCat = (p.category || "").toLowerCase().includes(q);
+      const matchSub = (p.subcategory || "").toLowerCase().includes(q);
+      const matchUniv = (p.universeId || "").toLowerCase().includes(q);
+      const matchBadge = (p.badge || "").toLowerCase().includes(q);
+      const matchDesc = (p.description || "").toLowerCase().includes(q);
+      return matchName || matchId || matchCat || matchSub || matchUniv || matchBadge || matchDesc;
+    });
+  }, [query, productsList]);
+
+  if (!isOpen) return null;
+
+  const handleSelectProduct = function(p: Product) {
+    onClose();
+    navigate("/products/" + p.slug);
+  };
+
+  const handleSubmitSearch = function(e: React.FormEvent) {
+    e.preventDefault();
+    if (!query.trim()) return;
+    onClose();
+    navigate("/shop?query=" + encodeURIComponent(query.trim()));
+  };
+
+  const quickChips = ["Baahubali", "T-Shirts", "Anime", "Hoodies", "Oversized", "Cult"];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-white flex flex-col font-mono text-neutral-900">
+      {/* Search Header */}
+      <div className="p-3.5 border-b border-neutral-200 bg-white flex items-center gap-2.5">
+        <button 
+          type="button" 
+          onClick={onClose}
+          className="p-1.5 -ml-1 text-neutral-600 hover:text-black transition-colors"
+          aria-label="Close search"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+
+        <form onSubmit={handleSubmitSearch} className="flex-1 relative flex items-center">
+          <input
+            ref={inputRef}
+            type="search"
+            value={query}
+            onChange={function(e) { setQuery(e.target.value); }}
+            placeholder="Search silhouettes, sagas, GSM..."
+            className="w-full pl-9 pr-8 py-2 bg-neutral-100 rounded-full text-xs font-mono focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#E51E2B] transition-all"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+          />
+          <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          {query && (
+            <button
+              type="button"
+              onClick={function() { setQuery(""); if (inputRef.current) inputRef.current.focus(); }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-700"
+              aria-label="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </form>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-xs font-bold uppercase text-neutral-500 hover:text-black"
+        >
+          Cancel
+        </button>
+      </div>
+
+      {/* Quick Search Suggestion Chips */}
+      <div className="px-3 py-2 bg-neutral-50 border-b border-neutral-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <span className="text-[10px] text-neutral-400 uppercase font-bold shrink-0">Tags:</span>
+        {quickChips.map(function(chip) {
+          return (
+            <button
+              key={chip}
+              type="button"
+              onClick={function() { setQuery(chip); }}
+              className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white border border-neutral-200 text-neutral-700 hover:border-black shrink-0 transition-colors"
+            >
+              {chip}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Results Content Area */}
+      <div className="flex-1 overflow-y-auto p-3.5">
+        {query.trim() === "" ? (
+          <div className="py-12 text-center text-neutral-400 space-y-2">
+            <Search className="w-8 h-8 mx-auto text-neutral-300" />
+            <p className="text-xs uppercase font-bold text-neutral-600">Type to search catalog</p>
+            <p className="text-[11px] max-w-xs mx-auto leading-relaxed">
+              Find cult cinema drops, anime sagas, fabric GSM weights, or garment identifiers.
+            </p>
+          </div>
+        ) : searchResults.length === 0 ? (
+          <div className="py-12 text-center text-neutral-400 space-y-2">
+            <p className="text-xs font-bold uppercase text-neutral-700">No drops matching "{query}"</p>
+            <p className="text-[11px] max-w-xs mx-auto leading-relaxed">
+              Try searching for general keywords like "T-Shirt", "Baahubali", "Anime", or "Cult".
+            </p>
+            <button
+              type="button"
+              onClick={function() { onClose(); navigate("/shop"); }}
+              className="mt-3 px-4 py-2 bg-neutral-900 text-white text-[11px] font-bold uppercase"
+            >
+              Browse Full Catalog
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold mb-2">
+              Found {searchResults.length} {searchResults.length === 1 ? "Drop" : "Drops"}
+            </div>
+            {searchResults.map(function(p) {
+              const thumb = (p.images && p.images[0]) || (p.colors && p.colors[0]?.images?.[0]) || (p as any).image;
+              const originalPrice = p.originalPrice != null && Number(p.originalPrice) > Number(p.price) ? Number(p.originalPrice) : null;
+              return (
+                <div
+                  key={p.id}
+                  onClick={function() { handleSelectProduct(p); }}
+                  className="flex items-center gap-3 p-2 bg-white border border-neutral-200 hover:border-neutral-400 active:bg-neutral-50 rounded-lg cursor-pointer transition-colors"
+                >
+                  <img
+                    src={resolveProductImageUrl(thumb)}
+                    onError={handleImageLoadError}
+                    alt={p.name}
+                    className="w-12 h-15 object-cover bg-neutral-100 rounded-xs shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[8px] font-bold uppercase px-1.5 py-0.2 bg-neutral-100 text-neutral-600 rounded-xs">
+                        {p.category}
+                      </span>
+                      {p.badge && (
+                        <span className="text-[8px] font-bold uppercase px-1.5 py-0.2 bg-[#E51E2B] text-white rounded-xs">
+                          {p.badge}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="text-xs font-black uppercase text-neutral-900 truncate mt-0.5">
+                      {p.name}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs">
+                      <span className="font-bold text-neutral-900">Rs. {Number(p.price).toFixed(2)}</span>
+                      {originalPrice && (
+                        <span className="text-[10px] text-neutral-400 line-through">
+                          Rs. {originalPrice.toFixed(2)}
+                        </span>
+                      )}
+                      {p.inStock === false && (
+                        <span className="text-[9px] font-bold text-red-600 uppercase ml-auto">
+                          Out of stock
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-neutral-400 shrink-0" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StoreFooter({ 
+  isHomePage, 
+  storeBrand, 
+  navigate, 
+  onSecretClick 
+}: { 
+  isHomePage: boolean; 
+  storeBrand: StoreBrandConfig; 
+  navigate: (path: string) => void; 
+  onSecretClick: () => void; 
+}) {
+  if (!isHomePage) {
+    return (
+      <footer className="bg-white border-t border-neutral-200 py-4 px-4 sm:px-6 lg:px-8 text-neutral-600 font-mono text-xs w-full">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div className="flex items-center gap-3">
+            <Th3eeBrandLogo onClick={function() { navigate("/"); }} domain={storeBrand.domain} />
+            <span className="hidden sm:inline text-neutral-300">|</span>
+            <span 
+              onClick={onSecretClick}
+              className="text-[11px] text-neutral-500 hover:text-neutral-700 cursor-pointer select-none"
+              title="Stealth Trigger: Triple-click to open Atelier Master Studio"
+            >
+              © {new Date().getFullYear()} TH3EE. ALL RIGHTS RESERVED.
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
+            <a 
+              href="mailto:support@th3ee.in?subject=TH3EE%20Support%20Inquiry"
+              className="text-neutral-800 hover:text-[#E51E2B] font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <Mail className="w-3.5 h-3.5 text-[#E51E2B]" />
+              <span>support@th3ee.in</span>
+            </a>
+            <span className="text-neutral-300">•</span>
+            <button 
+              type="button" 
+              onClick={function() { navigate("/shop"); }}
+              className="text-neutral-600 hover:text-[#E51E2B] uppercase font-semibold transition-colors"
+            >
+              Catalog
+            </button>
+            <span className="text-neutral-300">•</span>
+            <button 
+              type="button" 
+              onClick={function() { navigate("/atelier-admin"); }}
+              className="text-neutral-400 hover:text-[#E51E2B] text-[10px] uppercase font-mono transition-colors"
+            >
+              Atelier Desk
+            </button>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
+  return (
+    <footer className="bg-white border-t border-neutral-200 pt-8 sm:pt-10 pb-6 sm:pb-8 text-neutral-600 font-mono text-xs w-full overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 pb-6 sm:pb-8 border-b border-neutral-200">
+          {/* Column 1: Brand & Identity */}
+          <div className="space-y-3">
+            <Th3eeBrandLogo onClick={function() { navigate("/"); }} domain={storeBrand.domain} />
+            <p className="text-neutral-600 text-xs max-w-sm leading-relaxed">
+              Independent Indian streetwear atelier crafting 180–350 GSM loopback cotton heavyweight silhouettes inspired by cult cinema, anime, and comic universes.
+            </p>
+            <div className="flex flex-col space-y-1.5 pt-1 text-xs">
+              <a 
+                href="mailto:support@th3ee.in?subject=TH3EE%20Storefront%20Support"
+                className="text-neutral-800 hover:text-[#E51E2B] font-bold flex items-center gap-1.5 transition-colors"
+              >
+                <Mail className="w-4 h-4 text-[#E51E2B]" />
+                <span>support@th3ee.in</span>
+              </a>
+              <div className="flex items-center gap-2 text-[#E51E2B] font-semibold">
+                <Instagram className="w-4 h-4" />
+                <a href="https://instagram.com/th3ee.verse" target="_blank" rel="noreferrer" className="hover:underline">
+                  @th3ee.verse
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2: Collections & Sagas */}
+          <div className="space-y-2">
+            <span className="font-bold uppercase tracking-wider text-neutral-900 block mb-2 text-[11px]">Collections & Sagas</span>
+            <div className="flex flex-col space-y-2 text-neutral-600 font-medium">
+              <button type="button" onClick={function() { navigate("/shop?universe=tfi&subcategory=Baahubali"); }} className="text-left hover:text-[#E51E2B] transition-colors">Baahubali & TFI Cult Cinema</button>
+              <button type="button" onClick={function() { navigate("/shop?universe=anime"); }} className="text-left hover:text-[#E51E2B] transition-colors">Anime Shonen Saga Drops</button>
+              <button type="button" onClick={function() { navigate("/shop?category=T-Shirts"); }} className="text-left hover:text-[#E51E2B] transition-colors">Heavyweight T-Shirts (180–240 GSM)</button>
+              <button type="button" onClick={function() { navigate("/shop?category=Hoodies & Sweats"); }} className="text-left hover:text-[#E51E2B] transition-colors">French Terry Hoodies (300–350 GSM)</button>
+            </div>
+          </div>
+
+          {/* Column 3: Customer Desk & WhatsApp Hotline */}
+          <div className="space-y-3">
+            <span className="font-bold uppercase tracking-wider text-neutral-900 block text-[11px]">Customer Desk</span>
+            <p className="text-neutral-600 text-xs leading-relaxed">
+              Need sizing guidance or order status assistance? Connect directly with our atelier on WhatsApp or email our support desk.
+            </p>
+            <div className="space-y-2 pt-1">
+              <button 
+                type="button"
+                onClick={function() { window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE%20Support", "_blank"); }}
+                className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white py-2.5 font-bold uppercase flex items-center justify-center gap-2 transition-colors text-xs tracking-wider rounded-xs"
+              >
+                <MessageCircle className="w-4 h-4 fill-white shrink-0" />
+                <span className="truncate">WhatsApp: {storeBrand.whatsappDisplay}</span>
+              </button>
+              <a
+                href="mailto:support@th3ee.in?subject=TH3EE%20Order%20Support"
+                className="w-full bg-neutral-900 hover:bg-[#E51E2B] text-white py-2 font-bold uppercase flex items-center justify-center gap-2 transition-colors text-xs tracking-wider rounded-xs"
+              >
+                <Mail className="w-4 h-4 text-white shrink-0" />
+                <span>Email: support@th3ee.in</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="pt-5 sm:pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 text-[11px]">
+          <div 
+            onClick={onSecretClick}
+            className="font-medium text-neutral-500 text-center sm:text-left select-none cursor-pointer hover:text-neutral-700 transition-colors"
+            title="Stealth Trigger: Triple-click to open Atelier Master Studio"
+          >
+            © {new Date().getFullYear()} TH3EE ({storeBrand.domain}). ALL RIGHTS RESERVED.
+          </div>
+          <div className="flex flex-wrap items-center justify-center space-x-2 sm:space-x-4 font-semibold text-[9px] sm:text-[10px] tracking-wider uppercase text-neutral-400">
+            <span className="hover:text-black cursor-pointer">TERMS OF SERVICE</span>
+            <span>•</span>
+            <span className="hover:text-black cursor-pointer">PRIVACY POLICY</span>
+            <span>•</span>
+            <span 
+              onClick={function() { navigate("/atelier-admin"); }}
+              className="hover:text-[#E51E2B] cursor-pointer text-neutral-300"
+            >
+              ATELIER DESK [⌘+⇧+A]
+            </span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 function ShoppingBagDrawer({ 
   cart, 
   onClose, 
@@ -2673,16 +3048,28 @@ function ShoppingBagDrawer({
   hasFreeShipping,
   freeShippingLimit,
   whatsappPhone,
-  domain
+  domain,
+  deliverySettings
 }: any) {
-  const [deliveryInfo, setDeliveryInfo] = useState(function() {
+  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>(function() {
     try {
       const saved = localStorage.getItem("th3ee_customer_address");
       if (saved) return JSON.parse(saved);
     } catch (e) {}
-    return { fullName: "", phone: "", address: "", city: "", state: "", pincode: "" };
+    return { 
+      fullName: "", 
+      phone: "", 
+      houseNo: "", 
+      street: "", 
+      area: "", 
+      city: "", 
+      state: "", 
+      pincode: "", 
+      landmark: "" 
+    };
   });
-  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressErrors, setAddressErrors] = useState<Record<string, string>>({});
+  const [showAddressForm, setShowAddressForm] = useState(true);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -2714,18 +3101,77 @@ function ShoppingBagDrawer({
     setCouponMessage("");
   };
 
-  const handleAddressChange = function(field, val) {
-    const updated = Object.assign({}, deliveryInfo);
-    updated[field] = val;
+  const handleAddressChange = function(field: string, val: string) {
+    const updated = Object.assign({}, deliveryInfo, { [field]: val });
     setDeliveryInfo(updated);
+    if (addressErrors[field]) {
+      const nextErr = Object.assign({}, addressErrors);
+      delete nextErr[field];
+      setAddressErrors(nextErr);
+    }
     try { localStorage.setItem("th3ee_customer_address", JSON.stringify(updated)); } catch (e) {}
   };
 
   const limit = freeShippingLimit || INITIAL_FREE_SHIPPING_LIMIT;
   const finalCartTotal = Math.max(0, cartSubtotal - couponDiscount + deliveryCharge);
 
+  // Address compulsory validation
+  const validateDeliveryAddress = function(): boolean {
+    const errs: Record<string, string> = {};
+    if (!deliveryInfo.fullName || !deliveryInfo.fullName.trim()) {
+      errs.fullName = "Full name is required";
+    }
+    const cleanPhone = (deliveryInfo.phone || "").replace(/\D/g, "");
+    const phoneToTest = cleanPhone.length > 10 && cleanPhone.startsWith("91") ? cleanPhone.slice(2) : cleanPhone;
+    if (!deliveryInfo.phone || !deliveryInfo.phone.trim()) {
+      errs.phone = "Mobile number is required";
+    } else if (!/^[6-9]\d{9}$/.test(phoneToTest)) {
+      errs.phone = "Enter a valid 10-digit Indian mobile number (e.g. 9876543210)";
+    }
+
+    if (!deliveryInfo.houseNo || !deliveryInfo.houseNo.trim()) {
+      errs.houseNo = "House / Flat No. & Street is required";
+    }
+    if (!deliveryInfo.area || !deliveryInfo.area.trim()) {
+      errs.area = "Area / Locality is required";
+    }
+    if (!deliveryInfo.city || !deliveryInfo.city.trim()) {
+      errs.city = "City / Town is required";
+    }
+    if (!deliveryInfo.state || !deliveryInfo.state.trim()) {
+      errs.state = "State is required";
+    }
+    const cleanPin = (deliveryInfo.pincode || "").replace(/\D/g, "");
+    if (!deliveryInfo.pincode || !deliveryInfo.pincode.trim()) {
+      errs.pincode = "6-digit PIN code is required";
+    } else if (!/^\d{6}$/.test(cleanPin)) {
+      errs.pincode = "PIN code must be exactly 6 digits";
+    }
+
+    setAddressErrors(errs);
+    const keys = Object.keys(errs);
+    if (keys.length > 0) {
+      setShowAddressForm(true);
+      setTimeout(function() {
+        const firstEl = document.getElementById("field-" + keys[0]);
+        if (firstEl) {
+          firstEl.focus();
+          firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+      return false;
+    }
+    return true;
+  };
+
   const handleProceedWhatsApp = async function() {
     if (cart.length === 0) return;
+    
+    // Address is strictly compulsory
+    if (!validateDeliveryAddress()) {
+      return;
+    }
+
     const itemsSummary = cart.map(function(it) {
       return `${it.name} (${it.selectedColor}/${it.selectedSize}) x${it.quantity}`;
     }).join(', ');
@@ -2883,65 +3329,134 @@ function ShoppingBagDrawer({
               </AnimatePresence>
             </div>
 
+            {/* Compulsory Delivery Address Section */}
             {cart.length > 0 && (
-              <div className="pt-2 pb-4">
-                <button
-                  type="button"
-                  onClick={function() { setShowAddressForm(!showAddressForm); }}
-                  className="text-xs font-bold text-neutral-800 uppercase flex items-center justify-between w-full py-2 border-y border-neutral-200"
-                >
-                  <span className="truncate">{showAddressForm ? "▼ Hide Delivery Address" : "► Add Delivery Address (Optional)"}</span>
-                  <span className="text-[10px] text-neutral-400 font-mono shrink-0">Include in WhatsApp</span>
-                </button>
+              <div className="pt-2 pb-3 border-t border-neutral-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                      Delivery Address <span className="text-[#E51E2B]">*</span>
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-xs">
+                    Compulsory
+                  </span>
+                </div>
 
-                {showAddressForm && (
-                  <div className="mt-3 space-y-2 text-xs">
+                <div className="space-y-2 text-xs">
+                  <div>
                     <input 
+                      id="field-fullName"
                       type="text" 
-                      placeholder="Full Name" 
-                      value={deliveryInfo.fullName} 
+                      placeholder="Full Name *" 
+                      value={deliveryInfo.fullName || ""} 
                       onChange={function(e) { handleAddressChange("fullName", e.target.value); }} 
-                      className="w-full p-2 border border-neutral-300 bg-neutral-50 text-xs"
+                      className={"w-full p-2 border bg-neutral-50 text-xs rounded-xs " + (addressErrors.fullName ? "border-red-500 bg-red-50/30" : "border-neutral-300")}
                     />
+                    {addressErrors.fullName && (
+                      <span className="text-[10px] text-red-600 font-bold block mt-0.5">{addressErrors.fullName}</span>
+                    )}
+                  </div>
+
+                  <div>
                     <input 
+                      id="field-phone"
                       type="tel" 
-                      placeholder="10-Digit Phone" 
-                      value={deliveryInfo.phone} 
+                      inputMode="numeric"
+                      placeholder="10-Digit Mobile Number (e.g. 9876543210) *" 
+                      value={deliveryInfo.phone || ""} 
                       onChange={function(e) { handleAddressChange("phone", e.target.value); }} 
-                      className="w-full p-2 border border-neutral-300 bg-neutral-50 text-xs"
+                      className={"w-full p-2 border bg-neutral-50 text-xs rounded-xs " + (addressErrors.phone ? "border-red-500 bg-red-50/30" : "border-neutral-300")}
                     />
+                    {addressErrors.phone && (
+                      <span className="text-[10px] text-red-600 font-bold block mt-0.5">{addressErrors.phone}</span>
+                    )}
+                  </div>
+
+                  <div>
                     <input 
+                      id="field-houseNo"
                       type="text" 
-                      placeholder="Address Line" 
-                      value={deliveryInfo.address} 
-                      onChange={function(e) { handleAddressChange("address", e.target.value); }} 
-                      className="w-full p-2 border border-neutral-300 bg-neutral-50 text-xs"
+                      placeholder="House / Flat / Building No. & Street *" 
+                      value={deliveryInfo.houseNo || ""} 
+                      onChange={function(e) { handleAddressChange("houseNo", e.target.value); }} 
+                      className={"w-full p-2 border bg-neutral-50 text-xs rounded-xs " + (addressErrors.houseNo ? "border-red-500 bg-red-50/30" : "border-neutral-300")}
                     />
-                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                    {addressErrors.houseNo && (
+                      <span className="text-[10px] text-red-600 font-bold block mt-0.5">{addressErrors.houseNo}</span>
+                    )}
+                  </div>
+
+                  <div>
+                    <input 
+                      id="field-area"
+                      type="text" 
+                      placeholder="Area / Locality / Sector *" 
+                      value={deliveryInfo.area || ""} 
+                      onChange={function(e) { handleAddressChange("area", e.target.value); }} 
+                      className={"w-full p-2 border bg-neutral-50 text-xs rounded-xs " + (addressErrors.area ? "border-red-500 bg-red-50/30" : "border-neutral-300")}
+                    />
+                    {addressErrors.area && (
+                      <span className="text-[10px] text-red-600 font-bold block mt-0.5">{addressErrors.area}</span>
+                    )}
+                  </div>
+
+                  <div>
+                    <input 
+                      id="field-landmark"
+                      type="text" 
+                      placeholder="Landmark (Optional)" 
+                      value={deliveryInfo.landmark || ""} 
+                      onChange={function(e) { handleAddressChange("landmark", e.target.value); }} 
+                      className="w-full p-2 border border-neutral-300 bg-neutral-50 text-xs rounded-xs"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                    <div>
                       <input 
+                        id="field-city"
                         type="text" 
-                        placeholder="City" 
-                        value={deliveryInfo.city} 
+                        placeholder="City *" 
+                        value={deliveryInfo.city || ""} 
                         onChange={function(e) { handleAddressChange("city", e.target.value); }} 
-                        className="p-1.5 sm:p-2 border border-neutral-300 bg-neutral-50 text-xs"
+                        className={"w-full p-1.5 sm:p-2 border bg-neutral-50 text-xs rounded-xs " + (addressErrors.city ? "border-red-500 bg-red-50/30" : "border-neutral-300")}
                       />
+                      {addressErrors.city && (
+                        <span className="text-[9px] text-red-600 font-bold block mt-0.5">{addressErrors.city}</span>
+                      )}
+                    </div>
+                    <div>
                       <input 
+                        id="field-state"
                         type="text" 
-                        placeholder="State" 
-                        value={deliveryInfo.state} 
+                        placeholder="State *" 
+                        value={deliveryInfo.state || ""} 
                         onChange={function(e) { handleAddressChange("state", e.target.value); }} 
-                        className="p-1.5 sm:p-2 border border-neutral-300 bg-neutral-50 text-xs"
+                        className={"w-full p-1.5 sm:p-2 border bg-neutral-50 text-xs rounded-xs " + (addressErrors.state ? "border-red-500 bg-red-50/30" : "border-neutral-300")}
                       />
+                      {addressErrors.state && (
+                        <span className="text-[9px] text-red-600 font-bold block mt-0.5">{addressErrors.state}</span>
+                      )}
+                    </div>
+                    <div>
                       <input 
+                        id="field-pincode"
                         type="text" 
-                        placeholder="Pincode" 
-                        value={deliveryInfo.pincode} 
+                        inputMode="numeric"
+                        maxLength={6}
+                        placeholder="PIN (6 Digits) *" 
+                        value={deliveryInfo.pincode || ""} 
                         onChange={function(e) { handleAddressChange("pincode", e.target.value); }} 
-                        className="p-1.5 sm:p-2 border border-neutral-300 bg-neutral-50 text-xs"
+                        className={"w-full p-1.5 sm:p-2 border bg-neutral-50 text-xs rounded-xs " + (addressErrors.pincode ? "border-red-500 bg-red-50/30" : "border-neutral-300")}
                       />
+                      {addressErrors.pincode && (
+                        <span className="text-[9px] text-red-600 font-bold block mt-0.5">{addressErrors.pincode}</span>
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
 
@@ -3018,7 +3533,7 @@ function ShoppingBagDrawer({
               </div>
             )}
             <div className="flex justify-between text-xs">
-              <span>Shipping</span>
+              <span>Delivery Fee</span>
               <span>{deliveryCharge === 0 ? "FREE" : "Rs. " + deliveryCharge.toFixed(2)}</span>
             </div>
             <div className="flex justify-between font-bold text-sm text-[#E51E2B]">
@@ -3030,6 +3545,15 @@ function ShoppingBagDrawer({
               disabled={cart.length === 0}
               label="Order via WhatsApp"
             />
+            <div className="text-center pt-1">
+              <a 
+                href="mailto:support@th3ee.in?subject=TH3EE%20Bag%20Support"
+                className="text-[10px] text-neutral-500 hover:text-black transition-colors inline-flex items-center gap-1"
+              >
+                <Mail className="w-3 h-3 text-[#E51E2B]" />
+                <span>Support: support@th3ee.in</span>
+              </a>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -3037,7 +3561,7 @@ function ShoppingBagDrawer({
   );
 }
 
-function EditorialTriFoldSection({ navigate, domain }) {
+function EditorialTriFoldSection({ navigate, domain }: { navigate: (path: string) => void; domain?: string }) {
   const editorialCards = [
     {
       title: "MEN",
@@ -3060,18 +3584,18 @@ function EditorialTriFoldSection({ navigate, domain }) {
   ];
 
   return (
-    <section className="bg-[#0D0D0D] text-white py-10 sm:py-16 border-t border-neutral-800 relative z-10 font-mono w-full overflow-hidden">
+    <section className="bg-[#0D0D0D] text-white py-6 sm:py-16 border-t border-neutral-800 relative z-10 font-mono w-full overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 sm:mb-8 pb-3 sm:pb-4 border-b border-neutral-800/80 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 sm:mb-8 pb-3 sm:pb-4 border-b border-neutral-800/80 gap-2">
           <div>
             <span className="text-[9px] sm:text-[10px] text-[#E51E2B] uppercase tracking-widest font-bold block mb-1">
               TH3EE ATELIER CURATIONS
             </span>
-            <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white">
+            <h2 className="text-base sm:text-2xl font-black uppercase tracking-tight text-white">
               ELEVATED EVERYDAY HEAVYWEIGHT SILHOUETTES
             </h2>
           </div>
-          <div className="text-left sm:text-right">
+          <div className="hidden sm:block text-right">
             <span className="text-[8px] sm:text-[9px] uppercase tracking-widest text-neutral-400 block">
               OFFICIAL DOMAIN
             </span>
@@ -3081,7 +3605,38 @@ function EditorialTriFoldSection({ navigate, domain }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
+        {/* Mobile-only compact image-led row with direct category overlays (MEN, WOMEN, UNISEX) */}
+        <div className="grid grid-cols-3 gap-2 md:hidden">
+          {editorialCards.map(function(card) {
+            return (
+              <motion.div
+                key={card.title}
+                whileTap={{ scale: 0.95 }}
+                onClick={function() { navigate("/shop"); }}
+                className="group relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer border border-neutral-800 hover:border-neutral-600 focus:outline-hidden focus:ring-2 focus:ring-[#E51E2B] transition-all bg-neutral-900 shadow-sm"
+                role="button"
+                tabIndex={0}
+                onKeyDown={function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate("/shop"); } }}
+              >
+                <img 
+                  src={card.image} 
+                  onError={handleImageLoadError}
+                  alt={card.title} 
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-2 text-center">
+                  <span className="text-[10px] xs:text-[11px] font-black uppercase tracking-widest text-white drop-shadow-md block">
+                    {card.title}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Desktop presentation remains unchanged */}
+        <div className="hidden md:grid md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
           {editorialCards.map(function(card) {
             return (
               <div 
@@ -3144,16 +3699,28 @@ function SecretAtelierAdminView({
   storeBrand,
   setStoreBrand,
   universeCategoriesList,
+  setUniverseCategoriesList,
+  deliverySettings,
+  setDeliverySettings,
   navigate,
   showNotification
-}) {
+}: any) {
   const [adminUser, setAdminUser] = useState<any>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [adminEmail, setAdminEmail] = useState("charithreddytatekalava@gmail.com");
   const [adminPassword, setAdminPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
-  const [activeTab, setActiveTab] = useState("products"); // "products" | "inventory" | "banners" | "orders" | "coupons" | "reports" | "settings"
+  const [activeTab, setActiveTab] = useState("products"); // "products" | "inventory" | "banners" | "universes" | "delivery" | "orders" | "coupons" | "reports" | "settings"
+
+  const [heroSaving, setHeroSaving] = useState(false);
+  const [heroUploading, setHeroUploading] = useState<string | null>(null);
+  const [universesSaving, setUniversesSaving] = useState(false);
+  const [universeUploading, setUniverseUploading] = useState<string | null>(null);
+  const [deliverySaving, setDeliverySaving] = useState(false);
+  const [simDistance, setSimDistance] = useState("8");
+  const [simSubtotal, setSimSubtotal] = useState("499");
+  const [simResult, setSimResult] = useState<any>(null);
 
   const [couponsList, setCouponsList] = useState<any[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
@@ -3554,6 +4121,111 @@ function SecretAtelierAdminView({
     }
   };
 
+  // Save Hero Slides to Backend DB & Storage
+  const handleSaveHeroSlides = async function() {
+    setHeroSaving(true);
+    try {
+      const ok = await heroService.saveHeroSlides(heroSlides);
+      setHeroSaving(false);
+      if (ok) {
+        broadcastCatalogChange({ type: 'CATALOG_UPDATED' });
+        showNotification("Hero banners successfully saved to backend & storage!");
+      } else {
+        showNotification("Hero banners saved locally. (Backend sync note)");
+      }
+    } catch (err: any) {
+      setHeroSaving(false);
+      showNotification("Failed to save hero slides: " + (err?.message || err));
+    }
+  };
+
+  // Upload hero desktop/mobile image to R2/InsForge
+  const handleUploadHeroImage = async function(idx: number, isMobile: boolean, file: File) {
+    try {
+      setHeroUploading(idx + (isMobile ? "-mobile" : "-desktop"));
+      const res = await uploadService.uploadImage(file, 'heroes');
+      setHeroUploading(null);
+      if (res && res.url) {
+        setHeroSlides(function(prev: HeroSlide[]) {
+          const c = [].concat(prev as any);
+          if (isMobile) {
+            c[idx] = Object.assign({}, c[idx], { mobileImage: res.url });
+          } else {
+            c[idx] = Object.assign({}, c[idx], { image: res.url });
+          }
+          return c;
+        });
+        showNotification((isMobile ? "Mobile" : "Desktop") + " hero image uploaded! Click 'Save & Publish' to persist.");
+      }
+    } catch (err: any) {
+      setHeroUploading(null);
+      showNotification("Upload failed: " + (err?.message || err));
+    }
+  };
+
+  // Save Universe Customizations to Backend DB
+  const handleSaveUniverses = async function() {
+    setUniversesSaving(true);
+    try {
+      const ok = await categoriesService.saveUniverseCategories(universeCategoriesList);
+      setUniversesSaving(false);
+      if (ok) {
+        broadcastCatalogChange({ type: 'CATALOG_UPDATED' });
+        showNotification("Universe customizations saved to backend & published!");
+      } else {
+        showNotification("Universe settings saved locally.");
+      }
+    } catch (err: any) {
+      setUniversesSaving(false);
+      showNotification("Failed to save universes: " + (err?.message || err));
+    }
+  };
+
+  // Upload universe background image
+  const handleUploadUniverseImage = async function(idx: number, file: File) {
+    try {
+      setUniverseUploading(String(idx));
+      const res = await uploadService.uploadImage(file, 'banners');
+      setUniverseUploading(null);
+      if (res && res.url) {
+        setUniverseCategoriesList(function(prev: UniverseCategory[]) {
+          const c = [].concat(prev as any);
+          c[idx] = Object.assign({}, c[idx], { image: res.url });
+          return c;
+        });
+        showNotification("Universe background image uploaded! Click 'Save & Publish' to persist.");
+      }
+    } catch (err: any) {
+      setUniverseUploading(null);
+      showNotification("Upload failed: " + (err?.message || err));
+    }
+  };
+
+  // Save Delivery Settings
+  const handleSaveDeliverySettings = async function() {
+    setDeliverySaving(true);
+    try {
+      const ok = await deliveryService.saveDeliverySettings(deliverySettings);
+      setDeliverySaving(false);
+      if (ok) {
+        showNotification("Delivery pricing rules saved to backend!");
+      } else {
+        showNotification("Delivery settings updated locally.");
+      }
+    } catch (err: any) {
+      setDeliverySaving(false);
+      showNotification("Failed to save delivery settings: " + (err?.message || err));
+    }
+  };
+
+  // Run delivery simulator test
+  const handleRunDeliverySim = function() {
+    const dist = parseFloat(simDistance) || 0;
+    const sub = parseFloat(simSubtotal) || 0;
+    const calc = deliveryService.calculateFee(sub, deliverySettings, dist);
+    setSimResult(calc);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 font-mono space-y-6 w-full">
       {/* Top Admin Bar */}
@@ -3598,7 +4270,9 @@ function SecretAtelierAdminView({
         {[
           { id: "products", label: "Products Catalog (" + productsList.length + ")", icon: Package },
           { id: "inventory", label: "Inventory Matrix", icon: Layers },
-          { id: "banners", label: "Hero & Carousel Banners (" + heroSlides.length + ")", icon: Image },
+          { id: "banners", label: "Hero Banners (" + heroSlides.length + ")", icon: Image },
+          { id: "universes", label: "Universes (" + universeCategoriesList.length + ")", icon: Globe },
+          { id: "delivery", label: "Delivery & Distance Fees", icon: Truck },
           { id: "orders", label: "Orders & Tracking (" + ordersList.length + ")", icon: Truck },
           { id: "coupons", label: "Coupons (" + couponsList.length + ")", icon: Tag },
           { id: "reports", label: "Sales & Performance", icon: BarChart3 },
@@ -3813,37 +4487,49 @@ function SecretAtelierAdminView({
       {/* TAB 3: BANNERS & HERO SLIDES */}
       {activeTab === "banners" && (
         <div className="space-y-4">
-          <div className="bg-neutral-50 p-3.5 border border-neutral-200 flex justify-between items-center">
+          <div className="bg-neutral-50 p-3.5 border border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h2 className="text-sm font-bold uppercase text-neutral-900">Homepage Hero Slides</h2>
-              <p className="text-[11px] text-neutral-500">Manage rotating mobile and desktop showcase banners.</p>
+              <p className="text-[11px] text-neutral-500">Configure separate desktop and mobile banner images with backend database persistence.</p>
             </div>
-            <button
-              type="button"
-              onClick={function() {
-                const newSlide = {
-                  id: "slide-" + (heroSlides.length + 1),
-                  tag: "NEW DROP",
-                  title: "NEW STREETWEAR DROP",
-                  highlight: "EXCLUSIVE RELEASE",
-                  desc: "180 to 350 GSM custom milled heavyweight cotton silhouette.",
-                  cta: "EXPLORE DROP",
-                  target: "/shop",
-                  bgGradient: "from-neutral-950 via-neutral-900 to-neutral-950",
-                  image: resolveProductImageUrl("tshirts/IMg 1.jpeg"),
-                  badgeColor: "bg-[#E51E2B]"
-                };
-                setHeroSlides(function(prev) { return prev.concat([newSlide]); });
-                showNotification("Added new slide");
-              }}
-              className="bg-neutral-900 hover:bg-[#E51E2B] text-white px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Slide</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSaveHeroSlides}
+                disabled={heroSaving}
+                className="bg-[#E51E2B] hover:bg-red-700 text-white px-3.5 py-1.5 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors shadow-xs"
+              >
+                {heroSaving ? <Loader2 className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+                <span>{heroSaving ? "Saving..." : "Save & Publish Slides"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={function() {
+                  const newSlide: HeroSlide = {
+                    id: "slide-" + (heroSlides.length + 1),
+                    tag: "NEW DROP",
+                    title: "NEW STREETWEAR DROP",
+                    highlight: "EXCLUSIVE RELEASE",
+                    desc: "180 to 350 GSM custom milled heavyweight cotton silhouette.",
+                    cta: "EXPLORE DROP",
+                    target: "/shop",
+                    bgGradient: "from-neutral-950 via-neutral-900 to-neutral-950",
+                    image: resolveProductImageUrl("tshirts/IMg 1.jpeg"),
+                    mobileImage: resolveProductImageUrl("tshirts/IMg 1.jpeg"),
+                    badgeColor: "bg-[#E51E2B]"
+                  };
+                  setHeroSlides(function(prev: HeroSlide[]) { return prev.concat([newSlide]); });
+                  showNotification("Added new slide. Remember to click 'Save & Publish Slides'.");
+                }}
+                className="bg-neutral-900 hover:bg-[#E51E2B] text-white px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Slide</span>
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {heroSlides.map(function(slide, idx) {
               return (
                 <div key={slide.id || idx} className="bg-white border border-neutral-200 p-4 space-y-3">
@@ -3856,7 +4542,7 @@ function SecretAtelierAdminView({
                           showNotification("At least 1 slide must be preserved.");
                           return;
                         }
-                        setHeroSlides(function(prev) { return prev.filter(function(_, i) { return i !== idx; }); });
+                        setHeroSlides(function(prev: HeroSlide[]) { return prev.filter(function(_, i) { return i !== idx; }); });
                         showNotification("Slide removed");
                       }}
                       className="text-neutral-400 hover:text-red-600 p-1"
@@ -3865,16 +4551,16 @@ function SecretAtelierAdminView({
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div>
-                      <label className="text-[10px] font-bold text-neutral-600 uppercase block">Tagline Badge</label>
+                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">Tagline Badge</label>
                       <input
                         type="text"
                         value={slide.tag || ""}
                         onChange={function(e) {
                           const val = e.target.value;
-                          setHeroSlides(function(prev) {
-                            const c = [].concat(prev);
+                          setHeroSlides(function(prev: HeroSlide[]) {
+                            const c = [].concat(prev as any);
                             c[idx] = Object.assign({}, c[idx], { tag: val });
                             return c;
                           });
@@ -3883,14 +4569,14 @@ function SecretAtelierAdminView({
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-neutral-600 uppercase block">Headline Title</label>
+                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">Headline Title</label>
                       <input
                         type="text"
                         value={slide.title || ""}
                         onChange={function(e) {
                           const val = e.target.value;
-                          setHeroSlides(function(prev) {
-                            const c = [].concat(prev);
+                          setHeroSlides(function(prev: HeroSlide[]) {
+                            const c = [].concat(prev as any);
                             c[idx] = Object.assign({}, c[idx], { title: val });
                             return c;
                           });
@@ -3899,14 +4585,14 @@ function SecretAtelierAdminView({
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-neutral-600 uppercase block">Highlight Text (Red)</label>
+                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">Highlight Text (Red)</label>
                       <input
                         type="text"
                         value={slide.highlight || ""}
                         onChange={function(e) {
                           const val = e.target.value;
-                          setHeroSlides(function(prev) {
-                            const c = [].concat(prev);
+                          setHeroSlides(function(prev: HeroSlide[]) {
+                            const c = [].concat(prev as any);
                             c[idx] = Object.assign({}, c[idx], { highlight: val });
                             return c;
                           });
@@ -3914,26 +4600,623 @@ function SecretAtelierAdminView({
                         className="w-full p-2 border border-neutral-300 bg-neutral-50 font-bold"
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-neutral-600 uppercase block">Image Path or URL</label>
-                      <input
-                        type="text"
-                        value={slide.image || ""}
-                        onChange={function(e) {
-                          const val = e.target.value;
-                          setHeroSlides(function(prev) {
-                            const c = [].concat(prev);
-                            c[idx] = Object.assign({}, c[idx], { image: val });
-                            return c;
-                          });
-                        }}
-                        className="w-full p-2 border border-neutral-300 bg-neutral-50"
-                      />
+                  </div>
+
+                  {/* Desktop and Mobile Images */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t text-xs">
+                    {/* Desktop Image */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold text-neutral-700 uppercase">Desktop Image (Landscape)</label>
+                        <span className="text-[9px] text-neutral-400">Desktop / Tablet</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <img 
+                          src={resolveProductImageUrl(slide.image)} 
+                          onError={handleImageLoadError} 
+                          alt="" 
+                          className="w-12 h-10 object-cover bg-neutral-100 border border-neutral-200 shrink-0 rounded-xs" 
+                        />
+                        <input
+                          type="text"
+                          value={slide.image || ""}
+                          onChange={function(e) {
+                            const val = e.target.value;
+                            setHeroSlides(function(prev: HeroSlide[]) {
+                              const c = [].concat(prev as any);
+                              c[idx] = Object.assign({}, c[idx], { image: val });
+                              return c;
+                            });
+                          }}
+                          placeholder="Image path or R2 URL"
+                          className="w-full p-2 border border-neutral-300 bg-neutral-50 text-[11px]"
+                        />
+                        <label className="cursor-pointer bg-neutral-900 hover:bg-[#E51E2B] text-white px-2.5 py-2 text-[10px] font-bold uppercase shrink-0 transition-colors">
+                          {heroUploading === idx + '-desktop' ? "..." : "Upload"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={heroUploading !== null}
+                            onChange={function(e) {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadHeroImage(idx, false, file);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Mobile Image */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold text-[#E51E2B] uppercase">Mobile Hero Image (Portrait)</label>
+                        <span className="text-[9px] text-neutral-400">Mobile screens</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <img 
+                          src={resolveProductImageUrl(slide.mobileImage || slide.image)} 
+                          onError={handleImageLoadError} 
+                          alt="" 
+                          className="w-8 h-10 object-cover bg-neutral-100 border border-neutral-200 shrink-0 rounded-xs" 
+                        />
+                        <input
+                          type="text"
+                          value={slide.mobileImage || ""}
+                          onChange={function(e) {
+                            const val = e.target.value;
+                            setHeroSlides(function(prev: HeroSlide[]) {
+                              const c = [].concat(prev as any);
+                              c[idx] = Object.assign({}, c[idx], { mobileImage: val });
+                              return c;
+                            });
+                          }}
+                          placeholder="Mobile image URL (fallback to desktop if empty)"
+                          className="w-full p-2 border border-neutral-300 bg-neutral-50 text-[11px]"
+                        />
+                        <label className="cursor-pointer bg-[#E51E2B] hover:bg-black text-white px-2.5 py-2 text-[10px] font-bold uppercase shrink-0 transition-colors">
+                          {heroUploading === idx + '-mobile' ? "..." : "Upload Mobile"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={heroUploading !== null}
+                            onChange={function(e) {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadHeroImage(idx, true, file);
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={handleSaveHeroSlides}
+              disabled={heroSaving}
+              className="bg-[#E51E2B] hover:bg-red-700 text-white px-5 py-2.5 text-xs font-bold uppercase flex items-center gap-2 transition-colors shadow-xs"
+            >
+              {heroSaving ? <Loader2 className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+              <span>{heroSaving ? "Publishing to Backend..." : "Save & Publish Hero Slides"}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: UNIVERSES CUSTOMIZATION */}
+      {activeTab === "universes" && (
+        <div className="space-y-4">
+          <div className="bg-neutral-50 p-3.5 border border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase text-neutral-900">Explore by Universe Customization</h2>
+              <p className="text-[11px] text-neutral-500">Configure background images, colors, focal points, and readability overlays for mobile and desktop boxes.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveUniverses}
+              disabled={universesSaving}
+              className="bg-[#E51E2B] hover:bg-red-700 text-white px-3.5 py-1.5 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors shadow-xs"
+            >
+              {universesSaving ? <Loader2 className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+              <span>{universesSaving ? "Publishing..." : "Save & Publish Universes"}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {universeCategoriesList.map(function(univ: UniverseCategory, idx: number) {
+              const focalClass = univ.focalPoint === 'top' ? 'object-top' : (univ.focalPoint === 'bottom' ? 'object-bottom' : 'object-center');
+              const overlayOp = typeof univ.overlayOpacity === 'number' ? univ.overlayOpacity : 0.85;
+
+              return (
+                <div key={univ.id} className="bg-white border border-neutral-200 p-4 space-y-3 shadow-xs">
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-[#E51E2B]">{univ.subtitle}</span>
+                      <h3 className="text-xs font-black uppercase text-neutral-900">{univ.title}</h3>
+                    </div>
+                    <span className="text-[10px] font-mono text-neutral-400 font-bold">
+                      {univ.subcategories ? univ.subcategories.length : 0} Sagas
+                    </span>
+                  </div>
+
+                  {/* Settings grid */}
+                  <div className="space-y-3 text-xs">
+                    {/* Background Image */}
+                    <div>
+                      <label className="text-[10px] font-bold text-neutral-700 uppercase block mb-1">Background Image URL or R2 Path</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={univ.image || ""}
+                          onChange={function(e) {
+                            const val = e.target.value;
+                            setUniverseCategoriesList(function(prev: UniverseCategory[]) {
+                              const c = [].concat(prev as any);
+                              c[idx] = Object.assign({}, c[idx], { image: val });
+                              return c;
+                            });
+                          }}
+                          placeholder="e.g. universes/baahubali.jpg or URL"
+                          className="w-full p-2 border border-neutral-300 bg-neutral-50 text-[11px]"
+                        />
+                        <label className="cursor-pointer bg-neutral-900 hover:bg-[#E51E2B] text-white px-2.5 py-2 text-[10px] font-bold uppercase shrink-0 transition-colors">
+                          {universeUploading === String(idx) ? "..." : "Upload"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={universeUploading !== null}
+                            onChange={function(e) {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadUniverseImage(idx, file);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {/* Background Color */}
+                      <div>
+                        <label className="text-[10px] font-bold text-neutral-700 uppercase block mb-1">Fallback Color</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={univ.bgColor || "#171717"}
+                            onChange={function(e) {
+                              const val = e.target.value;
+                              setUniverseCategoriesList(function(prev: UniverseCategory[]) {
+                                const c = [].concat(prev as any);
+                                c[idx] = Object.assign({}, c[idx], { bgColor: val });
+                                return c;
+                              });
+                            }}
+                            className="w-8 h-8 p-0 border-0 cursor-pointer bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={univ.bgColor || "#171717"}
+                            onChange={function(e) {
+                              const val = e.target.value;
+                              setUniverseCategoriesList(function(prev: UniverseCategory[]) {
+                                const c = [].concat(prev as any);
+                                c[idx] = Object.assign({}, c[idx], { bgColor: val });
+                                return c;
+                              });
+                            }}
+                            className="w-full p-1.5 border border-neutral-300 bg-neutral-50 font-mono text-[10px]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Image Focal Point */}
+                      <div>
+                        <label className="text-[10px] font-bold text-neutral-700 uppercase block mb-1">Focal Point</label>
+                        <select
+                          value={univ.focalPoint || "center"}
+                          onChange={function(e) {
+                            const val = e.target.value as any;
+                            setUniverseCategoriesList(function(prev: UniverseCategory[]) {
+                              const c = [].concat(prev as any);
+                              c[idx] = Object.assign({}, c[idx], { focalPoint: val });
+                              return c;
+                            });
+                          }}
+                          className="w-full p-1.5 border border-neutral-300 bg-neutral-50 text-xs font-bold"
+                        >
+                          <option value="center">Center</option>
+                          <option value="top">Top (Head Focus)</option>
+                          <option value="bottom">Bottom</option>
+                        </select>
+                      </div>
+
+                      {/* Overlay Opacity */}
+                      <div>
+                        <label className="text-[10px] font-bold text-neutral-700 uppercase block mb-1">Readability Overlay</label>
+                        <select
+                          value={String(univ.overlayOpacity != null ? univ.overlayOpacity : 0.85)}
+                          onChange={function(e) {
+                            const val = parseFloat(e.target.value);
+                            setUniverseCategoriesList(function(prev: UniverseCategory[]) {
+                              const c = [].concat(prev as any);
+                              c[idx] = Object.assign({}, c[idx], { overlayOpacity: val });
+                              return c;
+                            });
+                          }}
+                          className="w-full p-1.5 border border-neutral-300 bg-neutral-50 text-xs font-bold"
+                        >
+                          <option value="0.5">50% Subtle</option>
+                          <option value="0.7">70% Balanced</option>
+                          <option value="0.85">85% High Contrast</option>
+                          <option value="0.95">95% Heavy Dark</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Live Desktop and Mobile Previews */}
+                    <div className="pt-2 border-t">
+                      <span className="text-[9px] font-bold uppercase text-neutral-400 block mb-1.5">Live Box Preview (Desktop vs Compact Mobile)</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* Desktop preview */}
+                        <div>
+                          <span className="text-[8px] uppercase text-neutral-500 font-bold block mb-0.5">Desktop Size</span>
+                          <div 
+                            style={{ backgroundColor: univ.bgColor || '#171717' }}
+                            className="relative h-20 rounded-xl overflow-hidden border border-neutral-300"
+                          >
+                            {univ.image ? (
+                              <img 
+                                src={resolveProductImageUrl(univ.image)} 
+                                onError={handleImageLoadError}
+                                alt={univ.title} 
+                                className={"w-full h-full object-cover " + focalClass} 
+                              />
+                            ) : (
+                              <div className="w-full h-full" style={{ backgroundColor: univ.bgColor || '#171717' }} />
+                            )}
+                            <div 
+                              className={"absolute inset-0 bg-gradient-to-t " + (univ.bgGradient || "from-neutral-950 via-neutral-900 to-neutral-950")} 
+                              style={{ opacity: overlayOp }}
+                            />
+                            <div className="absolute inset-0 p-2 flex flex-col justify-end text-white">
+                              <span className="text-[7px] font-mono uppercase tracking-widest text-neutral-300 font-semibold truncate">{univ.subtitle}</span>
+                              <h4 className="text-[10px] font-black uppercase text-white truncate">{univ.title}</h4>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Mobile compact preview */}
+                        <div>
+                          <span className="text-[8px] uppercase text-neutral-500 font-bold block mb-0.5">Mobile Compact</span>
+                          <div 
+                            style={{ backgroundColor: univ.bgColor || '#171717' }}
+                            className="relative h-16 rounded-lg overflow-hidden border border-neutral-300"
+                          >
+                            {univ.image ? (
+                              <img 
+                                src={resolveProductImageUrl(univ.image)} 
+                                onError={handleImageLoadError}
+                                alt={univ.title} 
+                                className={"w-full h-full object-cover " + focalClass} 
+                              />
+                            ) : (
+                              <div className="w-full h-full" style={{ backgroundColor: univ.bgColor || '#171717' }} />
+                            )}
+                            <div 
+                              className={"absolute inset-0 bg-gradient-to-t " + (univ.bgGradient || "from-neutral-950 via-neutral-900 to-neutral-950")} 
+                              style={{ opacity: overlayOp }}
+                            />
+                            <div className="absolute inset-0 p-1.5 flex flex-col justify-end text-white">
+                              <span className="text-[6px] font-mono uppercase tracking-widest text-neutral-300 font-semibold truncate">{univ.subtitle}</span>
+                              <h4 className="text-[9px] font-black uppercase text-white truncate">{univ.title}</h4>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={handleSaveUniverses}
+              disabled={universesSaving}
+              className="bg-[#E51E2B] hover:bg-red-700 text-white px-5 py-2.5 text-xs font-bold uppercase flex items-center gap-2 transition-colors shadow-xs"
+            >
+              {universesSaving ? <Loader2 className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+              <span>{universesSaving ? "Publishing to Backend..." : "Save & Publish Universes"}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: DELIVERY SETTINGS & DISTANCE PRICING */}
+      {activeTab === "delivery" && (
+        <div className="space-y-4">
+          <div className="bg-neutral-50 p-3.5 border border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase text-neutral-900">Delivery Pricing & Distance Bands</h2>
+              <p className="text-[11px] text-neutral-500">Configure base delivery fee (default ₹49), distance bands, serviceability limits, and test fee calculations.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveDeliverySettings}
+              disabled={deliverySaving}
+              className="bg-[#E51E2B] hover:bg-red-700 text-white px-3.5 py-1.5 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors shadow-xs"
+            >
+              {deliverySaving ? <Loader2 className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+              <span>{deliverySaving ? "Saving..." : "Save Delivery Settings"}</span>
+            </button>
+          </div>
+
+          {/* Core Settings Form */}
+          <div className="bg-white border border-neutral-200 p-4 space-y-4 text-xs">
+            <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block">GLOBAL DELIVERY PARAMETERS</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="font-bold text-neutral-700 uppercase block mb-1">Default Delivery Fee (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={deliverySettings.defaultDeliveryFee}
+                  onChange={function(e) {
+                    const val = Number(e.target.value) || 0;
+                    setDeliverySettings(Object.assign({}, deliverySettings, { defaultDeliveryFee: val }));
+                  }}
+                  className="w-full p-2 border border-neutral-300 font-bold bg-neutral-50"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-neutral-700 uppercase block mb-1">Free Delivery Threshold (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={deliverySettings.freeShippingThreshold || 1999}
+                  onChange={function(e) {
+                    const val = Number(e.target.value) || 0;
+                    setDeliverySettings(Object.assign({}, deliverySettings, { freeShippingThreshold: val }));
+                  }}
+                  className="w-full p-2 border border-neutral-300 font-bold bg-neutral-50"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-neutral-700 uppercase block mb-1">Max Serviceable Distance ({deliverySettings.unit || 'km'})</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={deliverySettings.maxServiceableDistance || 30}
+                  onChange={function(e) {
+                    const val = Number(e.target.value) || 30;
+                    setDeliverySettings(Object.assign({}, deliverySettings, { maxServiceableDistance: val }));
+                  }}
+                  className="w-full p-2 border border-neutral-300 font-bold bg-neutral-50"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-neutral-700 uppercase block mb-1">Distance-Based Pricing</label>
+                <button
+                  type="button"
+                  onClick={function() {
+                    setDeliverySettings(Object.assign({}, deliverySettings, { 
+                      isDistancePricingEnabled: !deliverySettings.isDistancePricingEnabled 
+                    }));
+                  }}
+                  className={"w-full p-2 border text-xs font-bold uppercase transition-colors " + (
+                    deliverySettings.isDistancePricingEnabled 
+                      ? "bg-emerald-600 text-white border-emerald-700" 
+                      : "bg-neutral-100 text-neutral-600 border-neutral-300"
+                  )}
+                >
+                  {deliverySettings.isDistancePricingEnabled ? "✓ Enabled (Band Rules)" : "✕ Disabled (Flat ₹" + deliverySettings.defaultDeliveryFee + ")"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Distance Band Rules */}
+          <div className="bg-white border border-neutral-200 p-4 space-y-3 text-xs">
+            <div className="flex justify-between items-center border-b pb-2">
+              <div>
+                <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block">DISTANCE PRICING BANDS</span>
+                <p className="text-[11px] text-neutral-500">Configurable fee brackets mapped to customer delivery distance.</p>
+              </div>
+              <button
+                type="button"
+                onClick={function() {
+                  const newRule: DeliveryPricingRule = {
+                    id: "rule-" + Date.now().toString(36),
+                    name: "Custom Distance Band",
+                    minDistanceKm: 30,
+                    maxDistanceKm: 50,
+                    fee: 199,
+                    isEnabled: true
+                  };
+                  const updatedRules = (deliverySettings.pricingRules || []).concat([newRule]);
+                  setDeliverySettings(Object.assign({}, deliverySettings, { pricingRules: updatedRules }));
+                }}
+                className="bg-neutral-900 hover:bg-[#E51E2B] text-white px-3 py-1 text-xs font-bold uppercase flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Band Rule</span>
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {(deliverySettings.pricingRules || []).map(function(rule: DeliveryPricingRule, rIdx: number) {
+                return (
+                  <div key={rule.id} className="p-3 bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 flex-1 w-full">
+                      <div>
+                        <label className="text-[9px] font-bold text-neutral-500 uppercase block">Rule Label</label>
+                        <input
+                          type="text"
+                          value={rule.name}
+                          onChange={function(e) {
+                            const val = e.target.value;
+                            const cp = [].concat(deliverySettings.pricingRules as any);
+                            cp[rIdx] = Object.assign({}, cp[rIdx], { name: val });
+                            setDeliverySettings(Object.assign({}, deliverySettings, { pricingRules: cp }));
+                          }}
+                          className="w-full p-1.5 border border-neutral-300 bg-white font-bold text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-neutral-500 uppercase block">Min Distance (km)</label>
+                        <input
+                          type="number"
+                          value={rule.minDistanceKm}
+                          onChange={function(e) {
+                            const val = Number(e.target.value) || 0;
+                            const cp = [].concat(deliverySettings.pricingRules as any);
+                            cp[rIdx] = Object.assign({}, cp[rIdx], { minDistanceKm: val });
+                            setDeliverySettings(Object.assign({}, deliverySettings, { pricingRules: cp }));
+                          }}
+                          className="w-full p-1.5 border border-neutral-300 bg-white text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-neutral-500 uppercase block">Max Distance (km)</label>
+                        <input
+                          type="number"
+                          value={rule.maxDistanceKm}
+                          onChange={function(e) {
+                            const val = Number(e.target.value) || 0;
+                            const cp = [].concat(deliverySettings.pricingRules as any);
+                            cp[rIdx] = Object.assign({}, cp[rIdx], { maxDistanceKm: val });
+                            setDeliverySettings(Object.assign({}, deliverySettings, { pricingRules: cp }));
+                          }}
+                          className="w-full p-1.5 border border-neutral-300 bg-white text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-neutral-500 uppercase block">Delivery Fee (₹)</label>
+                        <input
+                          type="number"
+                          value={rule.fee}
+                          onChange={function(e) {
+                            const val = Number(e.target.value) || 0;
+                            const cp = [].concat(deliverySettings.pricingRules as any);
+                            cp[rIdx] = Object.assign({}, cp[rIdx], { fee: val });
+                            setDeliverySettings(Object.assign({}, deliverySettings, { pricingRules: cp }));
+                          }}
+                          className="w-full p-1.5 border border-neutral-300 bg-white font-bold text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={function() {
+                          const cp = [].concat(deliverySettings.pricingRules as any);
+                          cp[rIdx] = Object.assign({}, cp[rIdx], { isEnabled: !cp[rIdx].isEnabled });
+                          setDeliverySettings(Object.assign({}, deliverySettings, { pricingRules: cp }));
+                        }}
+                        className={"px-2.5 py-1 text-[10px] font-bold uppercase " + (rule.isEnabled ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-600")}
+                      >
+                        {rule.isEnabled ? "Active" : "Disabled"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={function() {
+                          const cp = (deliverySettings.pricingRules || []).filter(function(_: any, i: number) { return i !== rIdx; });
+                          setDeliverySettings(Object.assign({}, deliverySettings, { pricingRules: cp }));
+                        }}
+                        className="text-neutral-400 hover:text-red-600 p-1"
+                        aria-label="Delete rule"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Interactive Calculator / Simulator */}
+          <div className="bg-amber-50/60 border border-amber-200 p-4 space-y-3 text-xs">
+            <div>
+              <span className="text-[10px] font-bold text-amber-900 uppercase tracking-widest block">FEE SIMULATION & VERIFICATION TOOL</span>
+              <p className="text-[11px] text-amber-800">Preview and test the exact delivery charge calculated for any test distance and bag subtotal before publishing.</p>
+            </div>
+
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-neutral-700 block mb-1">Test Distance (km)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={simDistance}
+                  onChange={function(e) { setSimDistance(e.target.value); }}
+                  className="p-2 border border-amber-300 bg-white font-bold text-xs w-28"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-neutral-700 block mb-1">Test Subtotal (₹)</label>
+                <input
+                  type="number"
+                  value={simSubtotal}
+                  onChange={function(e) { setSimSubtotal(e.target.value); }}
+                  className="p-2 border border-amber-300 bg-white font-bold text-xs w-28"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRunDeliverySim}
+                className="px-4 py-2 bg-neutral-900 hover:bg-[#E51E2B] text-white font-bold uppercase text-xs transition-colors"
+              >
+                Simulate Fee Calculation
+              </button>
+            </div>
+
+            {simResult && (
+              <div className="mt-3 p-3 bg-white border border-amber-300 rounded-sm space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold uppercase text-xs">
+                    Simulated Fee: <span className="text-[#E51E2B]">₹{simResult.fee}</span>
+                  </span>
+                  <span className={"text-[10px] font-bold px-2 py-0.5 uppercase " + (simResult.isServiceable ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800")}>
+                    {simResult.isServiceable ? "Serviceable" : "Outside Service Zone"}
+                  </span>
+                </div>
+                <div className="text-[11px] text-neutral-600">
+                  <strong>Explanation:</strong> {simResult.explanation}
+                </div>
+                {simResult.appliedRule && (
+                  <div className="text-[10px] text-neutral-500 font-mono">
+                    Rule: {simResult.appliedRule.name} ({simResult.appliedRule.minDistance}–{simResult.appliedRule.maxDistance} km)
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={handleSaveDeliverySettings}
+              disabled={deliverySaving}
+              className="bg-[#E51E2B] hover:bg-red-700 text-white px-5 py-2.5 text-xs font-bold uppercase flex items-center gap-2 transition-colors shadow-xs"
+            >
+              {deliverySaving ? <Loader2 className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+              <span>{deliverySaving ? "Saving..." : "Save Delivery Settings"}</span>
+            </button>
           </div>
         </div>
       )}

@@ -134,6 +134,7 @@ export function mapDbHeroSlideToFrontend(row: any, index: number = 0): HeroSlide
     target: row.target_url || '/shop',
     bgGradient: row.bg_gradient || defaultGradients[index % defaultGradients.length],
     image: resolveProductImageUrl(row.image_url),
+    mobileImage: row.mobile_image_url ? resolveProductImageUrl(row.mobile_image_url) : (row.mobileImage ? resolveProductImageUrl(row.mobileImage) : undefined),
     badgeColor: row.badge_color || 'bg-[#E51E2B]'
   };
 }
@@ -147,7 +148,7 @@ export function mapFrontendHeroSlideToDb(slide: HeroSlide, sortOrder: number = 1
     title: slide.title,
     subtitle: slide.highlight ? `${slide.highlight} • ${slide.desc}` : slide.desc,
     image_url: resolveProductImageUrl(slide.image),
-    mobile_image_url: resolveProductImageUrl(slide.image),
+    mobile_image_url: resolveProductImageUrl(slide.mobileImage || slide.image),
     target_url: slide.target,
     sort_order: sortOrder,
     is_active: true,

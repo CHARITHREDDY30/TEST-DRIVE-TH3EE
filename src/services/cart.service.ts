@@ -339,11 +339,12 @@ export function buildWhatsAppCartOrderUrl(
   total: number,
   deliveryInfo?: any,
   phoneNum?: string,
-  domain?: string
+  domain?: string,
+  customOrderRef?: string
 ): string {
   const targetPhone = phoneNum || '919392233213';
   const siteDomain = domain || 'th3ee.store';
-  const orderRef = 'TH3EE-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
+  const orderRef = customOrderRef || ('TH3EE-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000));
 
   const productEntries = cart.map((item, idx) => {
     const itemPrice = Number(item.price) || 0;
@@ -355,14 +356,37 @@ export function buildWhatsAppCartOrderUrl(
     return entry;
   }).join('\n\n');
 
-  const addressBlock = deliveryInfo && (deliveryInfo.fullName || deliveryInfo.address) ? [
-    'Delivery & Contact Details:',
-    '• Name: ' + (deliveryInfo.fullName || 'N/A'),
-    '• Phone: ' + (deliveryInfo.phone || 'N/A'),
-    '• Address: ' + (deliveryInfo.address || 'N/A'),
-    '• City & State: ' + (deliveryInfo.city ? deliveryInfo.city + ', ' : '') + (deliveryInfo.state || ''),
-    '• Pincode: ' + (deliveryInfo.pincode || 'N/A')
-  ].filter(Boolean).join('\n') : '';
+  const addressLines: string[] = [];
+  if (deliveryInfo) {
+    const customerName = deliveryInfo.fullName || deliveryInfo.name;
+    const phone = deliveryInfo.mobileNumber || deliveryInfo.phone;
+    if (customerName) addressLines.push('• Customer Name: ' + customerName);
+    if (phone) addressLines.push('• Mobile Number: ' + phone);
+
+    const streetCombined = [
+      deliveryInfo.houseNo,
+      deliveryInfo.houseStreet,
+      deliveryInfo.street || deliveryInfo.address
+    ].filter(Boolean).join(', ');
+
+    if (streetCombined) addressLines.push('• Street Address: ' + streetCombined);
+    const area = deliveryInfo.areaLocality || deliveryInfo.area;
+    if (area) addressLines.push('• Area / Locality: ' + area);
+    if (deliveryInfo.landmark) addressLines.push('• Landmark: ' + deliveryInfo.landmark);
+
+    const regionLine = [
+      deliveryInfo.city,
+      deliveryInfo.state,
+      deliveryInfo.pincode ? 'PIN: ' + deliveryInfo.pincode : ''
+    ].filter(Boolean).join(', ');
+
+    if (regionLine) addressLines.push('• City, State & PIN: ' + regionLine);
+  }
+
+  const addressBlock = addressLines.length > 0 ? [
+    'Delivery & Customer Details:',
+    ...addressLines
+  ].join('\n') : '';
 
   const totalQty = cart.reduce((c, i) => c + (Number(i.quantity) || 1), 0);
 
@@ -377,7 +401,7 @@ export function buildWhatsAppCartOrderUrl(
     'Order Summary:',
     `• Subtotal: Rs. ${Number(subtotal).toFixed(2)}`,
     discount > 0 ? `• Discount${coupon ? ` (${coupon})` : ''}: -Rs. ${Number(discount).toFixed(2)}` : null,
-    `• Shipping: ${shipping === 0 ? 'FREE EXPRESS SHIPPING' : `Rs. ${Number(shipping).toFixed(2)}`}`,
+    `• Delivery Fee: ${shipping === 0 ? 'FREE EXPRESS SHIPPING' : `Rs. ${Number(shipping).toFixed(2)}`}`,
     `• Final Total: Rs. ${Number(total).toFixed(2)}`,
     '',
     addressBlock,
