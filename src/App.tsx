@@ -335,13 +335,35 @@ function Th3eeBrandLogo({ onClick, domain = INITIAL_OFFICIAL_DOMAIN }) {
   );
 }
 
+function getAppBasePath(): string {
+  if (typeof window === "undefined") return "";
+  const pathname = window.location.pathname || "/";
+  const match = pathname.match(/^(\/[^\/]+)/);
+  if (match && (match[1].toLowerCase() === "/test-drive-th3ee")) {
+    return match[1];
+  }
+  return "";
+}
+
 function parseCurrentRoute(): RouteState {
   if (typeof window === "undefined") return { view: "home", slug: null, query: {} };
-  const path = window.location.pathname || "/";
-  const searchStr = window.location.search || "";
+  let path = window.location.pathname || "/";
+  const basePath = getAppBasePath();
+  if (basePath && path.startsWith(basePath)) {
+    path = path.slice(basePath.length) || "/";
+  }
+
+  // Also support hash-based routing (#/shop, #/products/..., #/atelier-admin)
+  const hash = window.location.hash || "";
+  if (hash.startsWith("#/")) {
+    path = hash.substring(1);
+  }
+
+  const searchStr = window.location.search || (hash.indexOf("?") !== -1 ? hash.substring(hash.indexOf("?")) : "");
   const query: Record<string, string> = {};
-  if (searchStr.indexOf("?") === 0) {
-    const params = new URLSearchParams(searchStr.substring(1));
+  if (searchStr.indexOf("?") !== -1) {
+    const qStr = searchStr.substring(searchStr.indexOf("?") + 1);
+    const params = new URLSearchParams(qStr);
     params.forEach(function(v, k) { query[k] = v; });
   }
 
@@ -460,7 +482,11 @@ export default function App() {
       setRouteState(parseCurrentRoute());
     }
     window.addEventListener("popstate", handlePopState);
-    return function() { window.removeEventListener("popstate", handlePopState); };
+    window.addEventListener("hashchange", handlePopState);
+    return function() { 
+      window.removeEventListener("popstate", handlePopState); 
+      window.removeEventListener("hashchange", handlePopState); 
+    };
   }, []);
 
   const navigate = function(path) {
@@ -487,7 +513,9 @@ export default function App() {
     setRouteState({ view: view, slug: slug, query: query });
     try {
       if (typeof window !== "undefined" && window.location.href.indexOf("blob:") === -1) {
-        window.history.pushState({}, "", path);
+        const basePath = getAppBasePath();
+        const fullPath = basePath ? `${basePath}${path.startsWith('/') ? path : '/' + path}` : path;
+        window.history.pushState({}, "", fullPath);
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {}
