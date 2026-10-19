@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type {
   Product,
   ProductColor,
@@ -35,7 +35,9 @@ import {
   categoriesService,
   uploadService,
   couponsService,
-  reportsService
+  reportsService,
+  broadcastCatalogChange,
+  onCatalogSync
 } from './services';
 
 // Self-contained zero-dependency inline SVG icons
@@ -373,6 +375,18 @@ export default function App() {
 
   const [universeCategoriesList, setUniverseCategoriesList] = useState<UniverseCategory[]>(INITIAL_UNIVERSE_CATEGORIES);
 
+  // Refresh catalog from database
+  const refreshCatalog = useCallback(async function() {
+    try {
+      const prods = await productsService.getProducts();
+      if (prods && prods.length > 0) {
+        setProductsList(prods);
+      }
+    } catch (err) {
+      console.warn('Catalog refresh notice:', err);
+    }
+  }, []);
+
   // Asynchronously synchronize from InsForge service layer on mount
   useEffect(function() {
     let isMounted = true;
@@ -399,6 +413,46 @@ export default function App() {
     return function() { isMounted = false; };
   }, []);
 
+  // Real-time synchronization across all screens, tabs, and windows
+  useEffect(function() {
+    const unsubscribe = onCatalogSync(function(event) {
+      if (event.type === 'STOCK_STATUS_CHANGED' && event.productId && event.inStock !== undefined) {
+        setProductsList(function(prev) {
+          return prev.map(function(p) {
+            return p.id === event.productId ? Object.assign({}, p, { inStock: event.inStock }) : p;
+          });
+        });
+      }
+      refreshCatalog();
+    });
+    return unsubscribe;
+  }, [refreshCatalog]);
+
+  // Sync on window focus or tab visibility change (e.g. switching back from admin tab to shop)
+  useEffect(function() {
+    function handleVisibilityOrFocus() {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refreshCatalog();
+      }
+    }
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    return function() {
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
+  }, [refreshCatalog]);
+
+  // Periodic heartbeat polling (every 15 seconds) so cross-device updates reflect automatically
+  useEffect(function() {
+    const intervalId = setInterval(function() {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refreshCatalog();
+      }
+    }, 15000);
+    return function() { clearInterval(intervalId); };
+  }, [refreshCatalog]);
+
   const [routeState, setRouteState] = useState(function() { return parseCurrentRoute(); });
 
   useEffect(function() {
@@ -410,6 +464,7 @@ export default function App() {
   }, []);
 
   const navigate = function(path) {
+    refreshCatalog();
     const parts = (path || "/").split("?");
     const pathPart = parts[0];
     const queryPart = parts[1];
@@ -483,6 +538,10 @@ export default function App() {
   const estimatedCartTotal = cartSubtotal + deliveryCharge;
 
   const addToBag = function(product, size, color) {
+    if (product.inStock === false) {
+      showNotification("This drop is currently sold out");
+      return;
+    }
     if (!size) size = "L";
     const chosenColor = color || (product.colors && product.colors[0] && product.colors[0].name) || "Standard";
     setCart(function(prev) {
@@ -1717,6 +1776,7 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
   const sellingPrice = Number(product.price);
   const originalPrice = product.originalPrice != null && Number(product.originalPrice) > 0 ? Number(product.originalPrice) : null;
   const hasDiscount = originalPrice !== null && originalPrice > sellingPrice;
+  const isOutOfStock = product.inStock === false;
 
   return (
     <div className="group flex flex-col justify-between bg-white border border-neutral-200 hover:border-neutral-400 transition-all font-mono shadow-2xs h-full w-full overflow-hidden">
@@ -1730,7 +1790,7 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
             onError={handleImageLoadError}
             alt={product.name} 
             loading="lazy"
-            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 block" 
+            className={"w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 block " + (isOutOfStock ? "opacity-80 grayscale-[25%]" : "")} 
           />
           {product.badge && (
             <span className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 bg-[#E51E2B] text-white text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-wider">
@@ -1738,11 +1798,17 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
             </span>
           )}
 
+          {isOutOfStock && (
+            <span className="absolute top-2 sm:top-2.5 right-2 sm:right-2.5 bg-neutral-900/90 text-white text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-wider backdrop-blur-xs z-10">
+              OUT OF STOCK
+            </span>
+          )}
+
           {onQuickView && (
             <button 
               type="button"
               onClick={function(e) { e.stopPropagation(); onQuickView(product); }}
-              className="absolute bottom-2 sm:bottom-2.5 right-2 sm:right-2.5 bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors"
+              className={"absolute bottom-2 sm:bottom-2.5 right-2 sm:right-2.5 bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors " + (isOutOfStock ? "top-auto" : "")}
               title="Quick View"
               aria-label="Quick View"
             >
@@ -1774,6 +1840,11 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
                 Rs. {originalPrice.toFixed(2)}
               </span>
             )}
+            {isOutOfStock && (
+              <span className="text-[9px] sm:text-[10px] font-mono font-bold text-red-600 uppercase tracking-wider">
+                • SOLD OUT
+              </span>
+            )}
           </div>
 
           {product.colors && product.colors.length > 0 && (
@@ -1800,23 +1871,26 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
       </div>
 
       <div className="p-2.5 xs:p-3 sm:p-4 pt-0 space-y-2">
-        <div className="grid grid-cols-5 gap-0.5 xs:gap-1 pt-2 border-t border-neutral-100">
+        <div className={"grid grid-cols-5 gap-0.5 xs:gap-1 pt-2 border-t border-neutral-100 " + (isOutOfStock ? "opacity-60" : "")}>
           {(product.availableSizes || ["S", "M", "L", "XL", "XXL"]).map(function(size) {
             const isSelected = selectedSize === size;
             return (
               <button
                 key={size}
                 type="button"
+                disabled={isOutOfStock}
                 onClick={function(e) {
                   e.stopPropagation();
-                  setSelectedSize(size);
+                  if (!isOutOfStock) setSelectedSize(size);
                 }}
                 className={"border py-1 text-[8px] xs:text-[9px] sm:text-[10px] font-mono font-bold transition-all uppercase text-center " + (
-                  isSelected
+                  isOutOfStock
+                    ? "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed line-through"
+                    : isSelected
                     ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
                     : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200"
                 )}
-                title={"Select size " + size}
+                title={isOutOfStock ? "Drop currently out of stock" : "Select size " + size}
               >
                 {size}
               </button>
@@ -1824,17 +1898,28 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
           })}
         </div>
 
-        <button
-          type="button"
-          onClick={function(e) {
-            e.stopPropagation();
-            addToBag(product, selectedSize, selectedColor);
-          }}
-          className="w-full bg-neutral-900 hover:bg-[#E51E2B] text-white py-1.5 text-[9px] xs:text-[10px] font-mono font-bold uppercase tracking-wider transition-colors shadow-2xs flex items-center justify-center gap-1.5"
-        >
-          <ShoppingBag className="w-3 h-3" />
-          <span>Add to Bag ({selectedSize})</span>
-        </button>
+        {isOutOfStock ? (
+          <button
+            type="button"
+            disabled
+            className="w-full bg-neutral-200 text-neutral-500 py-1.5 text-[9px] xs:text-[10px] font-mono font-bold uppercase tracking-wider cursor-not-allowed shadow-none flex items-center justify-center gap-1.5"
+          >
+            <ShoppingBag className="w-3 h-3 text-neutral-400" />
+            <span>OUT OF STOCK</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={function(e) {
+              e.stopPropagation();
+              addToBag(product, selectedSize, selectedColor);
+            }}
+            className="w-full bg-neutral-900 hover:bg-[#E51E2B] text-white py-1.5 text-[9px] xs:text-[10px] font-mono font-bold uppercase tracking-wider transition-colors shadow-2xs flex items-center justify-center gap-1.5"
+          >
+            <ShoppingBag className="w-3 h-3" />
+            <span>Add to Bag ({selectedSize})</span>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1977,6 +2062,18 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
             </div>
             <h1 className="text-xl sm:text-3xl font-black uppercase text-neutral-900 tracking-tight leading-snug">{product.name}</h1>
             
+            <div className="flex items-center gap-2 pt-1">
+              {!product.inStock ? (
+                <span className="bg-neutral-900 text-white text-[9px] sm:text-[10px] font-mono font-bold px-2.5 py-0.5 uppercase tracking-wider">
+                  OUT OF STOCK
+                </span>
+              ) : (
+                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] sm:text-[10px] font-mono font-bold px-2.5 py-0.5 uppercase tracking-wider">
+                  IN STOCK • READY TO SHIP
+                </span>
+              )}
+            </div>
+
             <div className="flex items-baseline space-x-2.5 sm:space-x-3 pt-2">
               <span className="text-xl sm:text-2xl font-bold text-neutral-900">
                 Rs. {sellingPrice.toFixed(2)}
@@ -2018,10 +2115,15 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
           )}
 
           <div className="space-y-2 pt-2 border-t border-neutral-200">
-            <span className="text-xs uppercase font-bold text-neutral-700 block">SELECT SIZE</span>
+            <div className="flex justify-between items-center">
+              <span className="text-xs uppercase font-bold text-neutral-700 block">SELECT SIZE</span>
+              {!product.inStock && (
+                <span className="text-[10px] font-mono font-bold text-red-600 uppercase">ALL SIZES CURRENTLY OUT OF STOCK</span>
+              )}
+            </div>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
               {AVAILABLE_GLOBAL_SIZES.map(function(s) {
-                const isAvailable = (product.availableSizes || AVAILABLE_GLOBAL_SIZES).indexOf(s) !== -1;
+                const isAvailable = product.inStock && (product.availableSizes || AVAILABLE_GLOBAL_SIZES).indexOf(s) !== -1;
                 return (
                   <button
                     key={s}
@@ -2041,40 +2143,67 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
           </div>
 
           <div className="space-y-2.5 sm:space-y-3 pt-4 border-t border-neutral-200">
-            <button
-              type="button"
-              onClick={function() { addToBag(product, chosenSize, chosenColor); }}
-              className="w-full bg-neutral-900 hover:bg-[#E51E2B] text-white py-3.5 sm:py-4 text-xs uppercase font-bold tracking-wider transition-colors shadow-xs"
-            >
-              ADD TO BAG • RS. {sellingPrice.toFixed(2)}
-            </button>
-            <button
-              type="button"
-              onClick={function() {
-                const singleCart = [Object.assign({}, product, { selectedSize: chosenSize, selectedColor: chosenColor, quantity: 1 })];
-                ordersService.createOrder({
-                  customerName: 'Direct WhatsApp Customer',
-                  phone: 'Pending WhatsApp Confirmation',
-                  shippingAddress: {},
-                  itemsSummary: `${product.name} (${chosenColor}/${chosenSize}) x1`,
-                  subtotal: product.price,
-                  totalAmount: product.price,
-                  items: [{
-                    productId: product.id,
-                    productName: product.name,
-                    variantTitle: `${chosenColor} / ${chosenSize}`,
-                    unitPrice: product.price,
-                    quantity: 1
-                  }]
-                }).catch(function(e) { console.warn('Direct order persist note:', e); });
-                const url = buildWhatsAppCartOrderUrl(singleCart, product.price, 0, "", 0, product.price, null, storeBrand.whatsappPhone, storeBrand.domain);
-                window.open(url, "_blank");
-              }}
-              className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white py-2.5 sm:py-3 text-[11px] sm:text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-colors"
-            >
-              <MessageCircle className="w-4 h-4 fill-white shrink-0" />
-              <span className="truncate">DIRECT ORDER ON WHATSAPP ({storeBrand.whatsappDisplay})</span>
-            </button>
+            {!product.inStock ? (
+              <>
+                <button
+                  type="button"
+                  disabled
+                  className="w-full bg-neutral-200 text-neutral-500 py-3.5 sm:py-4 text-xs uppercase font-bold tracking-wider cursor-not-allowed shadow-none"
+                >
+                  OUT OF STOCK • DROP CURRENTLY UNAVAILABLE
+                </button>
+                <button
+                  type="button"
+                  onClick={function() {
+                    const restockMsg = encodeURIComponent(
+                      `Hi ${storeBrand.name}, I would like to inquire about restock availability for "${product.name}" (${chosenColor}) [${storeBrand.domain}/products/${product.slug}]. Please notify me when available!`
+                    );
+                    window.open(`https://wa.me/${storeBrand.whatsappPhone}?text=${restockMsg}`, "_blank");
+                  }}
+                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white py-2.5 sm:py-3 text-[11px] sm:text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white shrink-0" />
+                  <span className="truncate">NOTIFY ME ON WHATSAPP WHEN RESTOCKED ({storeBrand.whatsappDisplay})</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={function() { addToBag(product, chosenSize, chosenColor); }}
+                  className="w-full bg-neutral-900 hover:bg-[#E51E2B] text-white py-3.5 sm:py-4 text-xs uppercase font-bold tracking-wider transition-colors shadow-xs"
+                >
+                  ADD TO BAG • RS. {sellingPrice.toFixed(2)}
+                </button>
+                <button
+                  type="button"
+                  onClick={function() {
+                    const singleCart = [Object.assign({}, product, { selectedSize: chosenSize, selectedColor: chosenColor, quantity: 1 })];
+                    ordersService.createOrder({
+                      customerName: 'Direct WhatsApp Customer',
+                      phone: 'Pending WhatsApp Confirmation',
+                      shippingAddress: {},
+                      itemsSummary: `${product.name} (${chosenColor}/${chosenSize}) x1`,
+                      subtotal: product.price,
+                      totalAmount: product.price,
+                      items: [{
+                        productId: product.id,
+                        productName: product.name,
+                        variantTitle: `${chosenColor} / ${chosenSize}`,
+                        unitPrice: product.price,
+                        quantity: 1
+                      }]
+                    }).catch(function(e) { console.warn('Direct order persist note:', e); });
+                    const url = buildWhatsAppCartOrderUrl(singleCart, product.price, 0, "", 0, product.price, null, storeBrand.whatsappPhone, storeBrand.domain);
+                    window.open(url, "_blank");
+                  }}
+                  className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white py-2.5 sm:py-3 text-[11px] sm:text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white shrink-0" />
+                  <span className="truncate">DIRECT ORDER ON WHATSAPP ({storeBrand.whatsappDisplay})</span>
+                </button>
+              </>
+            )}
           </div>
 
           <div className="pt-4 border-t border-neutral-200 space-y-3 text-xs">
@@ -2177,6 +2306,9 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag }) {
               {hasDiscount && (
                 <span className="text-[11px] sm:text-xs text-neutral-400 line-through">Rs. {originalPrice.toFixed(2)}</span>
               )}
+              {product.inStock === false && (
+                <span className="text-[10px] font-mono font-bold text-red-600 uppercase">OUT OF STOCK</span>
+              )}
             </div>
 
             {product.colors && (
@@ -2198,15 +2330,25 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag }) {
               </div>
             )}
             <div>
-              <span className="text-[10px] uppercase font-bold text-neutral-500 block">Size</span>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] uppercase font-bold text-neutral-500 block">Size</span>
+                {product.inStock === false && (
+                  <span className="text-[9px] font-mono font-bold text-red-600 uppercase">Sold Out</span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {AVAILABLE_GLOBAL_SIZES.map(function(s) {
+                  const isAvailable = product.inStock !== false && (product.availableSizes || AVAILABLE_GLOBAL_SIZES).indexOf(s) !== -1;
                   return (
                     <button 
                       key={s} 
                       type="button"
+                      disabled={!isAvailable}
                       onClick={function() { setSize(s); }}
-                      className={"px-2 py-1 border text-[10px] font-bold " + (size === s ? "bg-[#E51E2B] text-white" : "")}
+                      className={"px-2 py-1 border text-[10px] font-bold " + (
+                        !isAvailable ? "opacity-30 line-through cursor-not-allowed border-neutral-200" :
+                        size === s ? "bg-[#E51E2B] text-white" : ""
+                      )}
                     >
                       {s}
                     </button>
@@ -2224,13 +2366,23 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag }) {
           >
             Full Details
           </button>
-          <button 
-            type="button"
-            onClick={function() { onAddToBag(product, size, color); }} 
-            className="flex-1 py-2 bg-neutral-900 text-white font-bold text-xs uppercase hover:bg-[#E51E2B]"
-          >
-            Add to Bag
-          </button>
+          {product.inStock === false ? (
+            <button 
+              type="button"
+              disabled
+              className="flex-1 py-2 bg-neutral-200 text-neutral-500 font-bold text-xs uppercase cursor-not-allowed"
+            >
+              Out of Stock
+            </button>
+          ) : (
+            <button 
+              type="button"
+              onClick={function() { onAddToBag(product, size, color); }} 
+              className="flex-1 py-2 bg-neutral-900 text-white font-bold text-xs uppercase hover:bg-[#E51E2B]"
+            >
+              Add to Bag
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -2830,6 +2982,7 @@ function SecretAtelierAdminView({
     if (confirm("Are you sure you want to permanently delete this drop from the catalog?")) {
       productsService.deleteProduct(productId).then(function() {
         setProductsList(function(prev) { return prev.filter(function(p) { return p.id !== productId; }); });
+        broadcastCatalogChange({ type: 'PRODUCT_DELETED', productId: productId });
         showNotification("Product drop deleted successfully");
       }).catch(function(err: any) {
         const msg = err?.message || 'Error';
@@ -2860,7 +3013,9 @@ function SecretAtelierAdminView({
         colorInv[size] = nextQty;
         currentInv[colorName] = colorInv;
         const updatedProd = Object.assign({}, prod, { inventory: currentInv });
-        productsService.saveProduct(updatedProd).catch(function(err: any) {
+        productsService.saveProduct(updatedProd).then(function() {
+          broadcastCatalogChange({ type: 'INVENTORY_STEP', productId: productId });
+        }).catch(function(err: any) {
           console.warn('Inventory step persist note:', err);
           const msg = err?.message || 'Error';
           if (msg.includes('permission denied') || msg.includes('row-level security')) {
@@ -2888,6 +3043,7 @@ function SecretAtelierAdminView({
           const next = !p.inStock;
           const updated = Object.assign({}, p, { inStock: next });
           productsService.saveProduct(updated).then(function() {
+            broadcastCatalogChange({ type: 'STOCK_STATUS_CHANGED', productId: productId, inStock: next });
             showNotification(p.name + " marked as " + (next ? "IN STOCK" : "OUT OF STOCK"));
           }).catch(function(err: any) {
             console.warn('Stock status save note:', err);
@@ -3927,6 +4083,7 @@ function SecretAtelierAdminView({
                 }
                 return [saved].concat(prev);
               });
+              broadcastCatalogChange({ type: 'PRODUCT_SAVED', productId: saved.id });
               showNotification("Product saved & published to storefront");
             }).catch(function(err: any) {
               const msg = err?.message || 'Error';
