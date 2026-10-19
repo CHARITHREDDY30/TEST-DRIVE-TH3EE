@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import type {
   Product,
   ProductColor,
@@ -6,7 +7,8 @@ import type {
   Order,
   StoreBrandConfig,
   UniverseCategory,
-  RouteState
+  RouteState,
+  CartItem
 } from './types/store';
 import {
   INITIAL_OFFICIAL_DOMAIN,
@@ -36,6 +38,7 @@ import {
   uploadService,
   couponsService,
   reportsService,
+  cartService,
   broadcastCatalogChange,
   onCatalogSync
 } from './services';
@@ -274,18 +277,30 @@ function Download({ className = "w-4 h-4" }) {
   );
 }
 
+function Loader2({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className + " animate-spin"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+  );
+}
 
 function buildWhatsAppCartOrderUrl(cart, subtotal, discount, coupon, shipping, total, deliveryInfo, phoneNum, domain) {
   const targetPhone = phoneNum || INITIAL_WHATSAPP_PHONE;
   const siteDomain = domain || INITIAL_OFFICIAL_DOMAIN;
-  const randomRef = Math.floor(1000 + Math.random() * 9000);
-  const orderRef = "TH3EE-" + randomRef;
+  const orderRef = "TH3EE-" + Date.now().toString(36).toUpperCase() + "-" + Math.floor(1000 + Math.random() * 9000);
 
   const productEntries = cart.map(function(item, idx) {
-    return (idx + 1) + ". " + item.name + " — Size: " + item.selectedSize + " — Colour: " + item.selectedColor + " — Qty: " + item.quantity + " — Rs. " + item.price + " each";
-  }).join("\n");
+    const itemPrice = Number(item.price) || 0;
+    const origPrice = Number(item.originalPrice) || 0;
+    let entry = (idx + 1) + ". " + item.name + "\n   • Size: " + item.selectedSize + " | Colour: " + item.selectedColor + "\n   • Qty: " + item.quantity + " × Rs. " + itemPrice.toFixed(2);
+    if (origPrice > itemPrice) {
+      entry += " (MRP: Rs. " + origPrice.toFixed(2) + " — Save Rs. " + ((origPrice - itemPrice) * item.quantity).toFixed(0) + ")";
+    }
+    return entry;
+  }).join("\n\n");
 
-  const addressBlock = deliveryInfo ? [
+  const addressBlock = deliveryInfo && (deliveryInfo.fullName || deliveryInfo.address) ? [
     "Delivery & Contact Details:",
     "• Name: " + (deliveryInfo.fullName || "N/A"),
     "• Phone: " + (deliveryInfo.phone || "N/A"),
@@ -294,18 +309,21 @@ function buildWhatsAppCartOrderUrl(cart, subtotal, discount, coupon, shipping, t
     "• Pincode: " + (deliveryInfo.pincode || "N/A")
   ].filter(Boolean).join("\n") : "";
 
+  const totalQty = cart.reduce(function(c, i) { return c + (Number(i.quantity) || 1); }, 0);
+
   const message = [
     "Hello TH3EE! I would like to place an order from " + siteDomain,
     "",
     "Order Reference: " + orderRef,
     "",
-    "Products:",
+    "Bag Items (" + totalQty + " items):",
     productEntries,
     "",
-    "Subtotal: Rs. " + subtotal,
-    discount > 0 ? "Discount: -Rs. " + discount : null,
-    "Shipping: " + (shipping === 0 ? "FREE" : "Rs. " + shipping),
-    "Estimated Total: Rs. " + total,
+    "Order Summary:",
+    "• Subtotal: Rs. " + Number(subtotal).toFixed(2),
+    discount > 0 ? "• Discount" + (coupon ? " (" + coupon + ")" : "") + ": -Rs. " + Number(discount).toFixed(2) : null,
+    "• Shipping: " + (shipping === 0 ? "FREE EXPRESS SHIPPING" : "Rs. " + Number(shipping).toFixed(2)),
+    "• Final Total: Rs. " + Number(total).toFixed(2),
     "",
     addressBlock,
     "",
@@ -521,11 +539,19 @@ export default function App() {
     } catch (e) {}
   };
 
-  const [toastNotification, setToastNotification] = useState(null);
-  const showNotification = function(msg) {
-    setToastNotification(msg);
-    setTimeout(function() { setToastNotification(null); }, 4000);
-  };
+  const [toastNotification, setToastNotification] = useState<any>(null);
+  const toastTimerRef = useRef<any>(null);
+  const showNotification = useCallback(function(data: any) {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (typeof data === "string") {
+      setToastNotification({ message: data, type: "info" });
+    } else {
+      setToastNotification(data);
+    }
+    toastTimerRef.current = setTimeout(function() {
+      setToastNotification(null);
+    }, 4000);
+  }, []);
 
   // Keyboard shortcut listener to open hidden admin: Ctrl + Shift + A (or Cmd + Shift + A)
   useEffect(function() {
@@ -540,20 +566,29 @@ export default function App() {
     return function() { window.removeEventListener("keydown", handleKeyDown); };
   }, []);
 
-  const [cart, setCart] = useState(function() {
-    try {
-      const cached = localStorage.getItem("th3ee_bag_cart");
-      if (cached) return JSON.parse(cached);
-    } catch (e) {}
-    return [];
+  // Customer isolated cart state
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [cart, setCart] = useState<CartItem[]>(function() {
+    return cartService.loadCustomerCart(null);
   });
   const [isBagOpen, setIsBagOpen] = useState(false);
+  const [isBagBumping, setIsBagBumping] = useState(false);
 
+  // Sync isolated cart if authenticated customer signs in
   useEffect(function() {
-    try {
-      localStorage.setItem("th3ee_bag_cart", JSON.stringify(cart));
-    } catch (e) {}
-  }, [cart]);
+    authService.getCurrentUser().then(function(user) {
+      if (user && user.id) {
+        setCurrentUserId(user.id);
+        const userCart = cartService.mergeGuestCartIntoUserCart(user.id);
+        setCart(userCart);
+      }
+    }).catch(function() {});
+  }, []);
+
+  // Persist cart items strictly into the customer's isolated storage
+  useEffect(function() {
+    cartService.saveCustomerCart(cart, currentUserId);
+  }, [cart, currentUserId]);
 
   const cartSubtotal = useMemo(function() {
     return cart.reduce(function(acc, item) {
@@ -565,39 +600,48 @@ export default function App() {
   const deliveryCharge = hasFreeShipping || cart.length === 0 ? 0 : 149;
   const estimatedCartTotal = cartSubtotal + deliveryCharge;
 
-  const addToBag = function(product, size, color) {
+  const addToBag = useCallback(function(product: Product, size?: string, color?: string): boolean {
     if (product.inStock === false) {
       showNotification("This drop is currently sold out");
-      return;
+      return false;
     }
-    if (!size) size = "L";
-    const chosenColor = color || (product.colors && product.colors[0] && product.colors[0].name) || "Standard";
-    setCart(function(prev) {
-      const idx = prev.findIndex(function(item) {
-        return item.id === product.id && item.selectedSize === size && item.selectedColor === chosenColor;
-      });
-      if (idx > -1) {
-        const copy = [].concat(prev);
-        copy[idx].quantity += 1;
-        return copy;
-      }
-      return prev.concat([Object.assign({}, product, { selectedSize: size, selectedColor: chosenColor, quantity: 1 })]);
-    });
-    showNotification("Added " + product.name + " (" + size + ") to Bag");
-    setIsBagOpen(true);
-  };
+    try {
+      const result = cartService.addProductToCart(cart, product, size, color);
+      setCart(result.cart);
 
-  const adjustBagQuantity = function(productId, size, color, delta) {
+      // Trigger bag icon count bounce animation in header
+      setIsBagBumping(true);
+      setTimeout(function() { setIsBagBumping(false); }, 450);
+
+      // Show smooth "Added to your bag" toast with thumbnail and view bag action
+      showNotification({
+        type: "bag",
+        message: "Added to your bag",
+        productName: product.name,
+        size: result.item.selectedSize,
+        color: result.item.selectedColor,
+        thumbnail: result.item.thumbnail
+      });
+
+      // Maintain customer on current product page without opening drawer
+      return true;
+    } catch (err: any) {
+      showNotification(err?.message || "Failed to add to bag");
+      return false;
+    }
+  }, [cart, showNotification]);
+
+  const adjustBagQuantity = useCallback(function(productId: string, size: string, color: string, delta: number) {
     setCart(function(prev) {
-      return prev.map(function(item) {
-        if (item.id === productId && item.selectedSize === size && item.selectedColor === color) {
-          const next = item.quantity + delta;
-          return next > 0 ? Object.assign({}, item, { quantity: next }) : null;
-        }
-        return item;
-      }).filter(Boolean);
+      return cartService.adjustVariantQuantity(prev, productId, size, color, delta);
     });
-  };
+  }, []);
+
+  const removeBagItem = useCallback(function(productId: string, size: string, color: string) {
+    setCart(function(prev) {
+      return cartService.removeVariantFromCart(prev, productId, size, color);
+    });
+  }, []);
 
   const [selectedUniverseModal, setSelectedUniverseModal] = useState(null);
   const [quickViewItem, setQuickViewItem] = useState(null);
@@ -685,12 +729,56 @@ export default function App() {
         }
       `}</style>
 
-      {toastNotification && (
-        <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#121212] text-white px-3.5 sm:px-4 py-2.5 sm:py-3 shadow-2xl flex items-center space-x-2 text-[11px] sm:text-xs font-mono tracking-wide border-l-4 border-[#E51E2B] max-w-[90vw]">
-          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E51E2B] shrink-0" />
-          <span className="truncate">{toastNotification}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {toastNotification && (
+          <motion.div
+            role="status"
+            aria-live="polite"
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#121212] text-white p-3 sm:p-4 shadow-2xl flex items-center space-x-3 text-[11px] sm:text-xs font-mono tracking-wide border-l-4 border-[#E51E2B] rounded-r-lg max-w-[92vw] sm:max-w-md border-t border-r border-b border-neutral-800"
+          >
+            {typeof toastNotification === "object" && toastNotification.type === "bag" ? (
+              <>
+                {toastNotification.thumbnail && (
+                  <img
+                    src={resolveProductImageUrl(toastNotification.thumbnail)}
+                    onError={handleImageLoadError}
+                    alt={toastNotification.productName || "Product"}
+                    className="w-10 h-12 object-cover bg-neutral-800 border border-neutral-700 rounded-xs shrink-0"
+                  />
+                )}
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className="flex items-center gap-1.5 font-bold text-white uppercase text-[11px]">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>Added to your bag</span>
+                  </div>
+                  <div className="text-neutral-300 text-[10px] truncate mt-0.5">
+                    {toastNotification.productName} ({toastNotification.size} • {toastNotification.color})
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={function() {
+                    setToastNotification(null);
+                    setIsBagOpen(true);
+                  }}
+                  className="bg-white text-black hover:bg-[#E51E2B] hover:text-white px-3 py-1.5 text-[10px] font-bold uppercase rounded-full transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-[#E51E2B]"
+                >
+                  VIEW BAG
+                </button>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E51E2B] shrink-0" />
+                <span className="truncate">{typeof toastNotification === "object" ? toastNotification.message : toastNotification}</span>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Announcement Banner */}
       <div className="bg-[#111111] text-white text-[10px] sm:text-[11px] font-mono tracking-wider py-1.5 sm:py-2 px-3 sm:px-4 border-b border-neutral-800">
@@ -888,17 +976,24 @@ export default function App() {
               <span>Order Support</span>
             </button>
 
-            <button
+            <motion.button
               type="button"
               onClick={function() { setIsBagOpen(true); }}
-              className="flex items-center space-x-1.5 sm:space-x-2 bg-neutral-900 text-white hover:bg-[#E51E2B] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-mono uppercase tracking-wider transition-colors shadow-xs shrink-0"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              className="flex items-center space-x-1.5 sm:space-x-2 bg-neutral-900 text-white hover:bg-[#E51E2B] px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-mono uppercase tracking-wider transition-colors shadow-xs shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1"
             >
               <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline font-bold">BAG</span>
-              <span className="bg-white text-black font-extrabold text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.2 rounded-full">
+              <motion.span
+                key={cart.reduce(function(count, item) { return count + item.quantity; }, 0)}
+                animate={isBagBumping ? { scale: [1, 1.45, 0.9, 1.1, 1] } : { scale: 1 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="bg-white text-black font-extrabold text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full inline-block"
+              >
                 {cart.reduce(function(count, item) { return count + item.quantity; }, 0)}
-              </span>
-            </button>
+              </motion.span>
+            </motion.button>
           </div>
         </div>
       </header>
@@ -1070,20 +1165,23 @@ export default function App() {
       )}
 
       {/* Shopping Bag Drawer */}
-      {isBagOpen && (
-        <ShoppingBagDrawer 
-          cart={cart}
-          onClose={function() { setIsBagOpen(false); }}
-          onAdjustQty={adjustBagQuantity}
-          cartSubtotal={cartSubtotal}
-          deliveryCharge={deliveryCharge}
-          estimatedCartTotal={estimatedCartTotal}
-          hasFreeShipping={hasFreeShipping}
-          freeShippingLimit={storeBrand.freeShippingLimit}
-          whatsappPhone={storeBrand.whatsappPhone}
-          domain={storeBrand.domain}
-        />
-      )}
+      <AnimatePresence>
+        {isBagOpen && (
+          <ShoppingBagDrawer 
+            cart={cart}
+            onClose={function() { setIsBagOpen(false); }}
+            onAdjustQty={adjustBagQuantity}
+            onRemoveItem={removeBagItem}
+            cartSubtotal={cartSubtotal}
+            deliveryCharge={deliveryCharge}
+            estimatedCartTotal={estimatedCartTotal}
+            hasFreeShipping={hasFreeShipping}
+            freeShippingLimit={storeBrand.freeShippingLimit}
+            whatsappPhone={storeBrand.whatsappPhone}
+            domain={storeBrand.domain}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Unified Single Footer */}
       <footer className="bg-white border-t border-neutral-200 pt-8 sm:pt-10 pb-6 sm:pb-8 text-neutral-600 font-mono text-xs w-full overflow-hidden">
@@ -1795,6 +1893,170 @@ function ShopAllView({
   );
 }
 
+interface AddToBagButtonProps {
+  product: Product;
+  selectedSize: string;
+  selectedColor: string;
+  onAdd: (product: Product, size: string, color: string) => boolean | Promise<boolean>;
+  variant?: 'pdp' | 'card' | 'quickview';
+  price?: number;
+  className?: string;
+}
+
+function AddToBagButton({
+  product,
+  selectedSize,
+  selectedColor,
+  onAdd,
+  variant = 'card',
+  price,
+  className = ''
+}: AddToBagButtonProps) {
+  const [btnState, setBtnState] = useState<'idle' | 'loading' | 'success'>('idle');
+  const timerRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (btnState !== 'idle' || product.inStock === false) return;
+
+    setBtnState('loading');
+    await new Promise((r) => setTimeout(r, 180));
+
+    try {
+      const ok = await onAdd(product, selectedSize, selectedColor);
+      if (ok) {
+        setBtnState('success');
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+          setBtnState('idle');
+        }, 1800);
+      } else {
+        setBtnState('idle');
+      }
+    } catch {
+      setBtnState('idle');
+    }
+  };
+
+  if (product.inStock === false) {
+    return (
+      <button
+        type="button"
+        disabled
+        className={`w-full bg-neutral-200 text-neutral-400 font-mono font-bold uppercase tracking-wider cursor-not-allowed rounded-full flex items-center justify-center gap-1.5 ${
+          variant === 'pdp' ? 'py-3.5 sm:py-4 text-xs' : variant === 'card' ? 'py-1.5 text-[9px] xs:text-[10px]' : 'py-2 text-xs'
+        } ${className}`}
+      >
+        <ShoppingBag className="w-3.5 h-3.5 opacity-50" />
+        <span>OUT OF STOCK</span>
+      </button>
+    );
+  }
+
+  const baseClasses = variant === 'pdp'
+    ? 'w-full py-3.5 sm:py-4 text-xs uppercase font-bold tracking-wider rounded-full flex items-center justify-center gap-2 transition-all shadow-xs focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-2'
+    : variant === 'card'
+    ? 'w-full py-1.5 text-[9px] xs:text-[10px] font-mono font-bold uppercase tracking-wider rounded-full flex items-center justify-center gap-1.5 transition-all shadow-2xs focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1'
+    : 'flex-1 py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-full flex items-center justify-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1';
+
+  const stateClasses = btnState === 'success'
+    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+    : 'bg-neutral-900 hover:bg-[#E51E2B] text-white';
+
+  return (
+    <motion.button
+      type="button"
+      onClick={handleClick}
+      disabled={btnState === 'loading'}
+      whileHover={{ scale: 1.015, y: -1 }}
+      whileTap={{ scale: 0.98 }}
+      className={`${baseClasses} ${stateClasses} ${className}`}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {btnState === 'loading' ? (
+          <motion.span
+            key="loading"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center gap-1.5 font-bold"
+          >
+            <Loader2 className="w-3.5 h-3.5 text-white" />
+            <span>ADDING...</span>
+          </motion.span>
+        ) : btnState === 'success' ? (
+          <motion.span
+            key="success"
+            initial={{ opacity: 0, scale: 0.85, y: 2 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: -2 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-1.5 font-bold"
+          >
+            <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+            <span>ADDED TO BAG</span>
+          </motion.span>
+        ) : (
+          <motion.span
+            key="idle"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center gap-1.5"
+          >
+            <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+            {variant === 'pdp' ? (
+              <span>ADD TO BAG • RS. {(price ?? product.price).toFixed(2)}</span>
+            ) : variant === 'card' ? (
+              <span>Add to Bag ({selectedSize || 'L'})</span>
+            ) : (
+              <span>Add to Bag</span>
+            )}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
+  );
+}
+
+function OrderViaWhatsAppButton({
+  onClick,
+  label = "Order via WhatsApp",
+  displayPhone,
+  className = "",
+  disabled = false
+}: {
+  onClick: () => void;
+  label?: string;
+  displayPhone?: string;
+  className?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      whileHover={disabled ? undefined : { scale: 1.015, y: -1 }}
+      whileTap={disabled ? undefined : { scale: 0.98 }}
+      className={`w-full bg-[#25D366] hover:bg-[#1EBE5D] disabled:bg-neutral-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-full font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-xs focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:ring-offset-2 ${className}`}
+    >
+      <MessageCircle className="w-4 h-4 fill-white shrink-0" />
+      <span className="truncate">
+        {label} {displayPhone ? `(${displayPhone})` : ''}
+      </span>
+    </motion.button>
+  );
+}
+
 function ProductCard({ product, navigate, addToBag, onQuickView = function() {} }: any) {
   const [selectedColor, setSelectedColor] = useState((product.colors && product.colors[0] && product.colors[0].name) || "Standard");
   const [selectedSize, setSelectedSize] = useState("L");
@@ -1926,28 +2188,13 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
           })}
         </div>
 
-        {isOutOfStock ? (
-          <button
-            type="button"
-            disabled
-            className="w-full bg-neutral-200 text-neutral-500 py-1.5 text-[9px] xs:text-[10px] font-mono font-bold uppercase tracking-wider cursor-not-allowed shadow-none flex items-center justify-center gap-1.5"
-          >
-            <ShoppingBag className="w-3 h-3 text-neutral-400" />
-            <span>OUT OF STOCK</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={function(e) {
-              e.stopPropagation();
-              addToBag(product, selectedSize, selectedColor);
-            }}
-            className="w-full bg-neutral-900 hover:bg-[#E51E2B] text-white py-1.5 text-[9px] xs:text-[10px] font-mono font-bold uppercase tracking-wider transition-colors shadow-2xs flex items-center justify-center gap-1.5"
-          >
-            <ShoppingBag className="w-3 h-3" />
-            <span>Add to Bag ({selectedSize})</span>
-          </button>
-        )}
+        <AddToBagButton
+          product={product}
+          selectedSize={selectedSize}
+          selectedColor={selectedColor}
+          onAdd={addToBag}
+          variant="card"
+        />
       </div>
     </div>
   );
@@ -2188,7 +2435,7 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
                     );
                     window.open(`https://wa.me/${storeBrand.whatsappPhone}?text=${restockMsg}`, "_blank");
                   }}
-                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white py-2.5 sm:py-3 text-[11px] sm:text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-colors"
+                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white py-3 px-4 rounded-full text-[11px] sm:text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-2"
                 >
                   <MessageCircle className="w-4 h-4 fill-white shrink-0" />
                   <span className="truncate">NOTIFY ME ON WHATSAPP WHEN RESTOCKED ({storeBrand.whatsappDisplay})</span>
@@ -2196,17 +2443,29 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={function() { addToBag(product, chosenSize, chosenColor); }}
-                  className="w-full bg-neutral-900 hover:bg-[#E51E2B] text-white py-3.5 sm:py-4 text-xs uppercase font-bold tracking-wider transition-colors shadow-xs"
-                >
-                  ADD TO BAG • RS. {sellingPrice.toFixed(2)}
-                </button>
-                <button
-                  type="button"
+                <AddToBagButton
+                  product={product}
+                  selectedSize={chosenSize}
+                  selectedColor={chosenColor}
+                  onAdd={addToBag}
+                  variant="pdp"
+                  price={sellingPrice}
+                />
+                <OrderViaWhatsAppButton
+                  label="DIRECT ORDER ON WHATSAPP"
+                  displayPhone={storeBrand.whatsappDisplay}
                   onClick={function() {
-                    const singleCart = [Object.assign({}, product, { selectedSize: chosenSize, selectedColor: chosenColor, quantity: 1 })];
+                    const resolvedThumb = cartService.resolveVariantThumbnail(product, chosenColor);
+                    const singleCart = [
+                      Object.assign({}, product, {
+                        selectedSize: chosenSize,
+                        selectedColor: chosenColor,
+                        quantity: 1,
+                        thumbnail: resolvedThumb,
+                        price: product.price,
+                        originalPrice: product.originalPrice
+                      })
+                    ];
                     ordersService.createOrder({
                       customerName: 'Direct WhatsApp Customer',
                       phone: 'Pending WhatsApp Confirmation',
@@ -2225,11 +2484,7 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
                     const url = buildWhatsAppCartOrderUrl(singleCart, product.price, 0, "", 0, product.price, null, storeBrand.whatsappPhone, storeBrand.domain);
                     window.open(url, "_blank");
                   }}
-                  className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white py-2.5 sm:py-3 text-[11px] sm:text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white shrink-0" />
-                  <span className="truncate">DIRECT ORDER ON WHATSAPP ({storeBrand.whatsappDisplay})</span>
-                </button>
+                />
               </>
             )}
           </div>
@@ -2387,30 +2642,20 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag }) {
           </div>
         </div>
         <div className="flex gap-2 pt-2 border-t">
-          <button 
+          <button
             type="button"
-            onClick={function() { onNavigate("/products/" + product.slug); }} 
-            className="flex-1 py-2 border font-bold text-xs uppercase"
+            onClick={function() { onNavigate("/products/" + product.slug); }}
+            className="flex-1 py-2 border font-bold text-xs uppercase rounded-full hover:bg-neutral-50 transition-colors"
           >
             Full Details
           </button>
-          {product.inStock === false ? (
-            <button 
-              type="button"
-              disabled
-              className="flex-1 py-2 bg-neutral-200 text-neutral-500 font-bold text-xs uppercase cursor-not-allowed"
-            >
-              Out of Stock
-            </button>
-          ) : (
-            <button 
-              type="button"
-              onClick={function() { onAddToBag(product, size, color); }} 
-              className="flex-1 py-2 bg-neutral-900 text-white font-bold text-xs uppercase hover:bg-[#E51E2B]"
-            >
-              Add to Bag
-            </button>
-          )}
+          <AddToBagButton
+            product={product}
+            selectedSize={size}
+            selectedColor={color}
+            onAdd={onAddToBag}
+            variant="quickview"
+          />
         </div>
       </div>
     </div>
@@ -2421,6 +2666,7 @@ function ShoppingBagDrawer({
   cart, 
   onClose, 
   onAdjustQty, 
+  onRemoveItem,
   cartSubtotal, 
   deliveryCharge, 
   estimatedCartTotal, 
@@ -2428,7 +2674,7 @@ function ShoppingBagDrawer({
   freeShippingLimit,
   whatsappPhone,
   domain
-}) {
+}: any) {
   const [deliveryInfo, setDeliveryInfo] = useState(function() {
     try {
       const saved = localStorage.getItem("th3ee_customer_address");
@@ -2515,13 +2761,26 @@ function ShoppingBagDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden font-mono">
-      <div onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-xs" />
+      <motion.div 
+        onClick={onClose} 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs" 
+      />
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-3 sm:pl-10">
-        <div className="w-screen max-w-md bg-white flex flex-col justify-between shadow-2xl p-4 sm:p-6">
+        <motion.div 
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ type: "spring", damping: 28, stiffness: 300 }}
+          className="w-screen max-w-md bg-white flex flex-col justify-between shadow-2xl p-4 sm:p-6"
+        >
           <div className="flex-1 overflow-y-auto pr-1">
             <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-neutral-200">
-              <h3 className="text-xs font-bold uppercase tracking-wider">TH3EE BAG ({cart.length})</h3>
-              <button type="button" onClick={onClose} className="p-1 hover:text-red-600"><X className="w-5 h-5" /></button>
+              <h3 className="text-xs font-bold uppercase tracking-wider">TH3EE BAG ({cart.reduce(function(acc, i) { return acc + (Number(i.quantity) || 1); }, 0)})</h3>
+              <button type="button" onClick={onClose} className="p-1 hover:text-red-600 transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="py-2.5 sm:py-3 border-b border-neutral-100 text-xs">
@@ -2537,34 +2796,91 @@ function ShoppingBagDrawer({
             </div>
 
             <div className="py-3 sm:py-4 space-y-3">
-              {cart.length === 0 ? (
-                <div className="text-center py-10 text-neutral-400 text-xs">Your bag is empty.</div>
-              ) : (
-                cart.map(function(item) {
-                  return (
-                    <div key={item.id + "-" + item.selectedSize + "-" + item.selectedColor} className="flex space-x-2.5 sm:space-x-3 items-center pb-2.5 border-b border-neutral-100">
-                      <img 
-                        src={resolveProductImageUrl((item.images && item.images[0]) || (item.colors && item.colors[0] && item.colors[0].images && item.colors[0].images[0]))} 
-                        onError={handleImageLoadError}
-                        alt={item.name} 
-                        className="w-12 h-14 sm:w-14 sm:h-16 object-cover object-center bg-neutral-100 border border-neutral-200 shrink-0" 
-                      />
-                      <div className="flex-1 min-w-0 text-xs">
-                        <h4 className="font-bold uppercase truncate">{item.name}</h4>
-                        <div className="text-neutral-500 text-[10px] truncate">SIZE: {item.selectedSize} • {item.selectedColor}</div>
-                        <div className="flex justify-between items-center mt-1.5">
-                          <div className="flex border border-neutral-300">
-                            <button type="button" onClick={function() { onAdjustQty(item.id, item.selectedSize, item.selectedColor, -1); }} className="px-2 py-0.5 text-xs">-</button>
-                            <span className="px-2 py-0.5 font-bold text-xs">{item.quantity}</span>
-                            <button type="button" onClick={function() { onAdjustQty(item.id, item.selectedSize, item.selectedColor, 1); }} className="px-2 py-0.5 text-xs">+</button>
-                          </div>
-                          <span className="font-bold text-xs">Rs. {Number(item.price * item.quantity).toFixed(2)}</span>
-                        </div>
-                      </div>
+              <AnimatePresence initial={false}>
+                {cart.length === 0 ? (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-center py-12 px-4 space-y-3"
+                  >
+                    <div className="w-14 h-14 mx-auto rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400">
+                      <ShoppingBag className="w-6 h-6" />
                     </div>
-                  );
-                })
-              )}
+                    <div className="text-neutral-800 font-bold uppercase text-xs tracking-wider">Your bag is empty</div>
+                    <p className="text-neutral-400 text-[11px] max-w-xs mx-auto leading-relaxed">
+                      Discover heavyweight cult streetwear drops and add silhouettes to your bag.
+                    </p>
+                  </motion.div>
+                ) : (
+                  cart.map(function(item) {
+                    const itemThumb = item.thumbnail || (item.images && item.images[0]) || (item.colors && item.colors[0]?.images?.[0]);
+                    return (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0, paddingBottom: 0 }}
+                        transition={{ duration: 0.22 }}
+                        key={item.id + "-" + item.selectedSize + "-" + item.selectedColor}
+                        className="flex space-x-2.5 sm:space-x-3 items-center pb-2.5 border-b border-neutral-100"
+                      >
+                        <img 
+                          src={resolveProductImageUrl(itemThumb)} 
+                          onError={handleImageLoadError}
+                          alt={item.name} 
+                          className="w-12 h-14 sm:w-14 sm:h-16 object-cover object-center bg-neutral-100 border border-neutral-200 shrink-0 rounded-xs" 
+                        />
+                        <div className="flex-1 min-w-0 text-xs">
+                          <div className="flex items-start justify-between gap-1">
+                            <h4 className="font-bold uppercase truncate">{item.name}</h4>
+                            <button
+                              type="button"
+                              onClick={function() {
+                                if (onRemoveItem) {
+                                  onRemoveItem(item.id, item.selectedSize, item.selectedColor);
+                                } else {
+                                  onAdjustQty(item.id, item.selectedSize, item.selectedColor, -item.quantity);
+                                }
+                              }}
+                              className="text-neutral-300 hover:text-red-600 p-0.5 transition-colors shrink-0"
+                              title="Remove item"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="text-neutral-500 text-[10px] truncate">SIZE: {item.selectedSize} • {item.selectedColor}</div>
+                          <div className="flex justify-between items-center mt-1.5">
+                            <div className="flex items-center border border-neutral-300 rounded-sm overflow-hidden">
+                              <button 
+                                type="button" 
+                                onClick={function() { onAdjustQty(item.id, item.selectedSize, item.selectedColor, -1); }} 
+                                className="px-2 py-0.5 text-xs hover:bg-neutral-100 active:bg-neutral-200 transition-colors"
+                              >-</button>
+                              <span className="px-2 py-0.5 font-bold text-xs bg-neutral-50">{item.quantity}</span>
+                              <button 
+                                type="button" 
+                                onClick={function() { onAdjustQty(item.id, item.selectedSize, item.selectedColor, 1); }} 
+                                className="px-2 py-0.5 text-xs hover:bg-neutral-100 active:bg-neutral-200 transition-colors"
+                              >+</button>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="font-bold text-xs">Rs. {Number(item.price * item.quantity).toFixed(2)}</span>
+                              {item.originalPrice && item.originalPrice > item.price && (
+                                <span className="text-[9px] text-neutral-400 line-through">
+                                  Rs. {Number(item.originalPrice * item.quantity).toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </AnimatePresence>
             </div>
 
             {cart.length > 0 && (
@@ -2709,16 +3025,13 @@ function ShoppingBagDrawer({
               <span>Total</span>
               <span>Rs. {finalCartTotal.toFixed(2)}</span>
             </div>
-            <button
-              type="button"
+            <OrderViaWhatsAppButton
               onClick={handleProceedWhatsApp}
               disabled={cart.length === 0}
-              className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white py-3 font-mono text-xs font-bold uppercase transition-colors"
-            >
-              Order via WhatsApp
-            </button>
+              label="Order via WhatsApp"
+            />
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

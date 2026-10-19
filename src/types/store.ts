@@ -92,11 +92,14 @@ export interface CartItem {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number;
   selectedSize: string;
   selectedColor: string;
   quantity: number;
+  thumbnail?: string;
   images?: string[];
   colors?: ProductColor[];
+  slug?: string;
 }
 
 export interface DeliveryInfo {

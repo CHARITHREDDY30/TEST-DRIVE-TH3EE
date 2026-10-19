@@ -7,10 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "test": "npx tsx scripts/verify-shopping-bag.ts"
   },
   "dependencies": {
     "@insforge/sdk": "^1.5.2",
+    "motion": "^14.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -9,3 +9,4 @@ export * from './reports.service';
 export * from './upload.service';
 export * from './catalogSync';
 export * from './mappers';
+export * from './cart.service';
