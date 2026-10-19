@@ -3,3 +3,8 @@ export * from './orders.service';
 export * from './hero.service';
 export * from './settings.service';
 export * from './auth.service';
+export * from './categories.service';
+export * from './coupons.service';
+export * from './reports.service';
+export * from './upload.service';
+export * from './mappers';

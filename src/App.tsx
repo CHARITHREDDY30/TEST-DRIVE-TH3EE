@@ -31,7 +31,11 @@ import {
   ordersService,
   heroService,
   settingsService,
-  authService
+  authService,
+  categoriesService,
+  uploadService,
+  couponsService,
+  reportsService
 } from './services';
 
 // Self-contained zero-dependency inline SVG icons
@@ -243,6 +247,32 @@ function Layers({ className = "w-4 h-4" }) {
   );
 }
 
+function Tag({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/>
+      <path d="M7 7h.01"/>
+    </svg>
+  );
+}
+
+function BarChart3({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+    </svg>
+  );
+}
+
+function Download({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+    </svg>
+  );
+}
+
+
 function buildWhatsAppCartOrderUrl(cart, subtotal, discount, coupon, shipping, total, deliveryInfo, phoneNum, domain) {
   const targetPhone = phoneNum || INITIAL_WHATSAPP_PHONE;
   const siteDomain = domain || INITIAL_OFFICIAL_DOMAIN;
@@ -341,7 +371,7 @@ export default function App() {
   // Dynamic Orders & Tracking (Real InsForge database records, no mock orders)
   const [ordersList, setOrdersList] = useState<Order[]>([]);
 
-  const universeCategoriesList = INITIAL_UNIVERSE_CATEGORIES;
+  const [universeCategoriesList, setUniverseCategoriesList] = useState<UniverseCategory[]>(INITIAL_UNIVERSE_CATEGORIES);
 
   // Asynchronously synchronize from InsForge service layer on mount
   useEffect(function() {
@@ -349,6 +379,10 @@ export default function App() {
     productsService.getProducts().then(function(prods) {
       if (isMounted && prods && prods.length > 0) setProductsList(prods);
     }).catch(function(err) { console.warn('Products fetch notice:', err); });
+
+    categoriesService.getCategories().then(function(cats) {
+      if (isMounted && cats && cats.length > 0) setUniverseCategoriesList(cats);
+    }).catch(function(err) { console.warn('Categories fetch notice:', err); });
 
     heroService.getHeroSlides().then(function(slides) {
       if (isMounted && slides && slides.length > 0) setHeroSlides(slides);
@@ -2018,6 +2052,21 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
               type="button"
               onClick={function() {
                 const singleCart = [Object.assign({}, product, { selectedSize: chosenSize, selectedColor: chosenColor, quantity: 1 })];
+                ordersService.createOrder({
+                  customerName: 'Direct WhatsApp Customer',
+                  phone: 'Pending WhatsApp Confirmation',
+                  shippingAddress: {},
+                  itemsSummary: `${product.name} (${chosenColor}/${chosenSize}) x1`,
+                  subtotal: product.price,
+                  totalAmount: product.price,
+                  items: [{
+                    productId: product.id,
+                    productName: product.name,
+                    variantTitle: `${chosenColor} / ${chosenSize}`,
+                    unitPrice: product.price,
+                    quantity: 1
+                  }]
+                }).catch(function(e) { console.warn('Direct order persist note:', e); });
                 const url = buildWhatsAppCartOrderUrl(singleCart, product.price, 0, "", 0, product.price, null, storeBrand.whatsappPhone, storeBrand.domain);
                 window.open(url, "_blank");
               }}
@@ -2208,6 +2257,36 @@ function ShoppingBagDrawer({
     return { fullName: "", phone: "", address: "", city: "", state: "", pincode: "" };
   });
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [isCouponOpen, setIsCouponOpen] = useState(false);
+
+  const handleApplyCoupon = async function() {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponMessage("");
+    const result = await couponsService.validateCoupon(couponCode, cartSubtotal);
+    setCouponLoading(false);
+    if (result.valid) {
+      setAppliedCoupon(result.coupon || { code: couponCode.trim().toUpperCase() });
+      setCouponDiscount(result.discount);
+      setCouponMessage(result.message);
+    } else {
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+      setCouponMessage(result.message || "Invalid coupon code");
+    }
+  };
+
+  const handleRemoveCoupon = function() {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponCode("");
+    setCouponMessage("");
+  };
 
   const handleAddressChange = function(field, val) {
     const updated = Object.assign({}, deliveryInfo);
@@ -2217,10 +2296,40 @@ function ShoppingBagDrawer({
   };
 
   const limit = freeShippingLimit || INITIAL_FREE_SHIPPING_LIMIT;
+  const finalCartTotal = Math.max(0, cartSubtotal - couponDiscount + deliveryCharge);
 
-  const handleProceedWhatsApp = function() {
+  const handleProceedWhatsApp = async function() {
     if (cart.length === 0) return;
-    const url = buildWhatsAppCartOrderUrl(cart, cartSubtotal, 0, "", deliveryCharge, estimatedCartTotal, deliveryInfo, whatsappPhone, domain);
+    const itemsSummary = cart.map(function(it) {
+      return `${it.name} (${it.selectedColor}/${it.selectedSize}) x${it.quantity}`;
+    }).join(', ');
+
+    try {
+      await ordersService.createOrder({
+        customerName: deliveryInfo.fullName || 'WhatsApp Customer',
+        phone: deliveryInfo.phone || 'Pending',
+        shippingAddress: deliveryInfo,
+        itemsSummary: itemsSummary,
+        subtotal: cartSubtotal,
+        discountAmount: couponDiscount,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+        shippingAmount: deliveryCharge,
+        totalAmount: finalCartTotal,
+        items: cart.map(function(it) {
+          return {
+            productId: it.id,
+            productName: it.name,
+            variantTitle: `${it.selectedColor} / ${it.selectedSize}`,
+            unitPrice: it.price,
+            quantity: it.quantity
+          };
+        })
+      });
+    } catch (e) {
+      console.warn('Cart order DB persist note:', e);
+    }
+
+    const url = buildWhatsAppCartOrderUrl(cart, cartSubtotal, couponDiscount, appliedCoupon ? appliedCoupon.code : "", deliveryCharge, finalCartTotal, deliveryInfo, whatsappPhone, domain);
     window.open(url, "_blank");
   };
 
@@ -2339,6 +2448,66 @@ function ShoppingBagDrawer({
                 )}
               </div>
             )}
+
+            {cart.length > 0 && (
+              <div className="pt-2 pb-2">
+                <button
+                  type="button"
+                  onClick={function() { setIsCouponOpen(!isCouponOpen); }}
+                  className="text-xs font-bold text-neutral-800 uppercase flex items-center justify-between w-full py-2 border-b border-neutral-200"
+                >
+                  <span className="truncate flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    {appliedCoupon ? "Coupon: " + appliedCoupon.code + " (-Rs. " + couponDiscount + ")" : (isCouponOpen ? "▼ Hide Promo Code" : "► Apply Coupon / Promo Code")}
+                  </span>
+                  <span className="text-[10px] text-neutral-400 font-mono shrink-0">
+                    {appliedCoupon ? "Applied" : "Add Code"}
+                  </span>
+                </button>
+
+                {isCouponOpen && (
+                  <div className="mt-2 space-y-1.5">
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 p-2 text-xs">
+                        <span className="font-bold text-emerald-800">
+                          {appliedCoupon.code} (-Rs. {couponDiscount})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="text-[10px] font-bold text-red-600 uppercase hover:underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="ENTER COUPON CODE"
+                          value={couponCode}
+                          onChange={function(e) { setCouponCode(e.target.value.toUpperCase()); setCouponMessage(""); }}
+                          className="flex-1 p-2 border border-neutral-300 bg-neutral-50 text-xs font-bold uppercase tracking-wider"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          disabled={couponLoading || !couponCode.trim()}
+                          className="px-3 py-2 bg-neutral-900 hover:bg-[#E51E2B] disabled:bg-neutral-300 text-white text-xs font-bold uppercase transition-colors"
+                        >
+                          {couponLoading ? "..." : "Apply"}
+                        </button>
+                      </div>
+                    )}
+                    {couponMessage && (
+                      <div className={"text-[10px] font-bold " + (appliedCoupon ? "text-emerald-700" : "text-red-600")}>
+                        {couponMessage}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="border-t border-neutral-200 pt-3 sm:pt-4 space-y-2.5 sm:space-y-3">
@@ -2346,13 +2515,19 @@ function ShoppingBagDrawer({
               <span>Subtotal</span>
               <span>Rs. {cartSubtotal.toFixed(2)}</span>
             </div>
+            {couponDiscount > 0 && (
+              <div className="flex justify-between text-xs text-emerald-600 font-bold">
+                <span>Discount ({appliedCoupon?.code})</span>
+                <span>-Rs. {couponDiscount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-xs">
               <span>Shipping</span>
               <span>{deliveryCharge === 0 ? "FREE" : "Rs. " + deliveryCharge.toFixed(2)}</span>
             </div>
             <div className="flex justify-between font-bold text-sm text-[#E51E2B]">
               <span>Total</span>
-              <span>Rs. {estimatedCartTotal.toFixed(2)}</span>
+              <span>Rs. {finalCartTotal.toFixed(2)}</span>
             </div>
             <button
               type="button"
@@ -2485,7 +2660,47 @@ function SecretAtelierAdminView({
   const [adminPassword, setAdminPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
-  const [activeTab, setActiveTab] = useState("products"); // "products" | "inventory" | "banners" | "orders" | "settings"
+  const [activeTab, setActiveTab] = useState("products"); // "products" | "inventory" | "banners" | "orders" | "coupons" | "reports" | "settings"
+
+  const [couponsList, setCouponsList] = useState<any[]>([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
+  const [isCreatingCoupon, setIsCreatingCoupon] = useState(false);
+  const [newCoupon, setNewCoupon] = useState({
+    code: '',
+    description: '',
+    discountType: 'percentage' as 'percentage' | 'fixed',
+    discountValue: 10,
+    minimumOrderAmount: 0,
+    maximumDiscount: 500,
+    usageLimit: 100,
+    isActive: true,
+    canStack: false
+  });
+
+  const [reportsSummary, setReportsSummary] = useState<any>(null);
+  const [reportsLoading, setReportsLoading] = useState(false);
+
+  useEffect(function() {
+    if (isUnlocked) {
+      if (activeTab === "coupons") {
+        setCouponsLoading(true);
+        couponsService.getCoupons().then(function(coupons) {
+          setCouponsList(coupons);
+          setCouponsLoading(false);
+        }).catch(function() {
+          setCouponsLoading(false);
+        });
+      } else if (activeTab === "reports") {
+        setReportsLoading(true);
+        reportsService.getSalesSummary().then(function(summary) {
+          setReportsSummary(summary);
+          setReportsLoading(false);
+        }).catch(function() {
+          setReportsLoading(false);
+        });
+      }
+    }
+  }, [isUnlocked, activeTab]);
 
   useEffect(function() {
     let isMounted = true;
@@ -2603,15 +2818,19 @@ function SecretAtelierAdminView({
 
 
   // Handle Product Deletion
-  const handleDeleteProduct = function(productId) {
+  const handleDeleteProduct = function(productId: string) {
     if (confirm("Are you sure you want to permanently delete this drop from the catalog?")) {
-      setProductsList(function(prev) { return prev.filter(function(p) { return p.id !== productId; }); });
-      showNotification("Product drop deleted successfully");
+      productsService.deleteProduct(productId).then(function() {
+        setProductsList(function(prev) { return prev.filter(function(p) { return p.id !== productId; }); });
+        showNotification("Product drop deleted successfully");
+      }).catch(function(err: any) {
+        showNotification("Failed to delete product: " + (err?.message || 'Error'));
+      });
     }
   };
 
   // Handle Inventory Variant Step
-  const handleInventoryStep = function(productId, colorName, size, delta) {
+  const handleInventoryStep = function(productId: string, colorName: string, size: string, delta: number) {
     setProductsList(function(prev) {
       return prev.map(function(prod) {
         if (prod.id !== productId) return prod;
@@ -2621,19 +2840,28 @@ function SecretAtelierAdminView({
         const nextQty = Math.max(0, currQty + delta);
         colorInv[size] = nextQty;
         currentInv[colorName] = colorInv;
-        return Object.assign({}, prod, { inventory: currentInv });
+        const updatedProd = Object.assign({}, prod, { inventory: currentInv });
+        productsService.saveProduct(updatedProd).catch(function(err: any) {
+          console.warn('Inventory step persist note:', err);
+        });
+        return updatedProd;
       });
     });
   };
 
   // Toggle inStock
-  const handleToggleStockStatus = function(productId) {
+  const handleToggleStockStatus = function(productId: string) {
     setProductsList(function(prev) {
       return prev.map(function(p) {
         if (p.id === productId) {
           const next = !p.inStock;
-          showNotification(p.name + " marked as " + (next ? "IN STOCK" : "OUT OF STOCK"));
-          return Object.assign({}, p, { inStock: next });
+          const updated = Object.assign({}, p, { inStock: next });
+          productsService.saveProduct(updated).then(function() {
+            showNotification(p.name + " marked as " + (next ? "IN STOCK" : "OUT OF STOCK"));
+          }).catch(function(err: any) {
+            console.warn('Stock status save note:', err);
+          });
+          return updated;
         }
         return p;
       });
@@ -2641,17 +2869,143 @@ function SecretAtelierAdminView({
   };
 
   // Handle Order Status Advance
-  const handleAdvanceOrderStatus = function(orderId) {
+  const handleAdvanceOrderStatus = function(orderId: string) {
     const statuses = ["Received", "In Production", "Dispatched", "Delivered"];
     setOrdersList(function(prev) {
+      const target = prev.find(function(ord) { return ord.id === orderId; });
+      if (!target) return prev;
+      const currIdx = statuses.indexOf(target.status);
+      const nextStatus = statuses[(currIdx + 1) % statuses.length];
+      ordersService.updateOrderStatus(orderId, nextStatus).then(function() {
+        showNotification("Order " + target.id + " status updated to " + nextStatus);
+      }).catch(function(err: any) {
+        showNotification("Failed to update status: " + (err?.message || 'Error'));
+      });
       return prev.map(function(ord) {
         if (ord.id !== orderId) return ord;
-        const currIdx = statuses.indexOf(ord.status);
-        const nextStatus = statuses[(currIdx + 1) % statuses.length];
-        showNotification("Order " + ord.id + " status updated to " + nextStatus);
         return Object.assign({}, ord, { status: nextStatus });
       });
     });
+  };
+
+  // Coupon Management Handlers
+  const handleToggleCouponStatus = async function(coupon: any) {
+    try {
+      const updated = await couponsService.saveCoupon({
+        ...coupon,
+        isActive: !coupon.isActive
+      });
+      setCouponsList(function(prev) {
+        return prev.map(function(c) { return c.id === updated.id ? updated : c; });
+      });
+      showNotification("Coupon " + coupon.code + " " + (updated.isActive ? "ACTIVATED" : "DEACTIVATED"));
+    } catch (err: any) {
+      showNotification("Failed to update coupon: " + (err?.message || 'Error'));
+    }
+  };
+
+  const handleDeleteCoupon = async function(couponId: string, code: string) {
+    if (confirm("Delete coupon " + code + "?")) {
+      try {
+        await couponsService.deleteCoupon(couponId);
+        setCouponsList(function(prev) { return prev.filter(function(c) { return c.id !== couponId; }); });
+        showNotification("Coupon " + code + " deleted");
+      } catch (err: any) {
+        showNotification("Failed to delete coupon: " + (err?.message || 'Error'));
+      }
+    }
+  };
+
+  const handleCreateCouponSubmit = async function(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newCoupon.code.trim()) {
+      showNotification("Coupon code is required");
+      return;
+    }
+    try {
+      const created = await couponsService.saveCoupon(newCoupon);
+      setCouponsList(function(prev) {
+        const idx = prev.findIndex(function(c) { return c.code === created.code; });
+        if (idx > -1) {
+          const cp = [].concat(prev);
+          cp[idx] = created;
+          return cp;
+        }
+        return [created].concat(prev);
+      });
+      setIsCreatingCoupon(false);
+      setNewCoupon({
+        code: '',
+        description: '',
+        discountType: 'percentage',
+        discountValue: 10,
+        minimumOrderAmount: 0,
+        maximumDiscount: 500,
+        usageLimit: 100,
+        isActive: true,
+        canStack: false
+      });
+      showNotification("Coupon " + created.code + " created successfully");
+    } catch (err: any) {
+      showNotification("Failed to create coupon: " + (err?.message || 'Error'));
+    }
+  };
+
+  // Performance Reports CSV Exports
+  const handleExportOrdersCsv = function() {
+    const headers = ['Order Number', 'Date', 'Customer Name', 'Phone', 'Items', 'Total Amount', 'Status', 'Courier', 'Tracking Number'];
+    const rows = ordersList.map(function(o) {
+      return [
+        o.id,
+        o.date || o.createdAt || '',
+        o.customerName,
+        o.phone,
+        o.items,
+        o.total,
+        o.status,
+        o.courier || '',
+        o.trackingNumber || ''
+      ];
+    });
+    reportsService.downloadCsv('th3ee_orders_export.csv', headers, rows);
+    showNotification("Exported orders CSV");
+  };
+
+  const handleExportInventoryCsv = function() {
+    const headers = ['SKU', 'Product Name', 'Category', 'Colour', 'Size', 'Stock Quantity', 'Price', 'In Stock Status'];
+    const rows: (string | number)[][] = [];
+    productsList.forEach(function(p) {
+      if (p.colors && p.colors.length > 0) {
+        p.colors.forEach(function(c) {
+          (p.availableSizes || ['S', 'M', 'L', 'XL', 'XXL']).forEach(function(s) {
+            const qty = (p.inventory && p.inventory[c.name] && p.inventory[c.name][s]) || 0;
+            rows.push([
+              p.sku || p.id,
+              p.name,
+              p.category,
+              c.name,
+              s,
+              qty,
+              p.price,
+              p.inStock ? 'ACTIVE' : 'OUT_OF_STOCK'
+            ]);
+          });
+        });
+      } else {
+        rows.push([
+          p.sku || p.id,
+          p.name,
+          p.category,
+          'Default',
+          'Standard',
+          0,
+          p.price,
+          p.inStock ? 'ACTIVE' : 'OUT_OF_STOCK'
+        ]);
+      }
+    });
+    reportsService.downloadCsv('th3ee_inventory_export.csv', headers, rows);
+    showNotification("Exported inventory CSV");
   };
 
   // Reset to initial factory presets
@@ -2706,6 +3060,8 @@ function SecretAtelierAdminView({
           { id: "inventory", label: "Inventory Matrix", icon: Layers },
           { id: "banners", label: "Hero & Carousel Banners (" + heroSlides.length + ")", icon: Image },
           { id: "orders", label: "Orders & Tracking (" + ordersList.length + ")", icon: Truck },
+          { id: "coupons", label: "Coupons (" + couponsList.length + ")", icon: Tag },
+          { id: "reports", label: "Sales & Performance", icon: BarChart3 },
           { id: "settings", label: "Store Identity & WhatsApp", icon: SlidersHorizontal }
         ].map(function(tab) {
           const Icon = tab.icon;
@@ -3096,7 +3452,305 @@ function SecretAtelierAdminView({
         </div>
       )}
 
-      {/* TAB 5: SETTINGS */}
+      {/* TAB 5: COUPONS */}
+      {activeTab === "coupons" && (
+        <div className="space-y-4">
+          <div className="bg-neutral-50 p-3.5 border border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase text-neutral-900">Discount & Promo Codes</h2>
+              <p className="text-[11px] text-neutral-500">Configure promotional vouchers, percentage cuts, and minimum cart tiers.</p>
+            </div>
+            <button
+              type="button"
+              onClick={function() { setIsCreatingCoupon(!isCreatingCoupon); }}
+              className="bg-neutral-900 hover:bg-[#E51E2B] text-white px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{isCreatingCoupon ? "Close Form" : "Create Coupon"}</span>
+            </button>
+          </div>
+
+          {isCreatingCoupon && (
+            <form onSubmit={handleCreateCouponSubmit} className="bg-white border-2 border-neutral-900 p-4 sm:p-5 space-y-4 text-xs">
+              <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block">NEW PROMOTION</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-neutral-700 uppercase block mb-1">Coupon Code *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. TH3EE10"
+                    value={newCoupon.code}
+                    onChange={function(e) { setNewCoupon(Object.assign({}, newCoupon, { code: e.target.value.toUpperCase() })); }}
+                    className="w-full p-2 border border-neutral-300 font-bold uppercase bg-neutral-50"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-neutral-700 uppercase block mb-1">Discount Type</label>
+                  <select
+                    value={newCoupon.discountType}
+                    onChange={function(e) { setNewCoupon(Object.assign({}, newCoupon, { discountType: e.target.value as any })); }}
+                    className="w-full p-2 border border-neutral-300 font-bold bg-neutral-50"
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount (Rs.)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-neutral-700 uppercase block mb-1">
+                    {newCoupon.discountType === 'percentage' ? 'Percentage Off (%)' : 'Amount Off (Rs.)'} *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={newCoupon.discountType === 'percentage' ? 100 : 10000}
+                    value={newCoupon.discountValue}
+                    onChange={function(e) { setNewCoupon(Object.assign({}, newCoupon, { discountValue: Number(e.target.value) })); }}
+                    className="w-full p-2 border border-neutral-300 font-bold bg-neutral-50"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-neutral-700 uppercase block mb-1">Min Cart Value (Rs.)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newCoupon.minimumOrderAmount}
+                    onChange={function(e) { setNewCoupon(Object.assign({}, newCoupon, { minimumOrderAmount: Number(e.target.value) })); }}
+                    className="w-full p-2 border border-neutral-300 font-bold bg-neutral-50"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-neutral-700 uppercase block mb-1">Max Discount Cap (Rs.)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Optional"
+                    value={newCoupon.maximumDiscount || ''}
+                    onChange={function(e) { setNewCoupon(Object.assign({}, newCoupon, { maximumDiscount: e.target.value ? Number(e.target.value) : undefined })); }}
+                    className="w-full p-2 border border-neutral-300 font-bold bg-neutral-50"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-neutral-700 uppercase block mb-1">Total Usage Limit</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 100"
+                    value={newCoupon.usageLimit || ''}
+                    onChange={function(e) { setNewCoupon(Object.assign({}, newCoupon, { usageLimit: e.target.value ? Number(e.target.value) : undefined })); }}
+                    className="w-full p-2 border border-neutral-300 font-bold bg-neutral-50"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-neutral-700 uppercase block mb-1">Description</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 10% off on all streetwear drops"
+                  value={newCoupon.description}
+                  onChange={function(e) { setNewCoupon(Object.assign({}, newCoupon, { description: e.target.value })); }}
+                  className="w-full p-2 border border-neutral-300 bg-neutral-50"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <button
+                  type="button"
+                  onClick={function() { setIsCreatingCoupon(false); }}
+                  className="px-3 py-1.5 border border-neutral-300 hover:bg-neutral-100 uppercase font-bold text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-[#E51E2B] hover:bg-black text-white uppercase font-bold text-xs transition-colors"
+                >
+                  Publish Coupon
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="bg-white border border-neutral-200 divide-y divide-neutral-200">
+            {couponsLoading ? (
+              <div className="p-8 text-center text-xs text-neutral-500">Loading coupons...</div>
+            ) : couponsList.length === 0 ? (
+              <div className="p-8 text-center text-xs text-neutral-400">
+                No active promotional coupons found. Click "Create Coupon" above to add your first promo code.
+              </div>
+            ) : (
+              couponsList.map(function(coupon) {
+                return (
+                  <div key={coupon.id || coupon.code} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-neutral-50/70 transition-colors">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-xs tracking-wider bg-neutral-900 text-white px-2 py-0.5">
+                          {coupon.code}
+                        </span>
+                        <span className={"text-[9px] font-bold px-2 py-0.5 uppercase " + (
+                          coupon.isActive ? "bg-emerald-100 text-emerald-800" : "bg-neutral-100 text-neutral-600"
+                        )}>
+                          {coupon.isActive ? "ACTIVE" : "INACTIVE"}
+                        </span>
+                        <span className="text-xs font-bold text-[#E51E2B]">
+                          {coupon.discountType === 'percentage' ? `${coupon.discountValue}% OFF` : `Rs. ${coupon.discountValue} OFF`}
+                        </span>
+                      </div>
+                      {coupon.description && (
+                        <div className="text-xs text-neutral-700">{coupon.description}</div>
+                      )}
+                      <div className="text-[10px] text-neutral-400 flex flex-wrap gap-x-3 gap-y-0.5">
+                        <span>Min Cart: Rs. {coupon.minimumOrderAmount || 0}</span>
+                        {coupon.maximumDiscount && <span>Max Cap: Rs. {coupon.maximumDiscount}</span>}
+                        <span>Used: {coupon.usageCount || 0}{coupon.usageLimit ? ` / ${coupon.usageLimit}` : ' (unlimited)'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={function() { handleToggleCouponStatus(coupon); }}
+                        className={"px-3 py-1.5 text-xs font-bold uppercase transition-colors " + (
+                          coupon.isActive ? "bg-neutral-100 hover:bg-neutral-200 text-neutral-800" : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        )}
+                      >
+                        {coupon.isActive ? "Deactivate" : "Activate"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={function() { handleDeleteCoupon(coupon.id, coupon.code); }}
+                        className="p-1.5 text-neutral-400 hover:text-red-600 transition-colors"
+                        title="Delete Coupon"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: SALES & PERFORMANCE */}
+      {activeTab === "reports" && (
+        <div className="space-y-4">
+          <div className="bg-neutral-50 p-3.5 border border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase text-neutral-900">Sales & Performance Analytics</h2>
+              <p className="text-[11px] text-neutral-500">Live order metrics, average order value, warehouse units, and CSV ledger downloads.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleExportOrdersCsv}
+                className="bg-neutral-900 hover:bg-[#E51E2B] text-white px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Orders CSV</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportInventoryCsv}
+                className="bg-neutral-900 hover:bg-[#E51E2B] text-white px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Inventory CSV</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Key Metrics Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="bg-white p-3.5 border border-neutral-200 space-y-1">
+              <span className="text-[10px] text-neutral-500 uppercase font-bold block">Gross Revenue</span>
+              <div className="text-base sm:text-lg font-black text-neutral-900">
+                Rs. {((reportsSummary?.totalRevenue ?? ordersList.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0))).toLocaleString('en-IN')}
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 border border-neutral-200 space-y-1">
+              <span className="text-[10px] text-neutral-500 uppercase font-bold block">Total Orders</span>
+              <div className="text-base sm:text-lg font-black text-neutral-900">
+                {reportsSummary?.totalOrders ?? ordersList.length}
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 border border-neutral-200 space-y-1">
+              <span className="text-[10px] text-neutral-500 uppercase font-bold block">Avg Order Value</span>
+              <div className="text-base sm:text-lg font-black text-neutral-900">
+                Rs. {((reportsSummary?.averageOrderValue ?? (ordersList.length > 0 ? Math.round(ordersList.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0) / ordersList.length) : 0))).toLocaleString('en-IN')}
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 border border-neutral-200 space-y-1">
+              <span className="text-[10px] text-neutral-500 uppercase font-bold block">Delivered Orders</span>
+              <div className="text-base sm:text-lg font-black text-emerald-700">
+                {reportsSummary?.completedOrders ?? ordersList.filter((o: any) => o.status === 'Delivered').length}
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 border border-neutral-200 space-y-1">
+              <span className="text-[10px] text-neutral-500 uppercase font-bold block">In Flight / Pending</span>
+              <div className="text-base sm:text-lg font-black text-amber-700">
+                {reportsSummary?.pendingOrders ?? ordersList.filter((o: any) => o.status !== 'Delivered').length}
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 border border-neutral-200 space-y-1">
+              <span className="text-[10px] text-neutral-500 uppercase font-bold block">Warehouse Units</span>
+              <div className="text-base sm:text-lg font-black text-neutral-900">
+                {reportsSummary?.totalStockUnits || productsList.reduce((acc: number, p: any) => {
+                  let sub = 0;
+                  if (p.inventory) {
+                    Object.values(p.inventory).forEach((colInv: any) => {
+                      Object.values(colInv || {}).forEach((q: any) => { sub += Number(q) || 0; });
+                    });
+                  }
+                  return acc + sub;
+                }, 0)}
+              </div>
+            </div>
+          </div>
+
+          {/* Catalog Performance Breakdown */}
+          <div className="bg-white border border-neutral-200 p-4 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900">Catalog Inventory Breakdown</h3>
+            <div className="divide-y divide-neutral-100">
+              {productsList.map(function(prod) {
+                let prodStock = 0;
+                if (prod.inventory) {
+                  Object.values(prod.inventory).forEach(function(colInv: any) {
+                    Object.values(colInv || {}).forEach(function(q: any) { prodStock += Number(q) || 0; });
+                  });
+                }
+                return (
+                  <div key={prod.id} className="py-2.5 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-neutral-900 uppercase">{prod.name}</span>
+                      <span className="text-neutral-400 text-[10px] ml-2">SKU: {prod.sku || prod.id} • Rs. {prod.price}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-neutral-700">{prodStock} units</span>
+                      <span className={"text-[9px] font-bold px-1.5 py-0.5 uppercase " + (prod.inStock ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800")}>
+                        {prod.inStock ? "In Stock" : "Out of Stock"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 7: SETTINGS */}
       {activeTab === "settings" && (
         <div className="space-y-5">
           <div className="bg-neutral-50 p-3.5 border border-neutral-200">
@@ -3193,7 +3847,11 @@ function SecretAtelierAdminView({
               <button
                 type="button"
                 onClick={function() {
-                  showNotification("Settings saved successfully");
+                  settingsService.saveStoreBrandConfig(storeBrand).then(function() {
+                    showNotification("Settings saved successfully to InsForge");
+                  }).catch(function(err) {
+                    showNotification("Failed to save settings: " + (err?.message || 'Error'));
+                  });
                 }}
                 className="bg-[#E51E2B] hover:bg-black text-white px-5 py-2.5 text-xs font-bold uppercase transition-colors shadow-xs"
               >
@@ -3211,17 +3869,21 @@ function SecretAtelierAdminView({
           universeCategoriesList={universeCategoriesList}
           onClose={function() { setEditingProduct(null); }}
           onSave={function(updated) {
-            setProductsList(function(prev) {
-              const idx = prev.findIndex(function(p) { return p.id === updated.id; });
-              if (idx > -1) {
-                const c = [].concat(prev);
-                c[idx] = updated;
-                return c;
-              }
-              return [updated].concat(prev);
+            productsService.saveProduct(updated).then(function(saved) {
+              setProductsList(function(prev) {
+                const idx = prev.findIndex(function(p) { return p.id === saved.id || p.slug === saved.slug; });
+                if (idx > -1) {
+                  const c = [].concat(prev);
+                  c[idx] = saved;
+                  return c;
+                }
+                return [saved].concat(prev);
+              });
+              showNotification("Product saved & published to storefront");
+            }).catch(function(err: any) {
+              showNotification("Failed to save product: " + (err?.message || 'Error'));
             });
             setEditingProduct(null);
-            showNotification("Product saved & published to storefront");
           }}
         />
       )}
@@ -3469,7 +4131,28 @@ function ProductStudioModal({ product, universeCategoriesList, onClose, onSave }
                             value={imgRef} 
                             onChange={function(e) { handleColorImageChange(cIdx, imgIdx, e.target.value); }}
                             className="w-full p-1 border border-neutral-300 text-[11px] bg-white"
+                            placeholder="R2 image path or URL"
                           />
+                          <label className="cursor-pointer bg-neutral-900 hover:bg-[#E51E2B] text-white px-2 py-1 text-[10px] font-bold uppercase shrink-0 transition-colors">
+                            Upload
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async function(e) {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                try {
+                                  const res = await uploadService.uploadImage(file, 'products');
+                                  if (res && res.url) {
+                                    handleColorImageChange(cIdx, imgIdx, res.url);
+                                  }
+                                } catch (err: any) {
+                                  alert('Upload failed: ' + (err?.message || err));
+                                }
+                              }}
+                            />
+                          </label>
                         </div>
                       );
                     })}
