@@ -25,7 +25,11 @@ export const authService = {
       if (response && (response as any).error) {
         return { user: null, error: new Error((response as any).error.message || 'Authentication failed') };
       }
-      const user = (response as any)?.data?.user || (response as any)?.user || null;
+      const rawUser = (response as any)?.data?.user || (response as any)?.user;
+      const user = (rawUser && rawUser.id) ? (rawUser as AuthUser) : null;
+      if (!user) {
+        return { user: null, error: new Error('Invalid email or password. Please try again.') };
+      }
       return { user, error: null };
     } catch (err: any) {
       return {
@@ -49,8 +53,12 @@ export const authService = {
     if (!isInsForgeConfigured()) return null;
     try {
       const response = await insforge.auth.getCurrentUser();
-      const user = (response as any)?.data?.user || (response as any)?.user || response || null;
-      return user as AuthUser | null;
+      if (!response || (response as any).error) return null;
+      const user = (response as any)?.data?.user || (response as any)?.user;
+      if (user && user.id) {
+        return user as AuthUser;
+      }
+      return null;
     } catch {
       return null;
     }

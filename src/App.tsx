@@ -2656,7 +2656,7 @@ function SecretAtelierAdminView({
 }) {
   const [adminUser, setAdminUser] = useState<any>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [adminEmail, setAdminEmail] = useState("");
+  const [adminEmail, setAdminEmail] = useState("charithreddytatekalava@gmail.com");
   const [adminPassword, setAdminPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -2705,9 +2705,12 @@ function SecretAtelierAdminView({
   useEffect(function() {
     let isMounted = true;
     authService.getCurrentUser().then(function(user) {
-      if (isMounted && user) {
+      if (isMounted && user && user.id) {
         setAdminUser(user);
         setIsUnlocked(true);
+      } else if (isMounted) {
+        setAdminUser(null);
+        setIsUnlocked(false);
       }
     });
     return function() { isMounted = false; };
@@ -2723,12 +2726,12 @@ function SecretAtelierAdminView({
     setAuthError("");
     const { user, error } = await authService.signIn(adminEmail.trim(), adminPassword);
     setAuthLoading(false);
-    if (error || !user) {
+    if (error || !user || !user.id) {
       setAuthError(error ? error.message : "Authentication failed. Check your InsForge credentials.");
     } else {
       setAdminUser(user);
       setIsUnlocked(true);
-      showNotification("Welcome back to Atelier Studio");
+      showNotification("Welcome back to Atelier Studio (" + (user.email || 'Admin') + ")");
     }
   };
 
@@ -2819,18 +2822,34 @@ function SecretAtelierAdminView({
 
   // Handle Product Deletion
   const handleDeleteProduct = function(productId: string) {
+    if (!adminUser || !adminUser.id) {
+      showNotification("Authentication required: Please lock and sign in as administrator.");
+      setIsUnlocked(false);
+      return;
+    }
     if (confirm("Are you sure you want to permanently delete this drop from the catalog?")) {
       productsService.deleteProduct(productId).then(function() {
         setProductsList(function(prev) { return prev.filter(function(p) { return p.id !== productId; }); });
         showNotification("Product drop deleted successfully");
       }).catch(function(err: any) {
-        showNotification("Failed to delete product: " + (err?.message || 'Error'));
+        const msg = err?.message || 'Error';
+        if (msg.includes('permission denied') || msg.includes('row-level security')) {
+          showNotification("Session expired: Please lock and sign in again as administrator.");
+          setIsUnlocked(false);
+        } else {
+          showNotification("Failed to delete product: " + msg);
+        }
       });
     }
   };
 
   // Handle Inventory Variant Step
   const handleInventoryStep = function(productId: string, colorName: string, size: string, delta: number) {
+    if (!adminUser || !adminUser.id) {
+      showNotification("Authentication required: Please lock and sign in as administrator.");
+      setIsUnlocked(false);
+      return;
+    }
     setProductsList(function(prev) {
       return prev.map(function(prod) {
         if (prod.id !== productId) return prod;
@@ -2843,6 +2862,13 @@ function SecretAtelierAdminView({
         const updatedProd = Object.assign({}, prod, { inventory: currentInv });
         productsService.saveProduct(updatedProd).catch(function(err: any) {
           console.warn('Inventory step persist note:', err);
+          const msg = err?.message || 'Error';
+          if (msg.includes('permission denied') || msg.includes('row-level security')) {
+            showNotification("Session expired: Please lock and sign in again as administrator.");
+            setIsUnlocked(false);
+          } else {
+            showNotification("Failed to save stock: " + msg);
+          }
         });
         return updatedProd;
       });
@@ -2851,6 +2877,11 @@ function SecretAtelierAdminView({
 
   // Toggle inStock
   const handleToggleStockStatus = function(productId: string) {
+    if (!adminUser || !adminUser.id) {
+      showNotification("Authentication required: Please lock and sign in as administrator.");
+      setIsUnlocked(false);
+      return;
+    }
     setProductsList(function(prev) {
       return prev.map(function(p) {
         if (p.id === productId) {
@@ -2860,6 +2891,13 @@ function SecretAtelierAdminView({
             showNotification(p.name + " marked as " + (next ? "IN STOCK" : "OUT OF STOCK"));
           }).catch(function(err: any) {
             console.warn('Stock status save note:', err);
+            const msg = err?.message || 'Error';
+            if (msg.includes('permission denied') || msg.includes('row-level security')) {
+              showNotification("Session expired: Please lock and sign in again as administrator.");
+              setIsUnlocked(false);
+            } else {
+              showNotification("Failed to save product: " + msg);
+            }
           });
           return updated;
         }
@@ -3036,6 +3074,11 @@ function SecretAtelierAdminView({
         </div>
 
         <div className="flex items-center gap-2.5">
+          {adminUser && adminUser.email && (
+            <span className="text-[10px] text-neutral-500 font-bold hidden md:inline-block">
+              Admin: {adminUser.email}
+            </span>
+          )}
           <button
             type="button"
             onClick={function() { navigate("/"); }}
@@ -3869,6 +3912,11 @@ function SecretAtelierAdminView({
           universeCategoriesList={universeCategoriesList}
           onClose={function() { setEditingProduct(null); }}
           onSave={function(updated) {
+            if (!adminUser || !adminUser.id) {
+              showNotification("Authentication required: Please lock and sign in as administrator.");
+              setIsUnlocked(false);
+              return;
+            }
             productsService.saveProduct(updated).then(function(saved) {
               setProductsList(function(prev) {
                 const idx = prev.findIndex(function(p) { return p.id === saved.id || p.slug === saved.slug; });
@@ -3881,7 +3929,13 @@ function SecretAtelierAdminView({
               });
               showNotification("Product saved & published to storefront");
             }).catch(function(err: any) {
-              showNotification("Failed to save product: " + (err?.message || 'Error'));
+              const msg = err?.message || 'Error';
+              if (msg.includes('permission denied') || msg.includes('row-level security')) {
+                showNotification("Session expired: Please lock and sign in again as administrator.");
+                setIsUnlocked(false);
+              } else {
+                showNotification("Failed to save product: " + msg);
+              }
             });
             setEditingProduct(null);
           }}
