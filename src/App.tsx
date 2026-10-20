@@ -49,7 +49,7 @@ import {
   broadcastCatalogChange,
   onCatalogSync
 } from './services';
-import { CustomerAuthModal, type AuthMode } from './components/auth/CustomerAuthModal';
+import { CustomerAuthModal, CustomerAuthPortal, type AuthMode } from './components/auth/CustomerAuthModal';
 import { CustomerAccountView } from './components/auth/CustomerAccountView';
 import { BagView } from './components/bag/BagView';
 import { CheckoutView } from './components/checkout/CheckoutView';
@@ -62,6 +62,47 @@ import { VerifyPassView } from './components/loyalty/VerifyPassView';
 import type { AuthUser } from './types/auth';
 
 // Self-contained zero-dependency inline SVG icons
+function Home({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  );
+}
+
+function Heart({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+    </svg>
+  );
+}
+
+function Compass({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+    </svg>
+  );
+}
+
+function Shirt({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+    </svg>
+  );
+}
+
+function Flame({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+    </svg>
+  );
+}
+
 function Award({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -502,18 +543,12 @@ function parseCurrentRoute(): RouteState {
     view = "delivery-partner";
   } else if (path.indexOf("/verify-pass") === 0 || path.indexOf("/pass") === 0) {
     view = "verify-pass";
-  } else if (path.indexOf("/account") === 0) {
+  } else if (path.indexOf("/account") === 0 || path.indexOf("/profile") === 0) {
     view = "account";
-  } else if (path.indexOf("/login") === 0 || path.indexOf("/register") === 0) {
-    // Direct visits or reloads on /login or /register should always land cleanly on Home!
-    // The user can sign in via Header or when continuing to Checkout.
-    view = "home";
-    try {
-      if (typeof window !== "undefined") {
-        const basePath = getAppBasePath();
-        window.history.replaceState({}, "", basePath || "/");
-      }
-    } catch {}
+  } else if (path.indexOf("/login") === 0) {
+    view = "login";
+  } else if (path.indexOf("/register") === 0 || path.indexOf("/signup") === 0) {
+    view = "register";
   } else if (path.indexOf("/verify-email") === 0) {
     view = "verify-email";
   } else if (path.indexOf("/forgot-password") === 0) {
@@ -679,16 +714,12 @@ export default function App() {
       view = "delivery-partner";
     } else if (pathPart.indexOf("/verify-pass") === 0 || pathPart.indexOf("/pass") === 0) {
       view = "verify-pass";
-    } else if (pathPart.indexOf("/account") === 0) {
+    } else if (pathPart.indexOf("/account") === 0 || pathPart.indexOf("/profile") === 0) {
       view = "account";
     } else if (pathPart.indexOf("/login") === 0) {
-      setAuthModalInitialMode("login");
-      setIsAuthModalOpen(true);
-      return;
-    } else if (pathPart.indexOf("/register") === 0) {
-      setAuthModalInitialMode("register");
-      setIsAuthModalOpen(true);
-      return;
+      view = "login";
+    } else if (pathPart.indexOf("/register") === 0 || pathPart.indexOf("/signup") === 0) {
+      view = "register";
     } else if (pathPart.indexOf("/verify-email") === 0) {
       view = "verify-email";
     } else if (pathPart.indexOf("/forgot-password") === 0) {
@@ -723,6 +754,27 @@ export default function App() {
       setToastNotification(null);
     }, 4000);
   }, []);
+
+  // Responsive Auth Handler: Full-page dedicated navigation on mobile, modal or direct page on desktop
+  const openAuth = useCallback(function(mode: AuthMode = 'login') {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+    if (isMobile) {
+      if (mode === 'register') {
+        navigate('/register');
+      } else if (mode === 'forgot-password') {
+        navigate('/forgot-password');
+      } else if (mode === 'reset-password') {
+        navigate('/reset-password');
+      } else if (mode === 'verify-email') {
+        navigate('/verify-email');
+      } else {
+        navigate('/login');
+      }
+    } else {
+      setAuthModalInitialMode(mode);
+      setIsAuthModalOpen(true);
+    }
+  }, [navigate]);
 
   // Keyboard shortcut listener to open hidden admin: Ctrl + Shift + A (or Cmd + Shift + A)
   useEffect(function() {
@@ -782,15 +834,14 @@ export default function App() {
 
   // Sync routeState for direct auth URLs (verification links, reset passwords)
   useEffect(function() {
-    if (routeState.view === "verify-email") {
-      setAuthModalInitialMode("verify-email");
-      setIsAuthModalOpen(true);
-    } else if (routeState.view === "forgot-password") {
-      setAuthModalInitialMode("forgot-password");
-      setIsAuthModalOpen(true);
-    } else if (routeState.view === "reset-password") {
-      setAuthModalInitialMode("reset-password");
-      setIsAuthModalOpen(true);
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+      if (routeState.view === "verify-email") {
+        setAuthModalInitialMode("verify-email");
+      } else if (routeState.view === "forgot-password") {
+        setAuthModalInitialMode("forgot-password");
+      } else if (routeState.view === "reset-password") {
+        setAuthModalInitialMode("reset-password");
+      }
     }
   }, [routeState.view]);
 
@@ -800,14 +851,13 @@ export default function App() {
       try {
         sessionStorage.setItem('th3ee_auth_redirect', '/checkout');
       } catch {}
-      setAuthModalInitialMode('login');
-      setIsAuthModalOpen(true);
+      openAuth('login');
       showNotification({
         type: 'info',
         message: 'Please sign in or create an account to proceed to checkout.'
       });
     }
-  }, [routeState.view, currentUser, showNotification]);
+  }, [routeState.view, currentUser, showNotification, openAuth]);
 
   // Handle emailed verification links (insforge_status=success|error, insforge_type=verify_email)
   useEffect(function() {
@@ -821,15 +871,13 @@ export default function App() {
       if (type === "verify_email") {
         if (status === "success") {
           showNotification("Email verified successfully! Please sign in with your password.");
-          setAuthModalInitialMode("login");
-          setIsAuthModalOpen(true);
+          openAuth("login");
         } else if (status === "error") {
           showNotification({
             type: "error",
             message: err || "Email verification link was invalid or has expired."
           });
-          setAuthModalInitialMode("verify-email");
-          setIsAuthModalOpen(true);
+          openAuth("verify-email");
         }
 
         // Clean up url search parameters without reloading
@@ -1051,47 +1099,54 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Announcement Banner */}
-      <div className="bg-[#111111] text-white text-[10px] sm:text-[11px] font-mono tracking-wider py-1.5 sm:py-2 px-3 sm:px-4 border-b border-neutral-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <span className="hidden md:inline-flex items-center gap-1.5 text-neutral-400">
-            <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-            Official WhatsApp Atelier: {storeBrand.whatsappDisplay} • {storeBrand.domain}
-          </span>
-          <p className="w-full md:w-auto text-center font-medium truncate">
-            {storeBrand.announcementText}
-          </p>
-          <div className="hidden md:flex items-center space-x-4">
-            <button 
-              type="button"
-              onClick={function() { window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE%2C%20I%20need%20help%20with%20an%20order", "_blank"); }}
-              className="text-neutral-400 hover:text-white flex items-center gap-1 text-[10px] uppercase font-bold transition-colors"
-            >
-              <Truck className="w-3.5 h-3.5 text-[#E51E2B]" />
-              <span>Order Support</span>
-            </button>
-            <a href="https://instagram.com/th3ee.verse" target="_blank" rel="noreferrer" className="text-neutral-400 hover:text-white flex items-center gap-1 transition-colors">
-              <Instagram className="w-3.5 h-3.5 text-[#E51E2B]" />
-              <span>@th3ee.verse</span>
-            </a>
-          </div>
-        </div>
-      </div>
+      {/* When on dedicated Change 2 Auth routes, suppress storefront chrome so Change 2 renders cleanly as official portal */}
+      {(() => {
+        const isAuthView = ["login", "register", "forgot-password", "reset-password", "verify-email"].includes(routeState.view);
+        if (isAuthView) return null;
 
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 lg:gap-3 xl:gap-6 flex-nowrap min-w-0 w-full">
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <button 
-              type="button"
-              onClick={function() { setIsMobileNavOpen(true); }}
-              className="lg:hidden p-1.5 sm:p-2 text-neutral-700 hover:text-black"
-              aria-label="Open Mobile Menu"
-            >
-              <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-            <Th3eeBrandLogo onClick={function() { navigate("/"); }} domain={storeBrand.domain} />
-          </div>
+        return (
+          <>
+            {/* Announcement Banner */}
+            <div className="bg-[#111111] text-white text-[10px] sm:text-[11px] font-mono tracking-wider py-1.5 sm:py-2 px-3 sm:px-4 border-b border-neutral-800">
+              <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <span className="hidden md:inline-flex items-center gap-1.5 text-neutral-400">
+                  <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+                  Official WhatsApp Atelier: {storeBrand.whatsappDisplay} • {storeBrand.domain}
+                </span>
+                <p className="w-full md:w-auto text-center font-medium truncate">
+                  {storeBrand.announcementText}
+                </p>
+                <div className="hidden md:flex items-center space-x-4">
+                  <button 
+                    type="button"
+                    onClick={function() { window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE%2C%20I%20need%20help%20with%20an%20order", "_blank"); }}
+                    className="text-neutral-400 hover:text-white flex items-center gap-1 text-[10px] uppercase font-bold transition-colors"
+                  >
+                    <Truck className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    <span>Order Support</span>
+                  </button>
+                  <a href="https://instagram.com/th3ee.verse" target="_blank" rel="noreferrer" className="text-neutral-400 hover:text-white flex items-center gap-1 transition-colors">
+                    <Instagram className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    <span>@th3ee.verse</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Header */}
+            <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200">
+              <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 lg:gap-3 xl:gap-6 flex-nowrap min-w-0 w-full">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <button 
+                    type="button"
+                    onClick={function() { setIsMobileNavOpen(true); }}
+                    className="lg:hidden p-1.5 sm:p-2 text-neutral-700 hover:text-black"
+                    aria-label="Open Mobile Menu"
+                  >
+                    <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                  <Th3eeBrandLogo onClick={function() { navigate("/"); }} domain={storeBrand.domain} />
+                </div>
 
           <nav className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-7 font-mono text-xs uppercase tracking-wider font-bold shrink-0 whitespace-nowrap">
             <button 
@@ -1264,8 +1319,7 @@ export default function App() {
                 if (currentUser) {
                   navigate("/account");
                 } else {
-                  setAuthModalInitialMode("login");
-                  setIsAuthModalOpen(true);
+                  openAuth("login");
                 }
               }}
               className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider text-neutral-800 hover:text-[#E51E2B] rounded-full hover:bg-neutral-100 transition-colors shrink-0 whitespace-nowrap"
@@ -1340,15 +1394,14 @@ export default function App() {
                     if (currentUser) {
                       navigate("/account");
                     } else {
-                      setAuthModalInitialMode("login");
-                      setIsAuthModalOpen(true);
+                      navigate("/login");
                     }
                   }} 
                   className="flex items-center justify-between w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
-                  <span className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-[#E51E2B]" />
-                    <span>{currentUser ? `Account (${currentUser.name ? currentUser.name.split(' ')[0] : 'Patron'})` : 'Sign In / Register'}</span>
+                  <span className="flex items-center gap-2.5">
+                    <User className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>{currentUser ? `Profile (${currentUser.name ? currentUser.name.split(' ')[0] : 'Patron'})` : 'Sign In / Register'}</span>
                   </span>
                   {currentUser && <span className="w-2 h-2 bg-emerald-500 rounded-full" />}
                 </button>
@@ -1360,26 +1413,61 @@ export default function App() {
                   }} 
                   className="flex items-center justify-between w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
-                  <span className="flex items-center gap-2">
-                    <ShoppingBag className="w-3.5 h-3.5 text-[#E51E2B]" />
+                  <span className="flex items-center gap-2.5">
+                    <ShoppingBag className="w-4 h-4 text-[#FF2E2E]" />
                     <span>Shopping Bag</span>
                   </span>
                   <span className="bg-black text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
                     {cart.reduce(function(c, i) { return c + (i.quantity || 1); }, 0)}
                   </span>
                 </button>
-                <button type="button" onClick={function() { setIsMobileNavOpen(false); navigate("/"); }} className="block w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100">Home</button>
-                <button type="button" onClick={function() { setIsMobileNavOpen(false); navigate("/shop"); }} className="block w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100">Shop All Drops</button>
-                <button type="button" onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=T-Shirts"); }} className="block w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100">T-Shirts</button>
-                <button type="button" onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=Hoodies & Sweats"); }} className="block w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100">Hoodies & Sweats</button>
-                <button type="button" onClick={function() { setIsMobileNavOpen(false); window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE", "_blank"); }} className="flex items-center gap-1.5 w-full text-left py-1 text-neutral-600 hover:text-black">
-                  <Truck className="w-3.5 h-3.5 text-[#E51E2B]" />
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/"); }} 
+                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
+                >
+                  <Home className="w-4 h-4 text-[#FF2E2E]" />
+                  <span>Home</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop"); }} 
+                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
+                >
+                  <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
+                  <span>Shop All Drops</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=T-Shirts"); }} 
+                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
+                >
+                  <Shirt className="w-4 h-4 text-[#FF2E2E]" />
+                  <span>T-Shirts</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=Hoodies & Sweats"); }} 
+                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
+                >
+                  <Flame className="w-4 h-4 text-[#FF2E2E]" />
+                  <span>Hoodies & Sweats</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE", "_blank"); }} 
+                  className="flex items-center gap-2.5 w-full text-left py-1 text-neutral-600 hover:text-black"
+                >
+                  <Truck className="w-4 h-4 text-[#FF2E2E]" />
                   <span>Order Support</span>
                 </button>
               </div>
 
               <div className="mt-6 pt-4 border-t border-neutral-200">
-                <span className="text-[10px] font-bold uppercase text-neutral-400 block mb-2">13 Universes</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <Compass className="w-4 h-4 text-[#FF2E2E]" />
+                  <span className="text-[10px] font-bold uppercase text-neutral-400">13 Universes</span>
+                </div>
                 <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
                   {universeCategoriesList.map(function(u) {
                     return (
@@ -1403,21 +1491,43 @@ export default function App() {
           </div>
         </div>
       )}
+          </>
+        );
+      })()}
 
       {/* Main View Router */}
-      <main className="flex-1 w-full overflow-x-hidden">
-        {(routeState.view === "home" || ["login", "register", "forgot-password", "reset-password"].includes(routeState.view)) && (
-          <HomePageView 
-            productsList={productsList}
-            universeCategoriesList={universeCategoriesList}
-            heroSlides={heroSlides}
-            storeBrand={storeBrand}
-            navigate={navigate}
-            addToBag={addToBag}
-            setQuickViewItem={setQuickViewItem}
-            setSelectedUniverseModal={setSelectedUniverseModal}
-          />
-        )}
+      {(() => {
+        const isAuthView = ["login", "register", "forgot-password", "reset-password", "verify-email"].includes(routeState.view);
+
+        return (
+          <main className={`flex-1 w-full overflow-x-hidden ${!isAuthView ? 'pb-16 lg:pb-0' : ''}`}>
+            {routeState.view === "home" && (
+              <HomePageView 
+                productsList={productsList}
+                universeCategoriesList={universeCategoriesList}
+                heroSlides={heroSlides}
+                storeBrand={storeBrand}
+                navigate={navigate}
+                addToBag={addToBag}
+                setQuickViewItem={setQuickViewItem}
+                setSelectedUniverseModal={setSelectedUniverseModal}
+              />
+            )}
+
+            {isAuthView && (
+              <CustomerAuthPortal 
+                initialMode={routeState.view as AuthMode}
+                onSuccess={function(user) {
+                  setCurrentUser(user);
+                  setCurrentUserId(user.id);
+                  const target = sessionStorage.getItem('th3ee_auth_redirect') || '/account';
+                  try { sessionStorage.removeItem('th3ee_auth_redirect'); } catch {}
+                  navigate(target);
+                }}
+                showNotification={showNotification}
+                navigate={navigate}
+              />
+            )}
 
         {routeState.view === "shop" && (
           <ShopAllView 
@@ -1542,6 +1652,8 @@ export default function App() {
           />
         )}
       </main>
+    );
+  })()}
 
       {/* Universe Subcategories Modal */}
       {selectedUniverseModal && (
@@ -1617,13 +1729,122 @@ export default function App() {
         navigate={navigate}
       />
 
-      {/* Route-Aware Single Storefront Footer */}
-      <StoreFooter 
-        isHomePage={routeState.view === "home"}
-        storeBrand={storeBrand}
-        navigate={navigate}
-        onSecretClick={handleFooterSecretClick}
-      />
+      {/* Route-Aware Single Storefront Footer & Persistent Mobile Bottom Navigation */}
+      {(() => {
+        const isAuthView = ["login", "register", "forgot-password", "reset-password", "verify-email"].includes(routeState.view);
+        if (isAuthView) return null;
+
+        return (
+          <>
+            {/* Persistent Mobile Bottom Navigation Bar */}
+            <nav 
+              aria-label="Mobile Bottom Navigation"
+              className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200 lg:hidden shadow-[0_-4px_16px_rgba(0,0,0,0.06)] pb-[max(0.4rem,env(safe-area-inset-bottom))]"
+            >
+              <div className="grid grid-cols-6 h-14 items-center px-1">
+                {/* 1. Home */}
+                <button
+                  type="button"
+                  onClick={function() { navigate("/"); }}
+                  className={`flex flex-col items-center justify-center py-1 transition-colors ${
+                    routeState.view === "home" ? "text-[#FF2E2E] font-bold" : "text-neutral-500 hover:text-neutral-900"
+                  }`}
+                  aria-label="Home"
+                >
+                  <Home className="w-5 h-5" />
+                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Home</span>
+                </button>
+
+                {/* 2. Explore / Universes */}
+                <button
+                  type="button"
+                  onClick={function() { navigate("/shop"); }}
+                  className={`flex flex-col items-center justify-center py-1 transition-colors ${
+                    routeState.view === "shop" ? "text-[#FF2E2E] font-bold" : "text-neutral-500 hover:text-neutral-900"
+                  }`}
+                  aria-label="Explore Universes"
+                >
+                  <Compass className="w-5 h-5" />
+                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Explore</span>
+                </button>
+
+                {/* 3. Search */}
+                <button
+                  type="button"
+                  onClick={function() { setIsMobileSearchOpen(true); }}
+                  className="flex flex-col items-center justify-center py-1 text-neutral-500 hover:text-neutral-900 transition-colors"
+                  aria-label="Search Drops"
+                >
+                  <Search className="w-5 h-5" />
+                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Search</span>
+                </button>
+
+                {/* 4. Wishlist */}
+                <button
+                  type="button"
+                  onClick={function() { navigate("/shop?filter=featured"); }}
+                  className="flex flex-col items-center justify-center py-1 text-neutral-500 hover:text-neutral-900 transition-colors"
+                  aria-label="Wishlist"
+                >
+                  <Heart className="w-5 h-5" />
+                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Wishlist</span>
+                </button>
+
+                {/* 5. Bag */}
+                <button
+                  type="button"
+                  onClick={function() { navigate("/bag"); }}
+                  className={`flex flex-col items-center justify-center py-1 relative transition-colors ${
+                    routeState.view === "bag" || routeState.view === "checkout" ? "text-[#FF2E2E] font-bold" : "text-neutral-500 hover:text-neutral-900"
+                  }`}
+                  aria-label="Shopping Bag"
+                >
+                  <div className="relative">
+                    <ShoppingBag className="w-5 h-5" />
+                    {cart.length > 0 && (
+                      <span className="absolute -top-1.5 -right-2 bg-[#FF2E2E] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
+                        {cart.reduce(function(c, i) { return c + (i.quantity || 1); }, 0)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Bag</span>
+                </button>
+
+                {/* 6. Profile */}
+                <button
+                  type="button"
+                  onClick={function() {
+                    if (currentUser) {
+                      navigate("/account");
+                    } else {
+                      navigate("/login");
+                    }
+                  }}
+                  className={`flex flex-col items-center justify-center py-1 relative transition-colors ${
+                    routeState.view === "account" || routeState.view === "login" || routeState.view === "register" ? "text-[#FF2E2E] font-bold" : "text-neutral-500 hover:text-neutral-900"
+                  }`}
+                  aria-label="Profile Account"
+                >
+                  <div className="relative">
+                    <User className="w-5 h-5" />
+                    {currentUser && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full ring-1 ring-white" />
+                    )}
+                  </div>
+                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Profile</span>
+                </button>
+              </div>
+            </nav>
+
+            <StoreFooter 
+              isHomePage={routeState.view === "home"}
+              storeBrand={storeBrand}
+              navigate={navigate}
+              onSecretClick={handleFooterSecretClick}
+            />
+          </>
+        );
+      })()}
     </div>
   );
 }

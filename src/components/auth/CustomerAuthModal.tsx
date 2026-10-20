@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Lock, Mail, UserIcon, Phone, CheckCircle, AlertCircle, ArrowRight, Edit2, GoogleIcon } from './icons';
+import { 
+  X, 
+  Lock, 
+  UserIcon, 
+  Phone, 
+  CheckCircle, 
+  AlertCircle, 
+  Edit2, 
+  GoogleIcon, 
+  AppleIcon, 
+  FacebookIcon, 
+  ShieldCheck, 
+  Check,
+  Eye,
+  EyeOff
+} from './icons';
 import { authService } from '../../services/auth.service';
 import type { AuthUser } from '../../types/auth';
 import PasswordStrengthMeter from './PasswordStrengthMeter';
@@ -8,7 +23,17 @@ import { evaluatePasswordStrength, validateEmail } from '../../lib/auth-validato
 
 export type AuthMode = 'login' | 'register' | 'forgot-password' | 'reset-password' | 'verify-email';
 
-interface CustomerAuthModalProps {
+export interface CustomerAuthPortalProps {
+  initialMode?: AuthMode;
+  onSuccess?: (user: AuthUser) => void;
+  showNotification?: (data: any) => void;
+  navigate?: (path: string) => void;
+  isModal?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export interface CustomerAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: AuthMode;
@@ -18,59 +43,34 @@ interface CustomerAuthModalProps {
 }
 
 /**
- * Stylized Eye Toggle with lash aesthetic inspired by the reference design
+ * TH3EE Official Account Portal & Authentication System
+ * Exact visual theme and layout matching Change 2 reference specification.
  */
-const LashEyeToggle: React.FC<{ show: boolean; onClick: () => void }> = ({ show, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="text-[#8C8276] hover:text-[#2A231C] transition-colors p-1 cursor-pointer focus:outline-none"
-    tabIndex={-1}
-    aria-label={show ? 'Hide password' : 'Show password'}
-  >
-    {show ? (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5-10-6.5-10-6.5z" />
-        <circle cx="12" cy="12" r="3" />
-        <line x1="12" y1="2" x2="12" y2="4" />
-        <line x1="5.5" y1="4.5" x2="7" y2="6" />
-        <line x1="18.5" y1="4.5" x2="17" y2="6" />
-      </svg>
-    ) : (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 10c2.5 4.5 6.5 7 9 7s6.5-2.5 9-7" />
-        <line x1="12" y1="17" x2="12" y2="21" />
-        <line x1="7" y1="15.5" x2="5.5" y2="19" />
-        <line x1="17" y1="15.5" x2="18.5" y2="19" />
-      </svg>
-    )}
-  </button>
-);
-
-export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
-  isOpen,
-  onClose,
+export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
   initialMode = 'login',
   onSuccess,
   showNotification,
-  navigate
+  navigate,
+  isModal = false,
+  isOpen = true,
+  onClose
 }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Form states
+  // Form input fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
 
-  // 6-digit OTP states
+  // 6-digit OTP verification inputs
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Status & Feedback states
+  // Status & loading feedback
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -78,34 +78,36 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
   const [successMessage, setSuccessMessage] = useState('');
   const [isUnverifiedPrompt, setIsUnverifiedPrompt] = useState(false);
 
-  // Email correction states
+  // Email correction in verification view
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [editEmailValue, setEditEmailValue] = useState('');
 
-  // Sync mode whenever initialMode or isOpen changes
-  useEffect(() => {
-    if (isOpen) {
-      setMode(initialMode);
-      setError('');
-      setSuccessMessage('');
-      setIsUnverifiedPrompt(false);
-      setIsEditingEmail(false);
-      if (initialMode === 'verify-email') {
-        setResendCooldown(60);
-      }
-    }
-  }, [initialMode, isOpen]);
+  // Real-time email validation flag for Change 2 check icon
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
-  // Handle escape key to close
+  // Sync mode whenever initialMode changes
   useEffect(() => {
+    setMode(initialMode);
+    setError('');
+    setSuccessMessage('');
+    setIsUnverifiedPrompt(false);
+    setIsEditingEmail(false);
+    if (initialMode === 'verify-email') {
+      setResendCooldown(60);
+    }
+  }, [initialMode]);
+
+  // Handle escape key in modal mode
+  useEffect(() => {
+    if (!isModal || !onClose) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isModal, onClose]);
 
-  // Cooldown timer ticker for resending verification code
+  // Cooldown timer ticker for resending code
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const interval = setInterval(() => {
@@ -114,7 +116,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     return () => clearInterval(interval);
   }, [resendCooldown]);
 
-  if (!isOpen) return null;
+  if (isModal && !isOpen) return null;
 
   const resetForm = () => {
     setError('');
@@ -131,6 +133,14 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     setMode(newMode);
     if (newMode === 'verify-email' && resendCooldown === 0) {
       setResendCooldown(30);
+    }
+    // Update URL if we are on a dedicated route
+    if (!isModal && navigate) {
+      if (newMode === 'login') navigate('/login');
+      else if (newMode === 'register') navigate('/register');
+      else if (newMode === 'forgot-password') navigate('/forgot-password');
+      else if (newMode === 'verify-email') navigate('/verify-email');
+      else if (newMode === 'reset-password') navigate('/reset-password');
     }
   };
 
@@ -180,9 +190,9 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     } else {
       showNotification?.(`Welcome back, ${user.name || user.email}!`);
       onSuccess?.(user);
-      onClose();
+      if (onClose) onClose();
       const redirectTarget = getRedirectTarget();
-      if (navigate && redirectTarget && redirectTarget !== '/') {
+      if (navigate) {
         navigate(redirectTarget);
       }
     }
@@ -242,9 +252,9 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       } else if (result.user) {
         showNotification?.(`Welcome to TH3EE, ${result.user.name || result.user.email}!`);
         onSuccess?.(result.user);
-        onClose();
+        if (onClose) onClose();
         const redirectTarget = getRedirectTarget();
-        if (navigate && redirectTarget && redirectTarget !== '/') {
+        if (navigate) {
           navigate(redirectTarget);
         }
       }
@@ -279,16 +289,16 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       showNotification?.(`Welcome to TH3EE, ${result.user.name || result.user.email}!`);
       onSuccess?.(result.user);
       setTimeout(() => {
-        onClose();
+        if (onClose) onClose();
         const redirectTarget = getRedirectTarget();
-        if (navigate && redirectTarget && redirectTarget !== '/') {
+        if (navigate) {
           navigate(redirectTarget);
         }
       }, 1000);
     }
   };
 
-  // Handle Resend Verification Email OTP
+  // Handle Resend Verification OTP
   const handleResendOtp = async () => {
     if (resendCooldown > 0 || resendLoading) return;
     setError('');
@@ -314,7 +324,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     }
   };
 
-  // Handle Email Correction within Verification view
+  // Handle Email Correction
   const handleUpdateEmailAndResend = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -342,7 +352,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     }
   };
 
-  // OTP Input event handlers (auto-advance, backspace, paste)
+  // OTP inputs handling
   const handleOtpDigitChange = (index: number, value: string) => {
     const cleanDigit = value.replace(/[^0-9]/g, '');
     if (!cleanDigit) {
@@ -403,7 +413,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     const result = await authService.sendPasswordResetEmail(cleanEmail);
     setLoading(false);
 
-    setSuccessMessage(result.message || 'If an account exists with this email address, instructions will be sent.');
+    setSuccessMessage(result.message || 'If an account exists with this email address, password reset instructions have been dispatched.');
   };
 
   // Handle Reset Password with OTP
@@ -458,538 +468,448 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/60 backdrop-blur-md p-3 sm:p-6 lg:p-8 font-sans">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98, y: 16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.98, y: 16 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="relative w-full max-w-5xl min-h-[580px] lg:min-h-[640px] rounded-[32px] sm:rounded-[38px] overflow-hidden shadow-2xl bg-[#D8C7B5] border border-white/20 grid grid-cols-1 lg:grid-cols-12 items-stretch"
-      >
-        {/* CLOSE BUTTON */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-neutral-600 hover:text-black shadow-md flex items-center justify-center transition-all cursor-pointer backdrop-blur-xs"
-          aria-label="Close"
-        >
-          <X className="w-5 h-5" />
-        </button>
+  const handleSocialNotification = (provider: string) => {
+    showNotification?.({
+      type: 'info',
+      message: `${provider} authentication is coming soon. Please sign in with Google or Email.`
+    });
+  };
 
-        {/* =========================================================================
-            LEFT SECTION: WARM CLOTHING ATELIER LIFESTYLE ATMOSPHERE
-            (Uses Requested 3D Modern Retail Floor Atelier Visual)
-           ========================================================================= */}
-        <div className="relative lg:col-span-7 flex flex-col justify-between p-7 sm:p-10 lg:p-12 overflow-hidden min-h-[340px] lg:min-h-full">
-          {/* Background Image Layer */}
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out hover:scale-105"
-            style={{ 
-              backgroundImage: `url('${typeof window !== 'undefined' && window.location.pathname.startsWith('/test-drive-th3ee') ? '/test-drive-th3ee' : ''}/images/login-bg.jpg')` 
-            }}
-          />
+  // Card Content
+  const portalCard = (
+    <div className="w-full max-w-4xl transition-all duration-300 relative">
+      {/* Main Card: Side-by-side on desktop, seamlessly stacked on mobile */}
+      <div className="bg-white rounded-[28px] sm:rounded-[36px] th3ee-card-shadow overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[540px] border border-white relative">
+        
+        {/* Modal Close Button if in modal mode */}
+        {isModal && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-500 hover:text-black shadow-md flex items-center justify-center transition-all cursor-pointer border border-slate-200"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
 
-          {/* Warm Artistic Film Overlay for Legibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/60 lg:bg-gradient-to-r lg:from-black/75 lg:via-black/45 lg:to-black/30" />
+        {/* ========================================================= */}
+        {/* LEFT / TOP COLUMN: VECTOR ARTWORK IN TH3EE RED (CHANGE 2) */}
+        {/* ========================================================= */}
+        <div className="md:col-span-6 relative bg-gradient-to-br from-[#fff2f2] via-[#ffe8e8] to-[#fff7f7] flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 overflow-hidden min-h-[220px] sm:min-h-[270px] md:min-h-full border-b md:border-b-0 md:border-r border-red-100/60 select-none">
+          
+          {/* Organic Soft Curved Wave inside the backdrop */}
+          <svg className="absolute -top-10 -left-10 w-72 h-72 sm:w-96 sm:h-96 opacity-40 text-red-200 pointer-events-none" viewBox="0 0 200 200" fill="currentColor">
+            <path d="M44.7,-67.2C56.9,-60.7,65.3,-47.9,71.2,-34.1C77.1,-20.3,80.5,-5.5,77.5,8C74.5,21.5,65.1,33.7,54.6,44.2C44.1,54.7,32.5,63.5,19.2,68.2C5.9,72.9,-9.1,73.5,-23.4,69.5C-37.7,65.5,-51.3,56.9,-61.7,44.7C-72.1,32.5,-79.3,16.7,-79.8,-0.3C-80.3,-17.3,-74.1,-35.5,-62.8,-47.4C-51.5,-59.3,-35.1,-64.9,-19.9,-67.9C-4.7,-70.9,9.3,-71.3,44.7,-67.2Z" transform="translate(100 100)" />
+          </svg>
 
-          {/* Top Brand Tag */}
-          <div className="relative z-10 space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#4F8D26] animate-pulse" />
-              <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white drop-shadow-sm font-sans">
-                TH3EE
-              </h1>
-            </div>
-            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-white/80 pl-4.5">
-              ATELIER IDENTITY • EST. 2024
-            </p>
+          {/* Floating Clouds */}
+          <div className="absolute top-4 sm:top-8 left-5 sm:left-8 animate-float-slow opacity-85 pointer-events-none z-10">
+            <svg className="w-14 sm:w-16 h-8 sm:h-9 drop-shadow-sm" viewBox="0 0 68 38" fill="none">
+              <path d="M12 28C8 28 4 25 4 20C4 16 7 13 11 12.5C12.5 6 18 2 24.5 2C32 2 37.5 7 38.5 13C41 12.5 44 14 45.5 16.5C48 16 52 18 53 21C55 22.5 56 25 55.5 28H12Z" fill="#FFFFFF" />
+            </svg>
           </div>
 
-          {/* Middle/Bottom Headline & Subtitle */}
-          <div className="relative z-10 my-auto pt-8 pb-4 space-y-3 max-w-md">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.08] drop-shadow-md">
-              Every big thing starts small
-            </h2>
-            <p className="text-sm sm:text-base text-white/90 font-medium leading-relaxed drop-shadow-sm">
-              Log in and continue growing. Access your reserved drops, loyalty pass stamps, and bespoke order tracker.
-            </p>
+          <div className="absolute top-7 sm:top-12 right-6 sm:right-10 animate-float-delay opacity-80 pointer-events-none z-10">
+            <svg className="w-16 sm:w-20 h-9 sm:h-11 drop-shadow-sm" viewBox="0 0 84 42" fill="none">
+              <path d="M15 32C10 32 5 28 5 22C5 17 9 14 14 13C16 6 23 2 31 2C40 2 47 7.5 48.5 14.5C51.5 14 55 15.5 57 18.5C60 18 65 20.5 66 24C68.5 25.5 70 28.5 69.5 32H15Z" fill="#FFFFFF" />
+            </svg>
           </div>
 
-          {/* Bottom Atelier Micro-Credit */}
-          <div className="relative z-10 pt-2 text-[11px] text-white/70 font-medium flex items-center gap-2">
-            <span>Heavyweight 280 GSM Cotton</span>
-            <span>•</span>
-            <span>Hand-numbered Silhouettes</span>
+          {/* Floating TH3EE Red Shield with Keyhole */}
+          <div className="absolute top-10 sm:top-16 left-6 sm:left-12 animate-float-shield z-10">
+            <svg className="w-9 h-11 sm:w-11 sm:h-13 drop-shadow-md" viewBox="0 0 44 54" fill="none">
+              <path d="M22 2L4 9V24C4 36.5 11.5 48 22 52C32.5 48 40 36.5 40 24V9L22 2Z" fill="#FF2E2E" stroke="#ffffff" strokeWidth="2"/>
+              <circle cx="22" cy="22" r="4.5" fill="#ffffff"/>
+              <polygon points="20,22 24,22 25,32 19,32" fill="#ffffff"/>
+            </svg>
+          </div>
+
+          {/* PRIMARY VECTOR ARTWORK RECOLORED IN TH3EE RED & WHITE */}
+          <div className="relative w-full max-w-[280px] sm:max-w-[340px] md:max-w-[370px] h-48 sm:h-64 md:h-76 flex items-center justify-center my-auto">
+            <svg viewBox="0 0 400 340" className="w-full h-full drop-shadow-sm select-none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Baseline Ground in Brand Red */}
+              <path d="M40 310H360" stroke="#FF2E2E" strokeWidth="4.5" strokeLinecap="round" opacity="0.85"/>
+              
+              {/* SMARTPHONE FRAME */}
+              <g className="transition-transform duration-300">
+                <ellipse cx="140" cy="308" rx="68" ry="7" fill="#660a0a" opacity="0.12"/>
+                <rect x="74" y="44" width="132" height="262" rx="26" fill="#FFFFFF" stroke="#FF2E2E" strokeWidth="5.5"/>
+                <rect x="122" y="54" width="36" height="4" rx="2" fill="#cbd5e1"/>
+                <circle cx="140" cy="98" r="22" fill="#ffe1e1"/>
+                <circle cx="140" cy="98" r="18" fill="#FF2E2E"/>
+                <circle cx="140" cy="95" r="7.5" fill="#ffffff"/>
+                <path d="M133 93C133 88 136 86 140 86C144 86 147 88 147 93C144 91 136 91 133 93Z" fill="#1e293b"/>
+                <path d="M129 110C129 104 134 102 140 102C146 102 151 104 151 110V112H129V110Z" fill="#ffffff"/>
+                
+                {/* Simulated Input Field 1 */}
+                <rect x="94" y="132" width="92" height="11" rx="5.5" fill="#f1f5f9"/>
+                <circle cx="102" cy="137.5" r="2.5" fill="#94a3b8"/>
+                <line x1="110" y1="137.5" x2="160" y2="137.5" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round"/>
+                
+                {/* Simulated Input Field 2 */}
+                <rect x="94" y="149" width="92" height="11" rx="5.5" fill="#f1f5f9"/>
+                <circle cx="102" cy="154.5" r="2.5" fill="#94a3b8"/>
+                <line x1="110" y1="154.5" x2="148" y2="154.5" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="3 3" strokeLinecap="round"/>
+                
+                {/* Keyhole on Phone Display */}
+                <g className="animate-pulse">
+                  <circle cx="140" cy="180" r="6" fill="#1c1c20"/>
+                  <polygon points="137,180 143,180 145,192 135,192" fill="#1c1c20"/>
+                </g>
+              </g>
+
+              {/* POTTED PLANT */}
+              <g className="animate-sway origin-bottom">
+                <polygon points="80,285 106,285 101,310 85,310" fill="#111113"/>
+                <path d="M93 285C85 270 70 270 65 258C60 245 74 240 82 250C85 235 98 238 98 250C103 230 115 235 112 255C122 252 125 265 116 272C122 280 110 285 93 285Z" fill="#1e293b"/>
+                <path d="M93 285C88 274 78 272 74 262C71 253 82 248 88 256C91 243 100 246 100 256C104 240 112 244 110 260C118 258 119 268 112 274C116 280 106 284 93 285Z" fill="#334155"/>
+                <path d="M93 285C89 276 83 275 80 268C78 261 86 257 91 263C93 252 100 254 100 263C104 250 110 253 108 266C114 264 115 272 110 277C113 281 104 284 93 285Z" fill="#FF2E2E" opacity="0.6"/>
+              </g>
+
+              {/* STYLIZED STREETWEAR CHARACTER */}
+              <g id="character-group">
+                <circle cx="236" cy="160" r="10" fill="#fca5a5"/>
+                <path d="M228 158C228 151 233 147 239 148C245 149 248 155 246 161C242 158 232 157 228 158Z" fill="#111113"/>
+                {/* TH3EE Streetwear Red Hoodie */}
+                <path d="M224 175C224 171 230 170 236 170C242 170 248 171 248 175L250 205C246 208 238 209 230 207L224 175Z" fill="#FF2E2E"/>
+                <path d="M233 170V179" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round"/>
+
+                {/* Right Leg */}
+                <path d="M241 206L260 255L270 298L278 300L278 306L260 306L252 260L236 210" fill="#1c1c20"/>
+                <path d="M260 304H280C282 304 283 306 283 308C283 310 281 310 279 310H258L260 304Z" fill="#ffffff" stroke="#FF2E2E" strokeWidth="1.5"/>
+
+                {/* Left Leg */}
+                <path d="M228 206L214 246L210 288L200 302L188 304L188 308L212 308L224 286L232 245L236 206" fill="#111113"/>
+                <path d="M188 304H212C214 304 216 306 216 308C216 310 214 310 211 310H186L188 304Z" fill="#ffffff" stroke="#FF2E2E" strokeWidth="1.5"/>
+
+                {/* Arms Holding Golden Key */}
+                <path d="M244 178L262 215L274 225" stroke="#fca5a5" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M226 178L198 200L168 185" stroke="#fca5a5" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
+              </g>
+
+              {/* GIANT GOLDEN / AMBER KEY */}
+              <g id="golden-key" className="animate-key-bob origin-center">
+                <line x1="164" y1="184" x2="284" y2="242" stroke="url(#goldGrad)" strokeWidth="9" strokeLinecap="round"/>
+                <line x1="164" y1="184" x2="284" y2="242" stroke="#ffffff" strokeWidth="2" strokeDasharray="10 8" strokeLinecap="round" opacity="0.7"/>
+                <path d="M167 186L160 178M175 190L169 181M183 194L180 187" stroke="#f59e0b" strokeWidth="7" strokeLinecap="round"/>
+                <circle cx="288" cy="244" r="18" fill="none" stroke="url(#goldGrad)" strokeWidth="8"/>
+                <circle cx="288" cy="244" r="13" fill="#ffebee"/>
+                <circle cx="288" cy="244" r="9" fill="url(#goldGrad)"/>
+                <circle cx="288" cy="244" r="5" fill="#ffebee"/>
+              </g>
+
+              <defs>
+                <linearGradient id="goldGrad" x1="160" y1="180" x2="300" y2="250" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#f59e0b" />
+                  <stop offset="50%" stopColor="#fbbf24" />
+                  <stop offset="100%" stopColor="#d97706" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+
+          {/* Bottom Micro Tagline */}
+          <div className="mt-1 md:mt-2 text-center z-10 hidden sm:block">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/80 backdrop-blur-sm text-[11px] font-semibold text-brand-600 shadow-sm border border-red-100">
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-500" />
+              TH3EE Secure Verification
+            </span>
           </div>
         </div>
 
-        {/* =========================================================================
-            RIGHT SECTION: FLOATING WARM CREAM ROUNDED CARD
-            (Faithful representation of the reference screenshot's floating card)
-           ========================================================================= */}
-        <div className="relative lg:col-span-5 bg-[#FAF7F2] p-6 sm:p-9 lg:p-10 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-[#EBE3D7] text-[#2A231C]">
-          {/* Card Title */}
-          <div className="mb-6">
-            <h3 className="text-2xl sm:text-[26px] font-bold text-[#2A231C] tracking-tight">
-              {mode === 'login' && 'Log in to your account'}
-              {mode === 'register' && 'Create your account'}
-              {mode === 'verify-email' && 'Verify your email'}
-              {mode === 'forgot-password' && 'Reset your password'}
-              {mode === 'reset-password' && 'Set new password'}
-            </h3>
-            <p className="text-xs text-[#7A7065] mt-1">
-              {mode === 'login' && 'Enter your credentials to access your TH3EE patron portal.'}
-              {mode === 'register' && 'Join the TH3EE cult club for private drops and punchcard rewards.'}
-              {mode === 'verify-email' && 'Enter the 6-digit verification code sent to your inbox.'}
-              {mode === 'forgot-password' && 'Enter your email to receive recovery instructions.'}
-              {mode === 'reset-password' && 'Enter the verification code and set a new password.'}
+        {/* ========================================================= */}
+        {/* RIGHT / BOTTOM COLUMN: AUTHENTICATION FORM (CHANGE 2)     */}
+        {/* ========================================================= */}
+        <div className="md:col-span-6 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-center bg-white relative z-10">
+          
+          {/* Headings */}
+          <div className="text-center md:text-left mb-5 sm:mb-7">
+            <h1 className="font-poppins font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
+              {mode === 'login' && 'Welcome!'}
+              {mode === 'register' && 'Join TH3EE'}
+              {mode === 'forgot-password' && 'Password Recovery'}
+              {mode === 'reset-password' && 'Set New Password'}
+              {mode === 'verify-email' && 'Verify Email'}
+            </h1>
+            <p className="text-brand-500 font-sans text-sm sm:text-base mt-1 font-medium">
+              {mode === 'login' && 'Sign in to TH3EE Archive'}
+              {mode === 'register' && 'Create your Member Account'}
+              {mode === 'forgot-password' && 'Enter your email for security link'}
+              {mode === 'reset-password' && 'Enter code & create strong password'}
+              {mode === 'verify-email' && 'Enter 6-digit confirmation code'}
             </p>
           </div>
 
-          {/* Status Alerts */}
-          <AnimatePresence mode="wait">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl flex flex-col gap-1.5"
-              >
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#E51E2B]" />
-                  <span className="leading-snug">{error}</span>
-                </div>
+          {/* Feedback & Error Alerts */}
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -6 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-2.5 text-red-700 text-xs font-sans"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-brand-500" />
+              <div className="flex-1">
+                <span>{error}</span>
                 {isUnverifiedPrompt && mode === 'login' && (
                   <button
                     type="button"
                     onClick={() => switchMode('verify-email')}
-                    className="w-full mt-1 py-1.5 bg-[#4F8D26] text-white hover:bg-[#437A1F] text-[11px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                    className="block mt-1 font-bold underline hover:text-red-900"
                   >
-                    <span>Enter Verification Code</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    Click here to enter verification code →
                   </button>
                 )}
-              </motion.div>
-            )}
-
-            {successMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-2xl flex items-start gap-2"
-              >
-                <CheckCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#4F8D26]" />
-                <span className="leading-snug">{successMessage}</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* =====================================================================
-              1. LOGIN VIEW (Matches Reference Screenshot Pixel-for-Pixel)
-             ===================================================================== */}
-          {mode === 'login' && (
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              {/* Email Address */}
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1.5">
-                  Email address
-                </label>
-                <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Mail className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    autoComplete="email"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                </div>
               </div>
-
-              {/* Password */}
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1.5">
-                  Password
-                </label>
-                <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Lock className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                  <LashEyeToggle show={showPassword} onClick={() => setShowPassword(!showPassword)} />
-                </div>
-                <div className="flex justify-end mt-1.5">
-                  <button
-                    type="button"
-                    onClick={() => switchMode('forgot-password')}
-                    className="text-xs font-medium text-[#7A7065] hover:text-[#4F8D26] transition-colors cursor-pointer"
-                  >
-                    Forgot your password?
-                  </button>
-                </div>
-              </div>
-
-              {/* Log In Button (Green Pill matching Reference) */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 bg-[#4F8D26] hover:bg-[#437A1F] active:scale-[0.99] text-white text-sm font-bold tracking-wide rounded-2xl shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
-              >
-                {loading ? (
-                  <span>Logging in...</span>
-                ) : (
-                  <span>Log in</span>
-                )}
-              </button>
-
-              {/* "or" Divider */}
-              <div className="relative my-4 flex items-center justify-center">
-                <div className="w-full border-t border-[#E3DCD3]" />
-                <span className="absolute bg-[#FAF7F2] px-3 text-xs text-[#8C8276] font-medium">
-                  or
-                </span>
-              </div>
-
-              {/* Continue with Google */}
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                className="w-full py-3 bg-white hover:bg-neutral-50/90 border border-[#E3DCD3] rounded-2xl font-semibold text-sm text-[#3E362E] transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer"
-              >
-                <GoogleIcon className="w-5 h-5 shrink-0" />
-                <span>Continue with Google</span>
-              </button>
-
-              {/* Bottom Switch Link */}
-              <div className="text-center pt-2 text-xs text-[#7A7065]">
-                <span>Don't have an account? </span>
-                <button
-                  type="button"
-                  onClick={() => switchMode('register')}
-                  className="text-[#4F8D26] font-bold hover:underline cursor-pointer ml-1"
-                >
-                  Sign up
-                </button>
-              </div>
-            </form>
+            </motion.div>
           )}
 
-          {/* =====================================================================
-              2. REGISTER VIEW (Consistent Warm Aesthetic)
-             ===================================================================== */}
-          {mode === 'register' && (
-            <form onSubmit={handleRegisterSubmit} className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1">
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1">
-                  Full Name *
-                </label>
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <UserIcon className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    autoComplete="name"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1">
-                  Email address *
-                </label>
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Mail className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    autoComplete="email"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1">
-                  Mobile Number (Optional)
-                </label>
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Phone className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    autoComplete="tel"
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1">
-                  Password *
-                </label>
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Lock className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min 8 characters"
-                    autoComplete="new-password"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                  <LashEyeToggle show={showPassword} onClick={() => setShowPassword(!showPassword)} />
-                </div>
-                <div className="mt-1">
-                  <PasswordStrengthMeter password={password} />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1">
-                  Confirm Password *
-                </label>
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Lock className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    autoComplete="new-password"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                  <LashEyeToggle show={showConfirmPassword} onClick={() => setShowConfirmPassword(!showConfirmPassword)} />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 bg-[#4F8D26] hover:bg-[#437A1F] active:scale-[0.99] text-white text-sm font-bold tracking-wide rounded-2xl shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
-              >
-                {loading ? <span>Creating Account...</span> : <span>Create Account</span>}
-              </button>
-
-              <div className="relative my-3 flex items-center justify-center">
-                <div className="w-full border-t border-[#E3DCD3]" />
-                <span className="absolute bg-[#FAF7F2] px-3 text-xs text-[#8C8276] font-medium">
-                  or
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                className="w-full py-2.5 bg-white hover:bg-neutral-50/90 border border-[#E3DCD3] rounded-2xl font-semibold text-xs text-[#3E362E] transition-all shadow-xs flex items-center justify-center gap-2.5 cursor-pointer"
-              >
-                <GoogleIcon className="w-4 h-4 shrink-0" />
-                <span>Sign up with Google</span>
-              </button>
-
-              <div className="text-center pt-2 text-xs text-[#7A7065]">
-                <span>Already have an account? </span>
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="text-[#4F8D26] font-bold hover:underline cursor-pointer ml-1"
-                >
-                  Log in
-                </button>
-              </div>
-            </form>
+          {successMessage && (
+            <motion.div 
+              initial={{ opacity: 0, y: -6 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-sans"
+            >
+              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
+              <span>{successMessage}</span>
+            </motion.div>
           )}
 
-          {/* =====================================================================
-              3. VERIFY EMAIL VIEW (6-Digit OTP Punchcard)
-             ===================================================================== */}
-          {mode === 'verify-email' && (
-            <div className="space-y-4">
-              <div className="bg-white border border-[#E3DCD3] p-3.5 rounded-2xl space-y-1.5 shadow-xs">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#7A7065]">Code sent to:</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsEditingEmail(!isEditingEmail);
-                      setEditEmailValue(email);
-                    }}
-                    className="text-[#4F8D26] font-bold hover:underline flex items-center gap-1 cursor-pointer text-xs"
-                  >
-                    <Edit2 className="w-3 h-3" />
-                    <span>{isEditingEmail ? 'Cancel' : 'Change'}</span>
-                  </button>
-                </div>
-
-                {!isEditingEmail ? (
-                  <div className="font-bold text-[#2A231C] text-xs break-all">
-                    {email || 'your email'}
-                  </div>
-                ) : (
-                  <form onSubmit={handleUpdateEmailAndResend} className="space-y-2 pt-1">
-                    <input
-                      type="email"
-                      value={editEmailValue}
-                      onChange={(e) => setEditEmailValue(e.target.value)}
-                      placeholder="Corrected email"
-                      required
-                      className="w-full px-3 py-1.5 text-xs border border-[#E3DCD3] rounded-xl bg-[#FAF7F2] focus:outline-none"
+          {/* ================= MODE: LOGIN OR REGISTER ================= */}
+          {(mode === 'login' || mode === 'register') && (
+            <form 
+              onSubmit={mode === 'login' ? handleLoginSubmit : handleRegisterSubmit} 
+              className="space-y-3.5 sm:space-y-4"
+            >
+              {/* Dynamic Sign-Up Full Name Field */}
+              {mode === 'register' && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-1"
+                >
+                  <div className="reference-input rounded-full px-4 sm:px-5 py-2.5 sm:py-3 flex items-center bg-white">
+                    <UserIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <input 
+                      type="text" 
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Full Name" 
+                      required={mode === 'register'}
+                      className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-400 focus:outline-none pl-3 font-sans"
                     />
-                    <button
-                      type="submit"
-                      disabled={resendLoading || !editEmailValue.trim()}
-                      className="w-full py-1.5 bg-[#4F8D26] text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      {resendLoading ? 'Updating...' : 'Update & Resend'}
-                    </button>
-                  </form>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Email Address Input with '@' icon inside pill */}
+              <div>
+                <div className="reference-input rounded-full px-4 sm:px-5 py-2.5 sm:py-3 flex items-center bg-white">
+                  <span className="text-slate-400 font-medium text-base sm:text-lg select-none leading-none pl-0.5">@</span>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="Email Address" 
+                    autoComplete="email"
+                    className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-400 focus:outline-none pl-3 font-sans"
+                  />
+                  <span className={`transition-opacity ${isEmailValid ? 'opacity-100' : 'opacity-0'}`}>
+                    <Check className="w-4 h-4 text-brand-500" />
+                  </span>
+                </div>
+              </div>
+
+              {/* Dynamic Sign-Up Mobile Phone Field */}
+              {mode === 'register' && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-1"
+                >
+                  <div className="reference-input rounded-full px-4 sm:px-5 py-2.5 sm:py-3 flex items-center bg-white">
+                    <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                    <input 
+                      type="tel" 
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Mobile Phone (10 digits)" 
+                      className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-400 focus:outline-none pl-3 font-sans"
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Password Input with padlock and eye show/hide toggle */}
+              <div>
+                <div className="reference-input rounded-full px-4 sm:px-5 py-2.5 sm:py-3 flex items-center bg-white">
+                  <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input 
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Password" 
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-400 focus:outline-none pl-3 font-sans"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="text-slate-400 hover:text-brand-500 focus:outline-none p-1 -mr-1 transition-colors cursor-pointer" 
+                    title="Toggle password visibility"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Password strength meter in registration mode */}
+                {mode === 'register' && password && (
+                  <div className="px-2 pt-2">
+                    <PasswordStrengthMeter password={password} />
+                  </div>
                 )}
               </div>
 
-              <form onSubmit={handleVerifyEmailSubmit} className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-[#5A5046] block text-center mb-2">
-                    Enter 6-Digit Code
-                  </label>
-                  <div className="flex justify-center gap-2">
-                    {otpDigits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => { otpInputRefs.current[idx] = el; }}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                        onPaste={handleOtpPaste}
-                        className="w-10 h-12 text-center text-lg font-bold bg-white rounded-xl border border-[#E3DCD3] focus:border-[#4F8D26] focus:ring-2 focus:ring-[#4F8D26]/20 focus:outline-none transition-all shadow-xs"
-                        aria-label={`Digit ${idx + 1}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading || fullOtpString.length < 6}
-                  className="w-full py-3.5 bg-[#4F8D26] hover:bg-[#437A1F] text-white text-sm font-bold tracking-wide rounded-2xl shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+              {/* Dynamic Sign-Up Confirm Password Field */}
+              {mode === 'register' && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-1"
                 >
-                  {loading ? 'Verifying...' : 'Verify Email'}
+                  <div className="reference-input rounded-full px-4 sm:px-5 py-2.5 sm:py-3 flex items-center bg-white">
+                    <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
+                    <input 
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm Password" 
+                      required={mode === 'register'}
+                      className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-400 focus:outline-none pl-3 font-sans"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                      className="text-slate-400 hover:text-brand-500 focus:outline-none p-1 -mr-1 transition-colors cursor-pointer" 
+                      title="Toggle password visibility"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Forgot Password Right-Aligned Link (Login mode only) */}
+              {mode === 'login' && (
+                <div className="flex justify-end pt-0.5">
+                  <button 
+                    type="button" 
+                    onClick={() => switchMode('forgot-password')} 
+                    className="text-xs sm:text-[13px] text-brand-500 hover:text-brand-700 font-semibold transition-colors cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+
+              {/* Action Buttons: Solid TH3EE RED & Outlined RED */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full min-h-[48px] py-3 px-4 rounded-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:opacity-60 text-white font-poppins font-bold text-xs tracking-wider uppercase transition-all duration-200 shadow-md shadow-brand-500/30 hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {loading ? (
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <span>{mode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}</span>
+                  )}
                 </button>
 
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <span className="text-[#7A7065]">Didn't get code?</span>
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={resendCooldown > 0 || resendLoading}
-                    className="font-bold text-[#4F8D26] hover:underline disabled:text-neutral-400 disabled:no-underline cursor-pointer"
-                  >
-                    {resendLoading ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
-                  </button>
-                </div>
-
-                <div className="text-center pt-2 border-t border-[#E3DCD3]">
-                  <button
-                    type="button"
-                    onClick={() => switchMode('login')}
-                    className="text-xs text-[#7A7065] hover:text-[#2A231C] font-semibold cursor-pointer"
-                  >
-                    ← Back to Log in
-                  </button>
-                </div>
-              </form>
-            </div>
+                <button 
+                  type="button" 
+                  onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
+                  className={`w-full min-h-[48px] py-3 px-4 rounded-full border-2 border-brand-500 hover:bg-brand-50 text-brand-500 font-poppins font-bold text-xs tracking-wider uppercase transition-all duration-200 active:scale-95 cursor-pointer ${mode === 'register' ? 'bg-brand-50' : ''}`}
+                >
+                  {mode === 'login' ? 'SIGN UP' : 'BACK TO LOGIN'}
+                </button>
+              </div>
+            </form>
           )}
 
-          {/* =====================================================================
-              4. FORGOT PASSWORD VIEW
-             ===================================================================== */}
+          {/* ================= MODE: FORGOT PASSWORD ================= */}
           {mode === 'forgot-password' && (
             <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1.5">
-                  Email address
-                </label>
-                <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Mail className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your registered email"
-                    autoComplete="email"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                </div>
+              <p className="text-xs text-slate-500 font-sans leading-relaxed">
+                Enter your registered email address to receive an instant TH3EE security reset code and instructions.
+              </p>
+
+              <div className="reference-input rounded-full px-4 sm:px-5 py-2.5 sm:py-3 flex items-center bg-white">
+                <span className="text-slate-400 font-medium text-base select-none pl-0.5">@</span>
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="name@domain.com"
+                  className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-400 focus:outline-none pl-3 font-sans"
+                />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 bg-[#4F8D26] hover:bg-[#437A1F] active:scale-[0.99] text-white text-sm font-bold tracking-wide rounded-2xl shadow-sm transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {loading ? 'Sending Instructions...' : 'Send Reset Code'}
-              </button>
+              <div className="space-y-2 pt-2">
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full min-h-[48px] py-3.5 px-4 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-poppins font-bold text-xs uppercase tracking-wider transition-colors shadow-md shadow-brand-500/25 active:scale-95 disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {loading ? 'SENDING INSTRUCTIONS...' : 'SEND RESET INSTRUCTIONS'}
+                </button>
 
-              <div className="flex items-center justify-between pt-2 border-t border-[#E3DCD3] text-xs">
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="text-[#7A7065] hover:text-[#2A231C] font-semibold cursor-pointer"
-                >
-                  ← Back to Log in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchMode('reset-password')}
-                  className="text-[#4F8D26] font-bold hover:underline cursor-pointer"
-                >
-                  Have code? Reset
-                </button>
+                <div className="flex items-center justify-between pt-1">
+                  <button 
+                    type="button"
+                    onClick={() => switchMode('reset-password')}
+                    className="text-xs text-slate-500 hover:text-brand-500 font-semibold"
+                  >
+                    Already have code? Reset password →
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => switchMode('login')}
+                    className="text-xs text-brand-500 hover:text-brand-700 font-bold"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
               </div>
             </form>
           )}
 
-          {/* =====================================================================
-              5. RESET PASSWORD VIEW
-             ===================================================================== */}
+          {/* ================= MODE: RESET PASSWORD WITH OTP ================= */}
           {mode === 'reset-password' && (
             <form onSubmit={handleResetPasswordSubmit} className="space-y-3.5">
+              <p className="text-xs text-slate-500 font-sans leading-relaxed">
+                Enter the 6-digit code dispatched to your inbox and establish your new secure password.
+              </p>
+
+              {/* 6-Digit Code Inputs */}
               <div>
-                <label className="text-xs font-semibold text-[#5A5046] block text-center mb-1.5">
-                  Verification Code (OTP) *
+                <label className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block mb-2">
+                  Verification Code (6 Digits)
                 </label>
-                <div className="flex justify-center gap-2">
+                <div className="flex gap-2 justify-between">
                   {otpDigits.map((digit, idx) => (
                     <input
                       key={idx}
-                      ref={(el) => { otpInputRefs.current[idx] = el; }}
+                      ref={(el) => (otpInputRefs.current[idx] = el)}
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
@@ -998,76 +918,365 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                       onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                       onPaste={handleOtpPaste}
-                      className="w-9 h-11 text-center text-lg font-bold bg-white rounded-xl border border-[#E3DCD3] focus:border-[#4F8D26] focus:outline-none transition-all shadow-xs"
-                      aria-label={`Digit ${idx + 1}`}
+                      className="w-10 sm:w-12 h-12 text-center text-lg font-mono font-bold border-2 border-slate-200 rounded-2xl focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 bg-slate-50 transition-all"
                     />
                   ))}
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1">
-                  New Password *
-                </label>
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Lock className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min 8 characters"
-                    autoComplete="new-password"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                  <LashEyeToggle show={showPassword} onClick={() => setShowPassword(!showPassword)} />
-                </div>
-                <div className="mt-1">
+              {/* New Password */}
+              <div className="reference-input rounded-full px-4 sm:px-5 py-2.5 sm:py-3 flex items-center bg-white">
+                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <input 
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="New Password" 
+                  className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-400 focus:outline-none pl-3 font-sans"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  className="text-slate-400 hover:text-brand-500 p-1 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {password && (
+                <div className="px-2">
                   <PasswordStrengthMeter password={password} />
                 </div>
-              </div>
+              )}
 
-              <div>
-                <label className="text-xs font-semibold text-[#5A5046] block mb-1">
-                  Confirm New Password *
-                </label>
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-[#E3DCD3] focus-within:border-[#4F8D26] focus-within:ring-2 focus-within:ring-[#4F8D26]/20 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-                  <Lock className="w-4 h-4 text-[#8C8276] shrink-0" />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    autoComplete="new-password"
-                    required
-                    className="w-full bg-transparent text-sm text-[#2A231C] placeholder:text-[#AAA094] focus:outline-none"
-                  />
-                  <LashEyeToggle show={showConfirmPassword} onClick={() => setShowConfirmPassword(!showConfirmPassword)} />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 bg-[#4F8D26] hover:bg-[#437A1F] active:scale-[0.99] text-white text-sm font-bold tracking-wide rounded-2xl shadow-sm transition-all disabled:opacity-50 cursor-pointer mt-2"
-              >
-                {loading ? 'Updating Password...' : 'Update Password'}
-              </button>
-
-              <div className="text-center pt-2 border-t border-[#E3DCD3]">
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="text-xs text-[#7A7065] hover:text-[#2A231C] font-semibold cursor-pointer"
+              {/* Confirm New Password */}
+              <div className="reference-input rounded-full px-4 sm:px-5 py-2.5 sm:py-3 flex items-center bg-white">
+                <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
+                <input 
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Confirm New Password" 
+                  className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-400 focus:outline-none pl-3 font-sans"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                  className="text-slate-400 hover:text-brand-500 p-1 cursor-pointer"
                 >
-                  ← Back to Log in
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+              </div>
+
+              <div className="pt-2 space-y-2">
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full min-h-[48px] py-3.5 px-4 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-poppins font-bold text-xs uppercase tracking-wider transition-colors shadow-md shadow-brand-500/25 active:scale-95 disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {loading ? 'UPDATING PASSWORD...' : 'UPDATE PASSWORD & SIGN IN'}
+                </button>
+
+                <div className="text-center">
+                  <button 
+                    type="button" 
+                    onClick={() => switchMode('login')}
+                    className="text-xs text-brand-500 hover:text-brand-700 font-bold"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
               </div>
             </form>
           )}
+
+          {/* ================= MODE: VERIFY EMAIL ================= */}
+          {mode === 'verify-email' && (
+            <div className="space-y-4">
+              <div className="bg-red-50/60 border border-red-100 rounded-2xl p-3.5 text-xs text-slate-600 font-sans space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800">Verification Target:</span>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsEditingEmail(!isEditingEmail);
+                      setEditEmailValue(email);
+                    }}
+                    className="text-brand-500 hover:underline flex items-center gap-1 font-bold text-[11px]"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    <span>{isEditingEmail ? 'Cancel' : 'Edit Email'}</span>
+                  </button>
+                </div>
+                <div className="font-mono text-slate-900 font-semibold">{email}</div>
+              </div>
+
+              {isEditingEmail && (
+                <form onSubmit={handleUpdateEmailAndResend} className="p-3 bg-white border border-slate-200 rounded-2xl space-y-2">
+                  <label className="text-[11px] font-bold uppercase text-slate-500 block">Correct Email Address</label>
+                  <input 
+                    type="email"
+                    value={editEmailValue}
+                    onChange={(e) => setEditEmailValue(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-full focus:border-brand-500 focus:outline-none"
+                    placeholder="correct@domain.com"
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={resendLoading}
+                    className="w-full py-2 bg-slate-900 text-white rounded-full text-xs font-bold uppercase tracking-wider hover:bg-brand-500 transition-colors"
+                  >
+                    {resendLoading ? 'Resending...' : 'Update & Resend Code'}
+                  </button>
+                </form>
+              )}
+
+              {/* 6 Digits OTP */}
+              <form onSubmit={handleVerifyEmailSubmit} className="space-y-4">
+                <div>
+                  <label className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block mb-2">
+                    Enter 6-Digit Verification Code
+                  </label>
+                  <div className="flex gap-2 justify-between">
+                    {otpDigits.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        ref={(el) => (otpInputRefs.current[idx] = el)}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                        onPaste={handleOtpPaste}
+                        className="w-10 sm:w-12 h-12 text-center text-lg font-mono font-bold border-2 border-slate-200 rounded-2xl focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 bg-slate-50 transition-all"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={loading || fullOtpString.length < 6}
+                  className="w-full min-h-[48px] py-3.5 px-4 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-poppins font-bold text-xs uppercase tracking-wider transition-colors shadow-md shadow-brand-500/25 active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {loading ? 'VERIFYING CODE...' : 'Verify Email'}
+                </button>
+              </form>
+
+              {/* Resend Code Ticker */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={resendCooldown > 0 || resendLoading}
+                  className={`font-semibold transition-colors ${
+                    resendCooldown > 0 
+                      ? 'text-slate-400 cursor-not-allowed' 
+                      : 'text-brand-500 hover:text-brand-700 underline cursor-pointer'
+                  }`}
+                >
+                  {resendLoading ? 'Dispatching...' : resendCooldown > 0 ? `Resend Code in ${resendCooldown}s` : 'Resend Code'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => switchMode('login')}
+                  className="text-slate-500 hover:text-black font-semibold"
+                >
+                  Sign In with Password
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ================= OR LOGIN WITH SOCIAL ================= */}
+          {(mode === 'login' || mode === 'register') && (
+            <>
+              <div className="relative my-6 text-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200" />
+                </div>
+                <span className="relative bg-white px-3 text-[11px] font-sans font-semibold text-slate-400 tracking-wider uppercase">
+                  OR LOGIN WITH
+                </span>
+              </div>
+
+              {/* Social Authentications (Google, Apple, Facebook) */}
+              <div className="flex items-center justify-center space-x-5 sm:space-x-6">
+                {/* Google Button */}
+                <button 
+                  type="button" 
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                  className="w-12 h-12 rounded-full border border-slate-200 hover:border-brand-500 flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 bg-white active:scale-95 touch-manipulation group cursor-pointer"
+                  title="Sign in with Google"
+                >
+                  <div className="group-hover:scale-110 transition-transform">
+                    <GoogleIcon className="w-5 h-5" />
+                  </div>
+                </button>
+
+                {/* Apple ID Button */}
+                <button 
+                  type="button" 
+                  onClick={() => handleSocialNotification('Apple ID')}
+                  className="w-12 h-12 rounded-full border border-slate-200 hover:border-black flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 bg-white active:scale-95 touch-manipulation group cursor-pointer"
+                  title="Sign in with Apple ID"
+                >
+                  <div className="text-slate-900 group-hover:scale-110 transition-transform">
+                    <AppleIcon className="w-5 h-5" />
+                  </div>
+                </button>
+
+                {/* Facebook Button */}
+                <button 
+                  type="button" 
+                  onClick={() => handleSocialNotification('Facebook')}
+                  className="w-12 h-12 rounded-full border border-slate-200 hover:border-[#1877F2] flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 bg-white active:scale-95 touch-manipulation group cursor-pointer"
+                  title="Sign in with Facebook"
+                >
+                  <div className="group-hover:scale-110 transition-transform">
+                    <FacebookIcon className="w-5 h-5" />
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Bottom Card Brand Microcopy */}
+          <div className="mt-6 text-center text-xs text-slate-400 font-sans">
+            TH3EE Clothing Identity Protection
+          </div>
+
         </div>
-      </motion.div>
+
+      </div>
     </div>
+  );
+
+  // If in desktop modal mode, wrap inside floating backdrop
+  if (isModal) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
+        <div onClick={onClose} className="fixed inset-0" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 14 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 14 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          className="relative z-10 w-full max-w-4xl my-auto"
+        >
+          {portalCard}
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Dedicated Full-Page Mode (for mobile & desktop routes /login, /register, etc.)
+  return (
+    <div className="bg-[#faf5f5] font-sans min-h-screen relative flex flex-col justify-between text-slate-800 antialiased select-none overflow-x-hidden p-0 sm:p-4 md:p-6 lg:p-8">
+      {/* Ambient TH3EE Red Corner Organic Blobs */}
+      <div className="blob-top-left" />
+      <div className="blob-bottom-right" />
+
+      {/* Mobile Notch / Safe Area Spacer */}
+      <div className="h-[env(safe-area-inset-top,0px)] w-full" />
+
+      {/* Header with Authentic TH3EE Brand Logo */}
+      <header className="relative z-20 w-full max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+        <button 
+          type="button" 
+          onClick={() => navigate?.('/')} 
+          className="flex items-center space-x-3 group cursor-pointer"
+        >
+          <div className="px-3.5 py-1.5 rounded-xl bg-brand-500 text-white shadow-md shadow-brand-500/25 flex items-center justify-center transition-transform group-hover:scale-105">
+            <span className="th3ee-logo-text text-base sm:text-lg">
+              <span className="text-white">TH</span>
+              <span className="text-brand-500 bg-white px-[2px] rounded-sm mx-[1px]">3</span>
+              <span className="text-white">EE</span>
+            </span>
+          </div>
+          <div className="hidden xs:block">
+            <span className="text-[10px] tracking-[0.25em] uppercase font-bold text-slate-400 block leading-none">CLOTHING CO.</span>
+          </div>
+        </button>
+
+        {/* Security Status Badge & Back button */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/85 backdrop-blur-md border border-red-100 shadow-sm text-[11px] sm:text-xs font-medium text-slate-600">
+            <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+            <span>Official Portal</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate?.('/')}
+            className="text-xs font-bold text-slate-600 hover:text-brand-500 px-3 py-1 rounded-full bg-white/90 border border-slate-200 shadow-2xs hover:border-brand-500 transition-colors cursor-pointer"
+          >
+            Storefront ✕
+          </button>
+        </div>
+      </header>
+
+      {/* Main Viewport Responsive Container */}
+      <main className="relative z-20 flex-1 flex items-center justify-center w-full px-3 sm:px-4 my-auto py-3 sm:py-6">
+        {portalCard}
+      </main>
+
+      {/* Bottom Bar with Safe Area */}
+      <footer className="relative z-20 px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-1.5 text-center">
+        <div className="font-medium text-slate-600">TH3EE™ CLOTHING CO. // ALL RIGHTS RESERVED</div>
+        <div className="flex items-center space-x-4">
+          <button 
+            type="button" 
+            onClick={() => showNotification?.('TH3EE patron data is encrypted and protected with industry-standard cryptographic keys.')} 
+            className="hover:text-brand-500 transition-colors cursor-pointer"
+          >
+            Privacy
+          </button>
+          <span>•</span>
+          <button 
+            type="button" 
+            onClick={() => showNotification?.('Official TH3EE membership terms: Authentic limited silhouettes and exclusive drops.')} 
+            className="hover:text-brand-500 transition-colors cursor-pointer"
+          >
+            Terms
+          </button>
+          <span>•</span>
+          <span>v3.3</span>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+/**
+ * Backward-compatible Modal wrapper for desktop usage
+ */
+export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
+  isOpen,
+  onClose,
+  initialMode = 'login',
+  onSuccess,
+  showNotification,
+  navigate
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <CustomerAuthPortal
+      isModal={true}
+      isOpen={isOpen}
+      onClose={onClose}
+      initialMode={initialMode}
+      onSuccess={onSuccess}
+      showNotification={showNotification}
+      navigate={navigate}
+    />
   );
 };
 

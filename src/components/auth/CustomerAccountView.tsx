@@ -78,8 +78,11 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
   const [profilePhone, setProfilePhone] = useState(currentUser?.phone || '');
   const [profileSaving, setProfileSaving] = useState(false);
 
-  // Profile Avatar states
-  const [avatarUrl, setAvatarUrl] = useState<string>(currentUser?.avatar_url || currentUser?.profile?.avatar_url || '');
+  // Profile Avatar states with local cache fallback for guaranteed persistence
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => {
+    const cached = typeof window !== 'undefined' && currentUser?.id ? localStorage.getItem(`th3ee_avatar_${currentUser.id}`) : null;
+    return currentUser?.avatar_url || currentUser?.profile?.avatar_url || cached || '';
+  });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -126,7 +129,8 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
     if (currentUser && currentUser.id) {
       setProfileName(currentUser.name || '');
       setProfilePhone(currentUser.phone || '');
-      setAvatarUrl(currentUser.avatar_url || currentUser.profile?.avatar_url || '');
+      const cached = typeof window !== 'undefined' ? localStorage.getItem(`th3ee_avatar_${currentUser.id}`) : null;
+      setAvatarUrl(currentUser.avatar_url || currentUser.profile?.avatar_url || cached || '');
 
       // Load orders
       setOrdersLoading(true);
@@ -144,39 +148,39 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
     }
   }, [currentUser]);
 
-  // If user is not authenticated, show sleek access shield
+  // If user is not authenticated, show sleek Change 2 access card
   if (!currentUser || !currentUser.id) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center p-4 sm:p-6 font-mono">
-        <div className="max-w-md w-full bg-white border-2 border-neutral-900 shadow-2xl p-6 sm:p-8 space-y-6 text-center">
-          <div className="w-12 h-12 bg-neutral-900 text-white flex items-center justify-center mx-auto rounded-full">
-            <UserIcon className="w-6 h-6" />
+      <div className="min-h-[70vh] flex items-center justify-center p-4 sm:p-6 font-sans">
+        <div className="max-w-md w-full bg-white rounded-[28px] sm:rounded-[36px] th3ee-card-shadow p-6 sm:p-8 space-y-6 text-center border border-white">
+          <div className="w-14 h-14 bg-red-50 text-brand-500 flex items-center justify-center mx-auto rounded-full shadow-sm">
+            <UserIcon className="w-7 h-7" />
           </div>
           <div>
-            <span className="text-[10px] font-bold tracking-widest text-[#E51E2B] uppercase">ACCOUNT ACCESS</span>
-            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-neutral-900 mt-1">
+            <span className="text-[11px] font-bold tracking-widest text-brand-500 uppercase font-mono">ACCOUNT ACCESS</span>
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 mt-1 font-poppins">
               CUSTOMER IDENTITY PORTAL
             </h2>
-            <p className="text-xs text-neutral-500 mt-2 leading-relaxed">
-              Sign in to access your order logs, manage saved delivery addresses, and track real-time dispatches.
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed font-sans">
+              Sign in to view your order logs, manage saved delivery addresses, track real-time dispatches, and access your digital loyalty club pass.
             </p>
           </div>
 
           <div className="space-y-3 pt-2">
             <button
               type="button"
-              onClick={() => onOpenAuth('login')}
-              className="w-full py-2.5 bg-neutral-900 text-white hover:bg-[#E51E2B] text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              onClick={() => navigate('/login')}
+              className="w-full min-h-[48px] py-3 bg-brand-500 text-white hover:bg-brand-600 active:scale-95 text-xs font-bold font-poppins uppercase tracking-wider transition-all rounded-full shadow-md shadow-brand-500/25 flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Sign In with Email</span>
+              <span>SIGN IN TO TH3EE</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
-              onClick={() => onOpenAuth('register')}
-              className="w-full py-2.5 bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-50 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+              onClick={() => navigate('/register')}
+              className="w-full min-h-[48px] py-3 bg-white border-2 border-brand-500 text-brand-500 hover:bg-brand-50 active:scale-95 text-xs font-bold font-poppins uppercase tracking-wider transition-all rounded-full cursor-pointer"
             >
-              <span>Create New Account</span>
+              <span>CREATE MEMBER ACCOUNT</span>
             </button>
           </div>
         </div>
@@ -300,6 +304,11 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
       }
 
       setAvatarUrl(resolvedUrl);
+      if (typeof window !== 'undefined' && currentUser?.id) {
+        try {
+          localStorage.setItem(`th3ee_avatar_${currentUser.id}`, resolvedUrl);
+        } catch {}
+      }
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
       setAvatarPreview(null);
       setAvatarFile(null);
@@ -343,6 +352,11 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
       if (error) throw error;
 
       setAvatarUrl('');
+      if (typeof window !== 'undefined' && currentUser?.id) {
+        try {
+          localStorage.removeItem(`th3ee_avatar_${currentUser.id}`);
+        } catch {}
+      }
       handleCancelAvatar();
       if (user && onUserUpdated) {
         onUserUpdated(user);
@@ -393,6 +407,11 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
       } else {
         if (resolvedAvatarUrl) {
           setAvatarUrl(resolvedAvatarUrl);
+          if (typeof window !== 'undefined' && currentUser?.id) {
+            try {
+              localStorage.setItem(`th3ee_avatar_${currentUser.id}`, resolvedAvatarUrl);
+            } catch {}
+          }
           if (avatarPreview) URL.revokeObjectURL(avatarPreview);
           setAvatarPreview(null);
           setAvatarFile(null);
@@ -633,43 +652,57 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 font-mono">
-      {/* Header Banner */}
-      <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 mb-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 font-mono">
+      {/* Mobile Top Bar / Back to Store */}
+      <div className="flex items-center justify-between pb-3.5 mb-5 border-b border-neutral-200 lg:hidden">
+        <button 
+          type="button" 
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1.5 text-xs font-bold text-neutral-700 hover:text-brand-500 uppercase tracking-wider font-mono cursor-pointer"
+        >
+          <span>← Back to Store</span>
+        </button>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-500 bg-brand-50 px-3 py-1 rounded-full border border-red-100">
+          Patron Profile
+        </span>
+      </div>
+
+      {/* Header Banner with Change 2 rounded card styling */}
+      <div className="bg-white border border-slate-100 rounded-[28px] sm:rounded-[36px] p-6 sm:p-8 mb-8 th3ee-card-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           {avatarUrl ? (
             <img
               src={avatarUrl}
               alt={currentUser?.name || 'Patron Avatar'}
-              className="w-14 h-14 rounded-full object-cover border-2 border-neutral-300 shadow-sm shrink-0"
+              className="w-16 h-16 rounded-full object-cover border-2 border-brand-500 shadow-md shrink-0"
               onError={() => {
                 setAvatarUrl('');
               }}
             />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-neutral-900 text-[#F5F4F0] font-black text-lg flex items-center justify-center uppercase shrink-0 shadow-sm border border-neutral-800">
+            <div className="w-16 h-16 rounded-full bg-brand-dark text-white font-black text-xl flex items-center justify-center uppercase shrink-0 shadow-md border-2 border-brand-500">
               {getCustomerInitials(currentUser?.name, currentUser?.email)}
             </div>
           )}
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-black uppercase text-neutral-900">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-xl font-black uppercase text-slate-900 font-poppins">
                 {currentUser?.name || 'TH3EE Patron'}
               </h1>
               {currentUser?.emailVerified ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-200 uppercase">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 uppercase">
                   <CheckCircle className="w-3 h-3" /> Verified Account
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 border border-amber-200 uppercase">
-                  <AlertCircle className="w-3 h-3" /> Unverified Account
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 uppercase">
+                  <AlertCircle className="w-3 h-3" /> Unverified
                 </span>
               )}
             </div>
-            <p className="text-xs text-neutral-500 mt-0.5">{currentUser?.email || ''}</p>
+            <p className="text-xs text-slate-500 font-sans mt-0.5">{currentUser?.email || ''}</p>
             {currentUser?.createdAt && (
-              <p className="text-[10px] text-neutral-400 mt-1">
-                Patron Since: {new Date(currentUser.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+              <p className="text-[10px] text-slate-400 font-mono mt-1">
+                Patron Member Since: {new Date(currentUser.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
               </p>
             )}
           </div>
@@ -678,7 +711,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
         <button
           type="button"
           onClick={onSignOut}
-          className="px-4 py-2 border border-neutral-300 hover:border-neutral-900 text-neutral-700 hover:text-black text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 self-stretch sm:self-auto justify-center cursor-pointer"
+          className="px-5 py-2.5 border border-slate-200 hover:border-brand-500 hover:text-brand-500 text-slate-700 text-xs font-bold uppercase tracking-wider transition-all rounded-full flex items-center gap-2 self-stretch sm:self-auto justify-center cursor-pointer active:scale-95 shadow-2xs"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Sign Out</span>
@@ -686,14 +719,14 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex border-b border-neutral-200 mb-8 overflow-x-auto scrollbar-none">
+      <div className="flex border-b border-slate-200 mb-8 overflow-x-auto scrollbar-none gap-1 sm:gap-2">
         <button
           type="button"
           onClick={() => setActiveTab('orders')}
-          className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all whitespace-nowrap cursor-pointer rounded-t-xl ${
             activeTab === 'orders'
-              ? 'border-[#E51E2B] text-neutral-900'
-              : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              ? 'border-brand-500 text-brand-500 bg-brand-50/50'
+              : 'border-transparent text-slate-400 hover:text-slate-700'
           }`}
         >
           <Package className="w-4 h-4" />
@@ -703,10 +736,10 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('loyalty')}
-          className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all whitespace-nowrap cursor-pointer rounded-t-xl ${
             activeTab === 'loyalty'
-              ? 'border-[#E51E2B] text-neutral-900'
-              : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              ? 'border-brand-500 text-brand-500 bg-brand-50/50'
+              : 'border-transparent text-slate-400 hover:text-slate-700'
           }`}
         >
           <Award className="w-4 h-4" />
@@ -716,10 +749,10 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('addresses')}
-          className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all whitespace-nowrap cursor-pointer rounded-t-xl ${
             activeTab === 'addresses'
-              ? 'border-[#E51E2B] text-neutral-900'
-              : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              ? 'border-brand-500 text-brand-500 bg-brand-50/50'
+              : 'border-transparent text-slate-400 hover:text-slate-700'
           }`}
         >
           <MapPin className="w-4 h-4" />
@@ -729,14 +762,14 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all whitespace-nowrap cursor-pointer rounded-t-xl ${
             activeTab === 'profile'
-              ? 'border-[#E51E2B] text-neutral-900'
-              : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              ? 'border-brand-500 text-brand-500 bg-brand-50/50'
+              : 'border-transparent text-slate-400 hover:text-slate-700'
           }`}
         >
           <UserIcon className="w-4 h-4" />
-          <span>Profile Details</span>
+          <span>Profile & Avatar</span>
         </button>
       </div>
 
@@ -991,21 +1024,21 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
       {activeTab === 'profile' && (
         <div className="space-y-6 max-w-2xl font-mono">
           {/* Card 1: Patron Portrait / Avatar Management */}
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="bg-white border border-slate-100 rounded-[28px] sm:rounded-[36px] p-6 sm:p-8 th3ee-card-shadow space-y-6">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#E51E2B] block">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-500 block font-mono">
                 PATRON IDENTITY
               </span>
-              <h2 className="text-base sm:text-lg font-black uppercase text-neutral-900 tracking-tight mt-0.5">
+              <h2 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight mt-0.5 font-poppins">
                 Profile Portrait & Atelier Avatar
               </h2>
-              <p className="text-xs text-neutral-500 font-sans mt-1">
-                Upload a custom profile photo for your TH3EE patron identity. Stored securely on Cloudflare R2.
+              <p className="text-xs text-slate-500 font-sans mt-1">
+                Upload a custom profile photo for your TH3EE patron identity. Stored securely on Cloudflare R2 and synced to your profile.
               </p>
             </div>
 
             {avatarError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-sans">
+              <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-sans">
                 {avatarError}
               </div>
             )}
@@ -1013,7 +1046,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pt-2">
               {/* Circular Avatar Container */}
               <div className="relative group shrink-0">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-neutral-300 shadow-md bg-neutral-100 flex items-center justify-center relative">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-brand-500 shadow-md bg-slate-100 flex items-center justify-center relative">
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -1031,11 +1064,11 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-900 text-[#F5F4F0] select-none">
-                      <span className="text-xl sm:text-2xl font-black uppercase tracking-wider">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-brand-dark text-white select-none">
+                      <span className="text-xl sm:text-2xl font-black uppercase tracking-wider font-poppins">
                         {getCustomerInitials(currentUser?.name, currentUser?.email)}
                       </span>
-                      <span className="text-[7px] font-mono text-neutral-400 uppercase mt-0.5 tracking-widest">PATRON</span>
+                      <span className="text-[7px] font-mono text-slate-400 uppercase mt-0.5 tracking-widest">PATRON</span>
                     </div>
                   )}
 
@@ -1051,7 +1084,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 p-2 rounded-full bg-neutral-900 text-white hover:bg-[#E51E2B] transition-colors shadow-lg cursor-pointer border-2 border-white"
+                    className="absolute bottom-0 right-0 p-2.5 rounded-full bg-brand-500 text-white hover:bg-brand-600 transition-transform active:scale-95 shadow-md cursor-pointer border-2 border-white"
                     title="Change profile photo"
                   >
                     <CameraIcon className="w-3.5 h-3.5" />
@@ -1072,7 +1105,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
 
                 {avatarPreview ? (
                   <div className="space-y-2">
-                    <p className="text-xs text-neutral-700 font-sans">
+                    <p className="text-xs text-slate-700 font-sans">
                       New photo selected. Confirm to upload and save to your profile.
                     </p>
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -1080,7 +1113,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                         type="button"
                         onClick={handleSaveAvatar}
                         disabled={isUploadingAvatar}
-                        className="px-4 py-2 bg-[#E51E2B] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider transition-colors rounded-xl disabled:opacity-50 cursor-pointer shadow-sm"
+                        className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold font-poppins uppercase tracking-wider transition-all rounded-full disabled:opacity-50 cursor-pointer shadow-md shadow-brand-500/25 active:scale-95"
                       >
                         {isUploadingAvatar ? 'Saving to R2...' : 'Save Photo'}
                       </button>
@@ -1088,7 +1121,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                         type="button"
                         onClick={handleCancelAvatar}
                         disabled={isUploadingAvatar}
-                        className="px-4 py-2 border border-neutral-300 text-neutral-700 hover:bg-neutral-100 text-xs font-bold uppercase tracking-wider transition-colors rounded-xl cursor-pointer"
+                        className="px-4 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold font-poppins uppercase tracking-wider transition-all rounded-full cursor-pointer active:scale-95"
                       >
                         Cancel
                       </button>
@@ -1100,7 +1133,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-2 bg-neutral-900 hover:bg-[#E51E2B] text-white text-xs font-bold uppercase tracking-wider transition-colors rounded-xl cursor-pointer flex items-center gap-2 shadow-xs"
+                        className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold font-poppins uppercase tracking-wider transition-all rounded-full cursor-pointer flex items-center gap-2 shadow-md shadow-brand-500/25 active:scale-95"
                       >
                         <CameraIcon className="w-3.5 h-3.5" />
                         <span>{avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
@@ -1111,14 +1144,14 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                           type="button"
                           onClick={handleRemoveAvatar}
                           disabled={isUploadingAvatar}
-                          className="px-3 py-2 border border-neutral-300 text-red-600 hover:bg-red-50 text-xs font-bold uppercase tracking-wider transition-colors rounded-xl cursor-pointer flex items-center gap-1.5"
+                          className="px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold font-poppins uppercase tracking-wider transition-all rounded-full cursor-pointer flex items-center gap-1.5 active:scale-95"
                         >
                           <TrashIcon className="w-3.5 h-3.5" />
                           <span>Remove</span>
                         </button>
                       )}
                     </div>
-                    <p className="text-[11px] text-neutral-400 font-sans leading-relaxed">
+                    <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
                       Accepted formats: JPEG, PNG, or WebP. Maximum file size: 5 MB.
                     </p>
                   </div>
