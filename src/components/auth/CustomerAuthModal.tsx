@@ -477,16 +477,16 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
 
   // Card Content
   const portalCard = (
-    <div className="w-full max-w-4xl transition-all duration-300 relative">
-      {/* Main Card: Side-by-side on desktop, seamlessly stacked on mobile */}
-      <div className="bg-white rounded-[28px] sm:rounded-[36px] th3ee-card-shadow overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[540px] border border-white relative">
+    <div className="w-full md:max-w-4xl transition-all duration-300 relative min-h-screen md:min-h-0 flex flex-col justify-center">
+      {/* Main Card: Full-screen seamless page on mobile (no curved popup edges), elevated rounded card on desktop */}
+      <div className="bg-white rounded-none md:rounded-[36px] shadow-none md:th3ee-card-shadow overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-screen md:min-h-[540px] border-none md:border md:border-white relative w-full">
         
-        {/* Modal Close Button if in modal mode */}
+        {/* Modal Close Button if in modal mode on desktop */}
         {isModal && onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-500 hover:text-black shadow-md flex items-center justify-center transition-all cursor-pointer border border-slate-200"
+            className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-500 hover:text-black shadow-md hidden md:flex items-center justify-center transition-all cursor-pointer border border-slate-200"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -496,7 +496,7 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
         {/* ========================================================= */}
         {/* LEFT / TOP COLUMN: VECTOR ARTWORK IN TH3EE RED (CHANGE 2) */}
         {/* ========================================================= */}
-        <div className="md:col-span-6 relative bg-gradient-to-br from-[#fff2f2] via-[#ffe8e8] to-[#fff7f7] flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 overflow-hidden min-h-[220px] sm:min-h-[270px] md:min-h-full border-b md:border-b-0 md:border-r border-red-100/60 select-none">
+        <div className="md:col-span-6 relative bg-gradient-to-br from-[#fff2f2] via-[#ffe8e8] to-[#fff7f7] flex flex-col items-center justify-center p-6 sm:p-8 overflow-hidden min-h-[240px] md:min-h-full border-b md:border-b-0 md:border-r border-red-100/60 select-none">
           
           {/* Organic Soft Curved Wave inside the backdrop */}
           <svg className="absolute -top-10 -left-10 w-72 h-72 sm:w-96 sm:h-96 opacity-40 text-red-200 pointer-events-none" viewBox="0 0 200 200" fill="currentColor">
@@ -1162,14 +1162,14 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
   // If in desktop modal mode, wrap inside floating backdrop
   if (isModal) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
-        <div onClick={onClose} className="fixed inset-0" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
+        <div onClick={onClose} className="fixed inset-0 hidden md:block" />
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 14 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 14 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="relative z-10 w-full max-w-4xl my-auto"
+          className="relative z-10 w-full md:max-w-4xl my-auto min-h-screen md:min-h-0 bg-white md:bg-transparent"
         >
           {portalCard}
         </motion.div>
@@ -1179,16 +1179,16 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
 
   // Dedicated Full-Page Mode (for mobile & desktop routes /login, /register, etc.)
   return (
-    <div className="bg-[#faf5f5] font-sans min-h-screen relative flex flex-col justify-between text-slate-800 antialiased select-none overflow-x-hidden p-0 sm:p-4 md:p-6 lg:p-8">
+    <div className="bg-white md:bg-[#faf5f5] font-sans min-h-screen relative flex flex-col justify-between text-slate-800 antialiased select-none overflow-x-hidden p-0 md:p-6 lg:p-8">
       {/* Ambient TH3EE Red Corner Organic Blobs */}
-      <div className="blob-top-left" />
-      <div className="blob-bottom-right" />
+      <div className="blob-top-left hidden md:block" />
+      <div className="blob-bottom-right hidden md:block" />
 
       {/* Mobile Notch / Safe Area Spacer */}
       <div className="h-[env(safe-area-inset-top,0px)] w-full" />
 
       {/* Header with Authentic TH3EE Brand Logo */}
-      <header className="relative z-20 w-full max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+      <header className="relative z-20 w-full max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between border-b border-neutral-100 md:border-b-0 bg-white md:bg-transparent">
         <button 
           type="button" 
           onClick={() => navigate?.('/')} 
@@ -1223,12 +1223,12 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
       </header>
 
       {/* Main Viewport Responsive Container */}
-      <main className="relative z-20 flex-1 flex items-center justify-center w-full px-3 sm:px-4 my-auto py-3 sm:py-6">
+      <main className="relative z-20 flex-1 flex items-stretch md:items-center justify-center w-full p-0 md:px-4 md:my-auto md:py-6">
         {portalCard}
       </main>
 
       {/* Bottom Bar with Safe Area */}
-      <footer className="relative z-20 px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-1.5 text-center">
+      <footer className="relative z-20 px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-1.5 text-center bg-white md:bg-transparent border-t border-neutral-100 md:border-t-0">
         <div className="font-medium text-slate-600">TH3EE™ CLOTHING CO. // ALL RIGHTS RESERVED</div>
         <div className="flex items-center space-x-4">
           <button 
@@ -1267,9 +1267,18 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  // On mobile screens, never open a popup or modal with curved edges!
+  // Immediately navigate to dedicated full page
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    if (navigate) {
+      navigate(initialMode === 'register' ? '/register' : '/login');
+      return null;
+    }
+  }
+
   return (
     <CustomerAuthPortal
-      isModal={true}
+      isModal={typeof window !== 'undefined' && window.innerWidth >= 768}
       isOpen={isOpen}
       onClose={onClose}
       initialMode={initialMode}
