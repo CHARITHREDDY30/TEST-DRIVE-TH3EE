@@ -21,3 +21,6 @@ dist
 # Logs & Backups
 *.log
 scripts/backups/
+
+# InsForge & AI agent skills
+.windsurf

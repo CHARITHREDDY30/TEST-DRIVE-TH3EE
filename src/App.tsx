@@ -1400,7 +1400,7 @@ export default function App() {
                   className="flex items-center justify-between w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
                   <span className="flex items-center gap-2.5">
-                    <span className="text-base select-none">👤</span>
+                    <User className="w-4 h-4 text-[#FF2E2E]" />
                     <span>{currentUser ? `Profile (${currentUser.name ? currentUser.name.split(' ')[0] : 'Patron'})` : 'Sign In / Register'}</span>
                   </span>
                   {currentUser && <span className="w-2 h-2 bg-emerald-500 rounded-full" />}
@@ -1414,7 +1414,7 @@ export default function App() {
                   className="flex items-center justify-between w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
                   <span className="flex items-center gap-2.5">
-                    <span className="text-base select-none">🛍️</span>
+                    <ShoppingBag className="w-4 h-4 text-[#FF2E2E]" />
                     <span>Shopping Bag</span>
                   </span>
                   <span className="bg-black text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
@@ -1426,7 +1426,7 @@ export default function App() {
                   onClick={function() { setIsMobileNavOpen(false); navigate("/"); }} 
                   className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
-                  <span className="text-base select-none">🏠</span>
+                  <Home className="w-4 h-4 text-[#FF2E2E]" />
                   <span>Home</span>
                 </button>
                 <button 
@@ -1434,7 +1434,7 @@ export default function App() {
                   onClick={function() { setIsMobileNavOpen(false); navigate("/shop"); }} 
                   className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
-                  <span className="text-base select-none">🌌</span>
+                  <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
                   <span>Explore / Shop All Drops</span>
                 </button>
                 <button 
@@ -1442,7 +1442,7 @@ export default function App() {
                   onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=T-Shirts"); }} 
                   className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
-                  <span className="text-base select-none">👕</span>
+                  <Shirt className="w-4 h-4 text-[#FF2E2E]" />
                   <span>T-Shirts</span>
                 </button>
                 <button 
@@ -1450,7 +1450,7 @@ export default function App() {
                   onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=Hoodies & Sweats"); }} 
                   className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
-                  <span className="text-base select-none">🔥</span>
+                  <Flame className="w-4 h-4 text-[#FF2E2E]" />
                   <span>Hoodies & Sweats</span>
                 </button>
                 <button 
@@ -1458,7 +1458,7 @@ export default function App() {
                   onClick={function() { setIsMobileNavOpen(false); navigate("/shop?filter=featured"); }} 
                   className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
                 >
-                  <span className="text-base select-none">❤️</span>
+                  <Heart className="w-4 h-4 text-[#FF2E2E]" />
                   <span>Wishlist</span>
                 </button>
                 <button 
@@ -1466,14 +1466,14 @@ export default function App() {
                   onClick={function() { setIsMobileNavOpen(false); window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE", "_blank"); }} 
                   className="flex items-center gap-2.5 w-full text-left py-1 text-neutral-600 hover:text-black"
                 >
-                  <span className="text-base select-none">🚚</span>
+                  <Truck className="w-4 h-4 text-[#FF2E2E]" />
                   <span>Order Support</span>
                 </button>
               </div>
 
               <div className="mt-6 pt-4 border-t border-neutral-200">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-base select-none">🌌</span>
+                  <Compass className="w-4 h-4 text-[#FF2E2E]" />
                   <span className="text-[10px] font-bold uppercase text-neutral-400">13 Universes</span>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
@@ -1750,7 +1750,7 @@ export default function App() {
               className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200 lg:hidden shadow-[0_-4px_16px_rgba(0,0,0,0.06)] pb-[max(0.4rem,env(safe-area-inset-bottom))]"
             >
               <div className="grid grid-cols-6 h-14 items-center px-1">
-                {/* 1. Home — 🏠 */}
+                {/* 1. Home */}
                 <button
                   type="button"
                   onClick={function() { navigate("/"); }}
@@ -1759,11 +1759,11 @@ export default function App() {
                   }`}
                   aria-label="Home"
                 >
-                  <span className="text-lg leading-none select-none">🏠</span>
+                  <Home className="w-5 h-5" />
                   <span className="text-[10px] tracking-tight mt-0.5 font-sans">Home</span>
                 </button>
 
-                {/* 2. Explore / Universes — 🌌 */}
+                {/* 2. Explore / Universes */}
                 <button
                   type="button"
                   onClick={function() { navigate("/shop"); }}
@@ -1772,33 +1772,33 @@ export default function App() {
                   }`}
                   aria-label="Explore Universes"
                 >
-                  <span className="text-lg leading-none select-none">🌌</span>
+                  <Compass className="w-5 h-5" />
                   <span className="text-[10px] tracking-tight mt-0.5 font-sans">Explore</span>
                 </button>
 
-                {/* 3. Search — 🔍 */}
+                {/* 3. Search */}
                 <button
                   type="button"
                   onClick={function() { setIsMobileSearchOpen(true); }}
                   className="flex flex-col items-center justify-center py-1 text-neutral-500 hover:text-neutral-900 transition-colors"
                   aria-label="Search Drops"
                 >
-                  <span className="text-lg leading-none select-none">🔍</span>
+                  <Search className="w-5 h-5" />
                   <span className="text-[10px] tracking-tight mt-0.5 font-sans">Search</span>
                 </button>
 
-                {/* 4. Wishlist — ❤️ */}
+                {/* 4. Wishlist */}
                 <button
                   type="button"
                   onClick={function() { navigate("/shop?filter=featured"); }}
                   className="flex flex-col items-center justify-center py-1 text-neutral-500 hover:text-neutral-900 transition-colors"
                   aria-label="Wishlist"
                 >
-                  <span className="text-lg leading-none select-none">❤️</span>
+                  <Heart className="w-5 h-5" />
                   <span className="text-[10px] tracking-tight mt-0.5 font-sans">Wishlist</span>
                 </button>
 
-                {/* 5. Bag — 🛍️ */}
+                {/* 5. Bag */}
                 <button
                   type="button"
                   onClick={function() { navigate("/bag"); }}
@@ -1808,7 +1808,7 @@ export default function App() {
                   aria-label="Shopping Bag"
                 >
                   <div className="relative">
-                    <span className="text-lg leading-none select-none">🛍️</span>
+                    <ShoppingBag className="w-5 h-5" />
                     {cart.length > 0 && (
                       <span className="absolute -top-1.5 -right-2 bg-[#FF2E2E] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
                         {cart.reduce(function(c, i) { return c + (i.quantity || 1); }, 0)}
@@ -1818,7 +1818,7 @@ export default function App() {
                   <span className="text-[10px] tracking-tight mt-0.5 font-sans">Bag</span>
                 </button>
 
-                {/* 6. Profile — 👤 */}
+                {/* 6. Profile */}
                 <button
                   type="button"
                   onClick={function() {
@@ -1834,7 +1834,7 @@ export default function App() {
                   aria-label="Profile Account"
                 >
                   <div className="relative">
-                    <span className="text-lg leading-none select-none">👤</span>
+                    <User className="w-5 h-5" />
                     {currentUser && (
                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full ring-1 ring-white" />
                     )}
