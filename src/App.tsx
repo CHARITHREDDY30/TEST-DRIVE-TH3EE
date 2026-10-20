@@ -782,7 +782,7 @@ export default function App() {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
         e.preventDefault();
         navigate("/atelier-admin");
-        showNotification("🔓 Stealth Atelier Command Center Engaged");
+        showNotification("Stealth Atelier Command Center Engaged");
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -1019,7 +1019,7 @@ export default function App() {
     if (footerClickRef.current.count >= 3) {
       footerClickRef.current.count = 0;
       navigate("/atelier-admin");
-      showNotification("🔓 Secret Studio Unlocked via Triple-Click");
+      showNotification("Secret Studio Unlocked via Triple-Click");
     } else {
       footerClickRef.current.timer = setTimeout(function() {
         footerClickRef.current.count = 0;
@@ -4066,7 +4066,7 @@ function ShoppingBagDrawer({
             className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center hover:bg-[#E51E2B] transition-colors cursor-pointer shadow-lg no-print"
             title="Close Receipt"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
           <PaymentConfirmationReceipt
             order={{
@@ -6003,7 +6003,7 @@ function SecretAtelierAdminView({
                       : "bg-neutral-100 text-neutral-600 border-neutral-300"
                   )}
                 >
-                  {deliverySettings.isDistancePricingEnabled ? "✓ Enabled (Band Rules)" : "✕ Disabled (Flat ₹" + deliverySettings.defaultDeliveryFee + ")"}
+                  {deliverySettings.isDistancePricingEnabled ? "Enabled (Band Rules)" : "Disabled (Flat ₹" + deliverySettings.defaultDeliveryFee + ")"}
                 </button>
               </div>
             </div>

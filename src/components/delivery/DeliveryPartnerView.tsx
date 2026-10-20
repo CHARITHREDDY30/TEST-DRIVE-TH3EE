@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Order } from '../../types/store';
 import { ordersService } from '../../services/orders.service';
 import { insforge, isInsForgeConfigured } from '../../lib/insforge';
+import { X } from 'lucide-react';
 
 interface DeliveryPartnerViewProps {
   navigate: (path: string) => void;
@@ -220,8 +221,9 @@ export const DeliveryPartnerView: React.FC<DeliveryPartnerViewProps> = ({
                 )}
 
                 {order.deliveryAttempts ? (
-                  <p className="text-[10px] text-amber-700 font-bold">
-                    ⚠️ {order.deliveryAttempts} previous unfulfilled attempt(s)
+                  <p className="text-[10px] text-amber-700 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                    {order.deliveryAttempts} previous unfulfilled attempt(s)
                   </p>
                 ) : null}
               </div>
@@ -272,9 +274,10 @@ export const DeliveryPartnerView: React.FC<DeliveryPartnerViewProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedOrder(null)}
-                className="text-xs text-neutral-400 hover:text-black font-bold"
+                className="text-xs text-neutral-400 hover:text-black font-bold p-1 cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -370,9 +373,10 @@ export const DeliveryPartnerView: React.FC<DeliveryPartnerViewProps> = ({
                   setIsFailModalOpen(false);
                   setSelectedOrder(null);
                 }}
-                className="text-xs text-neutral-400 hover:text-black font-bold"
+                className="text-xs text-neutral-400 hover:text-black font-bold p-1 cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

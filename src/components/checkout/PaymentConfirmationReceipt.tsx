@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { X } from 'lucide-react';
 import { ReceiptBarcode } from '../common/PassQRCodes';
 
 export interface ConfirmedOrderReceiptData {
@@ -102,8 +103,8 @@ export const PaymentConfirmationReceipt: React.FC<PaymentConfirmationReceiptProp
     return (
       <div className="max-w-md mx-auto px-4 py-16 font-mono text-center">
         <div className="bg-white border border-neutral-300 rounded-3xl p-8 shadow-xl space-y-6">
-          <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto text-xl font-bold">
-            ✕
+          <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+            <X className="w-7 h-7" />
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-red-600 block">

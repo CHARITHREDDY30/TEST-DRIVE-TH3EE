@@ -74,8 +74,9 @@ export const VerifyPassView: React.FC<VerifyPassViewProps> = ({ navigate, onExpl
               <span className="text-[10px] tracking-wider text-neutral-300 uppercase font-mono px-2.5 py-1 bg-neutral-900 border border-neutral-700 rounded-md">
                 PASS ID: TH3EE-{memberId}
               </span>
-              <span className="text-[9px] text-emerald-400 font-mono mt-1 font-bold">
-                ✓ ACTIVE & VERIFIED
+              <span className="text-[9px] text-emerald-400 font-mono mt-1 font-bold flex items-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1.5 animate-pulse" />
+                ACTIVE & VERIFIED
               </span>
             </div>
           </div>
@@ -190,12 +191,12 @@ export const VerifyPassView: React.FC<VerifyPassViewProps> = ({ navigate, onExpl
                   : 'bg-neutral-900/60 border-neutral-800 text-neutral-300'
               }`}>
                 {isRewardReady ? (
-                  <p className="font-bold">
-                    🎉 REWARD UNLOCKED: Customer has collected all 7 stamps and is entitled to a complimentary heavyweight streetwear t-shirt drop.
+                  <p className="font-bold text-amber-300 tracking-wide">
+                    REWARD UNLOCKED: Customer has collected all 7 stamps and is entitled to a complimentary heavyweight streetwear t-shirt drop.
                   </p>
                 ) : (
-                  <p>
-                    ⚡ IN PROGRESS: {stampsRemaining} more qualifying delivered order{stampsRemaining === 1 ? '' : 's'} required to complete the loyalty cycle.
+                  <p className="tracking-wide">
+                    IN PROGRESS: {stampsRemaining} more qualifying delivered order{stampsRemaining === 1 ? '' : 's'} required to complete the loyalty cycle.
                   </p>
                 )}
               </div>

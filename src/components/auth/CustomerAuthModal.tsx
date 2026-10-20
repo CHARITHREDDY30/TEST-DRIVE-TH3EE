@@ -1215,9 +1215,10 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
           <button
             type="button"
             onClick={() => navigate?.('/')}
-            className="text-xs font-bold text-slate-600 hover:text-brand-500 px-3 py-1 rounded-full bg-white/90 border border-slate-200 shadow-2xs hover:border-brand-500 transition-colors cursor-pointer"
+            className="text-xs font-bold text-slate-600 hover:text-brand-500 px-3 py-1 rounded-full bg-white/90 border border-slate-200 shadow-2xs hover:border-brand-500 transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            Storefront ✕
+            <span>Storefront</span>
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </header>

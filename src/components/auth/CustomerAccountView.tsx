@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Truck,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  X
 } from './icons';
 import { LoyaltyClubCard } from '../loyalty/LoyaltyClubCard';
 import { authService } from '../../services/auth.service';
@@ -1192,8 +1193,9 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                     Permanent Email Address
                   </label>
                   {currentUser?.emailVerified ? (
-                    <span className="text-[9px] font-bold text-emerald-700 uppercase">
-                      ✓ Verified
+                    <span className="text-[9px] font-bold text-emerald-700 uppercase flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      Verified
                     </span>
                   ) : (
                     <span className="text-[9px] font-bold text-amber-700 uppercase">
@@ -1252,8 +1254,9 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                 type="button"
                 onClick={() => setIsAddressModalOpen(false)}
                 className="text-neutral-400 hover:text-neutral-900 p-1 cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -1413,8 +1416,9 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                 type="button"
                 onClick={() => setSelectedOrder(null)}
                 className="text-neutral-400 hover:text-neutral-900 p-1 cursor-pointer"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

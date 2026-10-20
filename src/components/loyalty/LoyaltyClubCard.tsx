@@ -61,6 +61,13 @@ const RefreshIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }
   </svg>
 );
 
+const CloseIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
 /**
  * Streetwear T-Shirt Silhouette Vector Illustration
  * Renders an authentic crewneck oversized t-shirt silhouette for TH3EE loyalty stamps.
@@ -823,8 +830,9 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                   type="button"
                   onClick={() => setIsVerifyModalOpen(false)}
                   className="text-neutral-400 hover:text-neutral-900 text-sm font-bold p-1 cursor-pointer"
+                  aria-label="Close"
                 >
-                  ✕
+                  <CloseIcon className="w-4 h-4" />
                 </button>
               </div>
 
@@ -852,7 +860,10 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-neutral-500 uppercase">Verification Status</span>
-                  <span className="text-xs font-bold text-emerald-600">✓ Atelier Verified</span>
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <CheckIcon className="w-3.5 h-3.5" />
+                    Atelier Verified
+                  </span>
                 </div>
               </div>
 
@@ -901,7 +912,7 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                   }}
                   className="flex-1 py-2.5 bg-[#E51E2B] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-md"
                 >
-                  Open Full Pass View ↗
+                  Open Full Pass View
                 </button>
                 <button
                   type="button"
@@ -1065,8 +1076,9 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                   type="button"
                   onClick={() => setIsClaimModalOpen(false)}
                   className="text-neutral-400 hover:text-neutral-900 p-1 cursor-pointer"
+                  aria-label="Close"
                 >
-                  ✕
+                  <CloseIcon className="w-4 h-4" />
                 </button>
               </div>
 

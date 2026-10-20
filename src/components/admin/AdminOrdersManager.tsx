@@ -711,7 +711,7 @@ export const AdminOrdersManager: React.FC<AdminOrdersManagerProps> = ({
                 onClick={() => setSelectedOrder(null)}
                 className="text-xs text-neutral-400 hover:text-black font-bold uppercase px-2 py-1 border border-neutral-200"
               >
-                ✕ Close
+                Close
               </button>
             </div>
 
