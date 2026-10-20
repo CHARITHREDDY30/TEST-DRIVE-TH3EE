@@ -43,12 +43,41 @@ import {
   reportsService,
   cartService,
   deliveryService,
+  customerService,
+  razorpayService,
   DEFAULT_DELIVERY_SETTINGS,
   broadcastCatalogChange,
   onCatalogSync
 } from './services';
+import { CustomerAuthModal, type AuthMode } from './components/auth/CustomerAuthModal';
+import { CustomerAccountView } from './components/auth/CustomerAccountView';
+import { BagView } from './components/bag/BagView';
+import { CheckoutView } from './components/checkout/CheckoutView';
+import { PaymentConfirmationReceipt } from './components/checkout/PaymentConfirmationReceipt';
+import { OrderTrackingView } from './components/tracking/OrderTrackingView';
+import { DeliveryPartnerView } from './components/delivery/DeliveryPartnerView';
+import { AdminOrdersManager } from './components/admin/AdminOrdersManager';
+import { AdminLoyaltyManager } from './components/admin/AdminLoyaltyManager';
+import { VerifyPassView } from './components/loyalty/VerifyPassView';
+import type { AuthUser } from './types/auth';
 
 // Self-contained zero-dependency inline SVG icons
+function Award({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+    </svg>
+  );
+}
+
+function User({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </svg>
+  );
+}
+
 function ShoppingBag({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -322,10 +351,34 @@ function Loader2({ className = "w-4 h-4" }) {
   );
 }
 
-function buildWhatsAppCartOrderUrl(cart, subtotal, discount, coupon, shipping, total, deliveryInfo, phoneNum, domain) {
+function CreditCard({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
+    </svg>
+  );
+}
+
+function CheckCircle2({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+    </svg>
+  );
+}
+
+function ShieldCheck({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+    </svg>
+  );
+}
+
+function buildWhatsAppCartOrderUrl(cart, subtotal, discount, coupon, shipping, total, deliveryInfo, phoneNum, domain, customOrderRef?: string) {
   const targetPhone = phoneNum || INITIAL_WHATSAPP_PHONE;
   const siteDomain = domain || INITIAL_OFFICIAL_DOMAIN;
-  const orderRef = "TH3EE-" + Date.now().toString(36).toUpperCase() + "-" + Math.floor(1000 + Math.random() * 9000);
+  const orderRef = customOrderRef || ("TH3EE-" + Date.now().toString(36).toUpperCase() + "-" + Math.floor(1000 + Math.random() * 9000));
 
   const productEntries = cart.map(function(item, idx) {
     const itemPrice = Number(item.price) || 0;
@@ -362,6 +415,7 @@ function buildWhatsAppCartOrderUrl(cart, subtotal, discount, coupon, shipping, t
     "• Shipping: " + (shipping === 0 ? "FREE EXPRESS SHIPPING" : "Rs. " + Number(shipping).toFixed(2)),
     "• Final Total: Rs. " + Number(total).toFixed(2),
     "",
+    "Address & Delivery:",
     addressBlock,
     "",
     "Please confirm product availability and share the payment details."
@@ -430,7 +484,43 @@ function parseCurrentRoute(): RouteState {
     slug = decodeURIComponent(path.replace("/products/", ""));
   } else if (path.indexOf("/shop") === 0) {
     view = "shop";
-  } else if (path.indexOf("/atelier-admin") === 0 || path.indexOf("/owner") === 0) {
+  } else if (path === "/bag" || path.indexOf("/bag") === 0 || path === "/cart" || path.indexOf("/cart") === 0) {
+    view = "bag";
+  } else if (path === "/checkout" || path.indexOf("/checkout") === 0) {
+    view = "checkout";
+  } else if (path.indexOf("/orders/") === 0 && path.indexOf("/track") !== -1) {
+    view = "order-track";
+    const match = path.match(/^\/orders\/([^/]+)\/track/);
+    if (match) slug = decodeURIComponent(match[1]);
+  } else if (path.indexOf("/track/") === 0) {
+    view = "order-track";
+    slug = decodeURIComponent(path.replace("/track/", ""));
+  } else if (path === "/track" || path.indexOf("/track") === 0) {
+    view = "order-track";
+    slug = query["order"] || query["id"] || null;
+  } else if (path.indexOf("/delivery-partner") === 0 || path.indexOf("/delivery") === 0) {
+    view = "delivery-partner";
+  } else if (path.indexOf("/verify-pass") === 0 || path.indexOf("/pass") === 0) {
+    view = "verify-pass";
+  } else if (path.indexOf("/account") === 0) {
+    view = "account";
+  } else if (path.indexOf("/login") === 0 || path.indexOf("/register") === 0) {
+    // Direct visits or reloads on /login or /register should always land cleanly on Home!
+    // The user can sign in via Header or when continuing to Checkout.
+    view = "home";
+    try {
+      if (typeof window !== "undefined") {
+        const basePath = getAppBasePath();
+        window.history.replaceState({}, "", basePath || "/");
+      }
+    } catch {}
+  } else if (path.indexOf("/verify-email") === 0) {
+    view = "verify-email";
+  } else if (path.indexOf("/forgot-password") === 0) {
+    view = "forgot-password";
+  } else if (path.indexOf("/reset-password") === 0) {
+    view = "reset-password";
+  } else if (path.indexOf("/atelier-admin") === 0 || path.indexOf("/owner") === 0 || path.indexOf("/admin") === 0 || path.indexOf("/secret-atelier") === 0) {
     view = "admin";
   }
 
@@ -571,7 +661,41 @@ export default function App() {
       slug = decodeURIComponent(pathPart.replace("/products/", ""));
     } else if (pathPart.indexOf("/shop") === 0) {
       view = "shop";
-    } else if (pathPart.indexOf("/atelier-admin") === 0 || pathPart.indexOf("/owner") === 0) {
+    } else if (pathPart === "/bag" || pathPart.indexOf("/bag") === 0 || pathPart === "/cart" || pathPart.indexOf("/cart") === 0) {
+      view = "bag";
+    } else if (pathPart === "/checkout" || pathPart.indexOf("/checkout") === 0) {
+      view = "checkout";
+    } else if (pathPart.indexOf("/orders/") === 0 && pathPart.indexOf("/track") !== -1) {
+      view = "order-track";
+      const match = pathPart.match(/^\/orders\/([^/]+)\/track/);
+      if (match) slug = decodeURIComponent(match[1]);
+    } else if (pathPart.indexOf("/track/") === 0) {
+      view = "order-track";
+      slug = decodeURIComponent(pathPart.replace("/track/", ""));
+    } else if (pathPart === "/track" || pathPart.indexOf("/track") === 0) {
+      view = "order-track";
+      slug = query["order"] || query["id"] || null;
+    } else if (pathPart.indexOf("/delivery-partner") === 0 || pathPart.indexOf("/delivery") === 0) {
+      view = "delivery-partner";
+    } else if (pathPart.indexOf("/verify-pass") === 0 || pathPart.indexOf("/pass") === 0) {
+      view = "verify-pass";
+    } else if (pathPart.indexOf("/account") === 0) {
+      view = "account";
+    } else if (pathPart.indexOf("/login") === 0) {
+      setAuthModalInitialMode("login");
+      setIsAuthModalOpen(true);
+      return;
+    } else if (pathPart.indexOf("/register") === 0) {
+      setAuthModalInitialMode("register");
+      setIsAuthModalOpen(true);
+      return;
+    } else if (pathPart.indexOf("/verify-email") === 0) {
+      view = "verify-email";
+    } else if (pathPart.indexOf("/forgot-password") === 0) {
+      view = "forgot-password";
+    } else if (pathPart.indexOf("/reset-password") === 0) {
+      view = "reset-password";
+    } else if (pathPart.indexOf("/atelier-admin") === 0 || pathPart.indexOf("/owner") === 0 || pathPart.indexOf("/admin") === 0 || pathPart.indexOf("/secret-atelier") === 0) {
       view = "admin";
     }
 
@@ -613,24 +737,121 @@ export default function App() {
     return function() { window.removeEventListener("keydown", handleKeyDown); };
   }, []);
 
-  // Customer isolated cart state
+  // Customer authentication and isolated cart state
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalInitialMode, setAuthModalInitialMode] = useState<AuthMode>('login');
   const [cart, setCart] = useState<CartItem[]>(function() {
     return cartService.loadCustomerCart(null);
   });
   const [isBagOpen, setIsBagOpen] = useState(false);
   const [isBagBumping, setIsBagBumping] = useState(false);
 
-  // Sync isolated cart if authenticated customer signs in
+  // Sync isolated cart if authenticated customer signs in & listen to real-time auth changes
   useEffect(function() {
+    let isMounted = true;
     authService.getCurrentUser().then(function(user) {
-      if (user && user.id) {
+      if (isMounted && user && user.id) {
+        setCurrentUser(user);
         setCurrentUserId(user.id);
         const userCart = cartService.mergeGuestCartIntoUserCart(user.id);
         setCart(userCart);
       }
     }).catch(function() {});
+
+    const unsubscribe = authService.onAuthStateChange(function(event, user) {
+      if (!isMounted) return;
+      if (user && user.id) {
+        setCurrentUser(user);
+        setCurrentUserId(user.id);
+        const userCart = cartService.mergeGuestCartIntoUserCart(user.id);
+        setCart(userCart);
+      } else {
+        setCurrentUser(null);
+        setCurrentUserId(null);
+        setCart(cartService.loadCustomerCart(null));
+      }
+    });
+
+    return function() {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
+
+  // Sync routeState for direct auth URLs (verification links, reset passwords)
+  useEffect(function() {
+    if (routeState.view === "verify-email") {
+      setAuthModalInitialMode("verify-email");
+      setIsAuthModalOpen(true);
+    } else if (routeState.view === "forgot-password") {
+      setAuthModalInitialMode("forgot-password");
+      setIsAuthModalOpen(true);
+    } else if (routeState.view === "reset-password") {
+      setAuthModalInitialMode("reset-password");
+      setIsAuthModalOpen(true);
+    }
+  }, [routeState.view]);
+
+  // Guard Checkout: Require login when patron continues to checkout
+  useEffect(function() {
+    if (routeState.view === "checkout" && !currentUser) {
+      try {
+        sessionStorage.setItem('th3ee_auth_redirect', '/checkout');
+      } catch {}
+      setAuthModalInitialMode('login');
+      setIsAuthModalOpen(true);
+      showNotification({
+        type: 'info',
+        message: 'Please sign in or create an account to proceed to checkout.'
+      });
+    }
+  }, [routeState.view, currentUser, showNotification]);
+
+  // Handle emailed verification links (insforge_status=success|error, insforge_type=verify_email)
+  useEffect(function() {
+    if (typeof window === "undefined") return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const status = params.get("insforge_status");
+      const type = params.get("insforge_type");
+      const err = params.get("insforge_error");
+
+      if (type === "verify_email") {
+        if (status === "success") {
+          showNotification("Email verified successfully! Please sign in with your password.");
+          setAuthModalInitialMode("login");
+          setIsAuthModalOpen(true);
+        } else if (status === "error") {
+          showNotification({
+            type: "error",
+            message: err || "Email verification link was invalid or has expired."
+          });
+          setAuthModalInitialMode("verify-email");
+          setIsAuthModalOpen(true);
+        }
+
+        // Clean up url search parameters without reloading
+        const url = new URL(window.location.href);
+        url.searchParams.delete("insforge_status");
+        url.searchParams.delete("insforge_type");
+        url.searchParams.delete("insforge_error");
+        window.history.replaceState({}, "", url.pathname + (url.search || ""));
+      }
+    } catch (e) {
+      console.warn("Auth link param detection notice:", e);
+    }
+  }, [showNotification]);
+
+  const handleSignOut = async function() {
+    await authService.signOut();
+    setCurrentUser(null);
+    setCurrentUserId(null);
+    setCart(cartService.loadCustomerCart(null));
+    showNotification("You have been signed out.");
+    navigate("/");
+  };
 
   // Persist cart items strictly into the customer's isolated storage
   useEffect(function() {
@@ -813,7 +1034,7 @@ export default function App() {
                   type="button"
                   onClick={function() {
                     setToastNotification(null);
-                    setIsBagOpen(true);
+                    navigate("/bag");
                   }}
                   className="bg-white text-black hover:bg-[#E51E2B] hover:text-white px-3 py-1.5 text-[10px] font-bold uppercase rounded-full transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-[#E51E2B]"
                 >
@@ -822,7 +1043,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E51E2B] shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-[#E51E2B] shrink-0" />
                 <span className="truncate">{typeof toastNotification === "object" ? toastNotification.message : toastNotification}</span>
               </>
             )}
@@ -859,8 +1080,8 @@ export default function App() {
 
       {/* Navigation Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 lg:gap-3 xl:gap-6 flex-nowrap min-w-0 w-full">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button 
               type="button"
               onClick={function() { setIsMobileNavOpen(true); }}
@@ -872,11 +1093,11 @@ export default function App() {
             <Th3eeBrandLogo onClick={function() { navigate("/"); }} domain={storeBrand.domain} />
           </div>
 
-          <nav className="hidden lg:flex items-center gap-7 font-mono text-xs uppercase tracking-wider font-bold">
+          <nav className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-7 font-mono text-xs uppercase tracking-wider font-bold shrink-0 whitespace-nowrap">
             <button 
               type="button"
               onClick={function() { navigate("/"); }} 
-              className={`py-6 relative transition-colors ${routeState.view === "home" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
+              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap ${routeState.view === "home" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
             >
               Home
               {routeState.view === "home" && (
@@ -886,7 +1107,7 @@ export default function App() {
             <button 
               type="button"
               onClick={function() { navigate("/shop"); }} 
-              className={`py-6 relative transition-colors ${routeState.view === "shop" && !routeState.query.category && !routeState.query.universe ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
+              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap ${routeState.view === "shop" && !routeState.query.category && !routeState.query.universe ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
             >
               Shop All
               {routeState.view === "shop" && !routeState.query.category && !routeState.query.universe && (
@@ -896,7 +1117,7 @@ export default function App() {
             <button 
               type="button"
               onClick={function() { navigate("/shop?category=T-Shirts"); }} 
-              className={`py-6 relative transition-colors ${routeState.query.category === "T-Shirts" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
+              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap ${routeState.query.category === "T-Shirts" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
             >
               T-Shirts
               {routeState.query.category === "T-Shirts" && (
@@ -906,7 +1127,7 @@ export default function App() {
             <button 
               type="button"
               onClick={function() { navigate("/shop?category=Hoodies & Sweats"); }} 
-              className={`py-6 relative transition-colors ${routeState.query.category === "Hoodies & Sweats" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
+              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap ${routeState.query.category === "Hoodies & Sweats" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
             >
               Hoodies & Sweats
               {routeState.query.category === "Hoodies & Sweats" && (
@@ -914,11 +1135,11 @@ export default function App() {
               )}
             </button>
 
-            <div className="relative py-6" ref={categoriesDropdownRef}>
+            <div className="relative py-5 xl:py-6" ref={categoriesDropdownRef}>
               <button 
                 type="button"
                 onClick={function() { setIsCategoriesDropdownOpen(!isCategoriesDropdownOpen); }}
-                className={`flex items-center gap-1.5 transition-colors ${isCategoriesDropdownOpen ? "text-[#E51E2B]" : "text-neutral-800 hover:text-[#E51E2B]"}`}
+                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap ${isCategoriesDropdownOpen ? "text-[#E51E2B]" : "text-neutral-800 hover:text-[#E51E2B]"}`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B] inline-block" />
                 <span>Categories</span>
@@ -953,18 +1174,18 @@ export default function App() {
             </div>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 flex-nowrap">
             <div className="relative hidden md:block" ref={searchContainerRef}>
               <form onSubmit={handleNavSearchSubmit} className="relative flex items-center">
                 <div className="relative flex items-center bg-white border border-neutral-300 rounded-full shadow-2xs hover:border-neutral-400 focus-within:border-black focus-within:ring-1 focus-within:ring-black transition-all">
-                  <Search className="w-3.5 h-3.5 text-neutral-400 ml-3 shrink-0" />
+                  <Search className="w-3.5 h-3.5 text-neutral-400 ml-2.5 sm:ml-3 shrink-0" />
                   <input 
                     type="text" 
                     placeholder="Search products..." 
                     value={navSearchQuery}
                     onChange={function(e) { setNavSearchQuery(e.target.value); }}
                     onFocus={function() { setIsNavSearchFocused(true); }}
-                    className="w-32 lg:w-40 xl:w-48 pl-2 pr-7 py-1.5 text-xs font-sans text-neutral-900 placeholder:text-neutral-400 bg-transparent rounded-full focus:outline-none"
+                    className="w-28 sm:w-32 lg:w-36 xl:w-44 focus:w-40 xl:focus:w-52 pl-2 pr-7 py-1.5 text-xs font-sans text-neutral-900 placeholder:text-neutral-400 bg-transparent rounded-full focus:outline-none transition-all duration-200"
                   />
                   {navSearchQuery && (
                     <button 
@@ -1015,12 +1236,12 @@ export default function App() {
               )}
             </div>
 
-            <div className="hidden lg:block h-5 w-px bg-neutral-200 shrink-0" aria-hidden="true" />
+            <div className="hidden xl:block h-5 w-px bg-neutral-200 shrink-0" aria-hidden="true" />
 
             <button 
               type="button"
               onClick={function() { window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE%2C%20I%20need%20help%20with%20an%20order", "_blank"); }}
-              className="hidden lg:flex text-neutral-700 hover:text-[#E51E2B] text-xs font-mono uppercase tracking-wider font-semibold items-center gap-1.5 transition-colors whitespace-nowrap"
+              className="hidden xl:flex text-neutral-700 hover:text-[#E51E2B] text-xs font-mono uppercase tracking-wider font-semibold items-center gap-1.5 transition-colors whitespace-nowrap shrink-0"
             >
               <Truck className="w-3.5 h-3.5 text-[#E51E2B]" />
               <span>Order Support</span>
@@ -1036,12 +1257,38 @@ export default function App() {
               <Search className="w-4 h-4" />
             </button>
 
+            {/* Customer Account / Sign In Button */}
+            <button
+              type="button"
+              onClick={function() {
+                if (currentUser) {
+                  navigate("/account");
+                } else {
+                  setAuthModalInitialMode("login");
+                  setIsAuthModalOpen(true);
+                }
+              }}
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider text-neutral-800 hover:text-[#E51E2B] rounded-full hover:bg-neutral-100 transition-colors shrink-0 whitespace-nowrap"
+              title={currentUser ? `Account: ${currentUser.name || currentUser.email}` : "Sign In to TH3EE"}
+              aria-label={currentUser ? "Customer Account" : "Sign In"}
+            >
+              <div className="relative">
+                <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                {currentUser && (
+                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full ring-1 ring-white" />
+                )}
+              </div>
+              <span className="hidden sm:inline font-bold">
+                {currentUser ? (currentUser.name ? currentUser.name.split(' ')[0] : 'ACCOUNT') : 'SIGN IN'}
+              </span>
+            </button>
+
             <motion.button
               type="button"
-              onClick={function() { setIsBagOpen(true); }}
+              onClick={function() { navigate("/bag"); }}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
-              className="flex items-center space-x-1.5 sm:space-x-2 bg-neutral-900 text-white hover:bg-[#E51E2B] px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-mono uppercase tracking-wider transition-colors shadow-xs shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1"
+              className="flex items-center space-x-1.5 sm:space-x-2 bg-neutral-900 text-white hover:bg-[#E51E2B] px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-mono uppercase tracking-wider transition-colors shadow-xs shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1 whitespace-nowrap"
             >
               <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline font-bold">BAG</span>
@@ -1086,6 +1333,41 @@ export default function App() {
               </form>
 
               <div className="mt-6 space-y-3.5 text-xs uppercase font-bold tracking-wider">
+                <button 
+                  type="button" 
+                  onClick={function() { 
+                    setIsMobileNavOpen(false); 
+                    if (currentUser) {
+                      navigate("/account");
+                    } else {
+                      setAuthModalInitialMode("login");
+                      setIsAuthModalOpen(true);
+                    }
+                  }} 
+                  className="flex items-center justify-between w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
+                >
+                  <span className="flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    <span>{currentUser ? `Account (${currentUser.name ? currentUser.name.split(' ')[0] : 'Patron'})` : 'Sign In / Register'}</span>
+                  </span>
+                  {currentUser && <span className="w-2 h-2 bg-emerald-500 rounded-full" />}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={function() { 
+                    setIsMobileNavOpen(false); 
+                    navigate("/bag");
+                  }} 
+                  className="flex items-center justify-between w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
+                >
+                  <span className="flex items-center gap-2">
+                    <ShoppingBag className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    <span>Shopping Bag</span>
+                  </span>
+                  <span className="bg-black text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    {cart.reduce(function(c, i) { return c + (i.quantity || 1); }, 0)}
+                  </span>
+                </button>
                 <button type="button" onClick={function() { setIsMobileNavOpen(false); navigate("/"); }} className="block w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100">Home</button>
                 <button type="button" onClick={function() { setIsMobileNavOpen(false); navigate("/shop"); }} className="block w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100">Shop All Drops</button>
                 <button type="button" onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=T-Shirts"); }} className="block w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100">T-Shirts</button>
@@ -1124,7 +1406,7 @@ export default function App() {
 
       {/* Main View Router */}
       <main className="flex-1 w-full overflow-x-hidden">
-        {routeState.view === "home" && (
+        {(routeState.view === "home" || ["login", "register", "forgot-password", "reset-password"].includes(routeState.view)) && (
           <HomePageView 
             productsList={productsList}
             universeCategoriesList={universeCategoriesList}
@@ -1174,6 +1456,87 @@ export default function App() {
             setUniverseCategoriesList={setUniverseCategoriesList}
             deliverySettings={deliverySettings}
             setDeliverySettings={setDeliverySettings}
+            navigate={navigate}
+            showNotification={showNotification}
+          />
+        )}
+
+        {routeState.view === "verify-pass" && (
+          <VerifyPassView 
+            navigate={navigate}
+          />
+        )}
+
+        {routeState.view === "account" && (
+          <CustomerAccountView 
+            currentUser={currentUser}
+            onSignOut={handleSignOut}
+            onOpenAuth={function(mode) {
+              setAuthModalInitialMode(mode || 'login');
+              setIsAuthModalOpen(true);
+            }}
+            navigate={navigate}
+            showNotification={showNotification}
+            onUserUpdated={function(updatedUser) {
+              setCurrentUser(updatedUser);
+            }}
+          />
+        )}
+
+        {routeState.view === "bag" && (
+          <BagView 
+            cart={cart}
+            currentUser={currentUser}
+            cartSubtotal={cartSubtotal}
+            deliveryCharge={deliveryCharge}
+            hasFreeShipping={hasFreeShipping}
+            freeShippingLimit={deliverySettings.freeDeliveryThreshold || storeBrand.freeShippingLimit || INITIAL_FREE_SHIPPING_LIMIT}
+            onAdjustQty={function(id, color, size, delta) { adjustBagQuantity(id, size, color, delta); }}
+            onRemoveItem={function(id, color, size) { removeBagItem(id, size, color); }}
+            onClearBag={function() {
+              setCart([]);
+              cartService.clearCustomerCart(currentUser?.id || null);
+            }}
+            navigate={navigate}
+            showNotification={showNotification}
+            onOpenAuthModal={function() {
+              setAuthModalInitialMode('login');
+              setIsAuthModalOpen(true);
+            }}
+          />
+        )}
+
+        {routeState.view === "checkout" && (
+          <CheckoutView 
+            cart={cart}
+            currentUser={currentUser}
+            cartSubtotal={cartSubtotal}
+            deliveryCharge={deliveryCharge}
+            hasFreeShipping={hasFreeShipping}
+            freeShippingLimit={deliverySettings.freeDeliveryThreshold || storeBrand.freeShippingLimit || INITIAL_FREE_SHIPPING_LIMIT}
+            onClearBag={function() {
+              setCart([]);
+              cartService.clearCustomerCart(currentUser?.id || null);
+            }}
+            navigate={navigate}
+            showNotification={showNotification}
+            onOpenAuthModal={function() {
+              setAuthModalInitialMode('login');
+              setIsAuthModalOpen(true);
+            }}
+          />
+        )}
+
+        {routeState.view === "order-track" && (
+          <OrderTrackingView 
+            orderIdentifier={routeState.slug || routeState.query.order || routeState.query.id || ""}
+            navigate={navigate}
+            showNotification={showNotification}
+          />
+        )}
+
+        {routeState.view === "delivery-partner" && (
+          <DeliveryPartnerView 
             navigate={navigate}
             showNotification={showNotification}
           />
@@ -1238,25 +1601,21 @@ export default function App() {
         navigate={navigate}
       />
 
-      {/* Shopping Bag Drawer */}
-      <AnimatePresence>
-        {isBagOpen && (
-          <ShoppingBagDrawer 
-            cart={cart}
-            onClose={function() { setIsBagOpen(false); }}
-            onAdjustQty={adjustBagQuantity}
-            onRemoveItem={removeBagItem}
-            cartSubtotal={cartSubtotal}
-            deliveryCharge={deliveryCharge}
-            estimatedCartTotal={estimatedCartTotal}
-            hasFreeShipping={hasFreeShipping}
-            freeShippingLimit={storeBrand.freeShippingLimit}
-            whatsappPhone={storeBrand.whatsappPhone}
-            domain={storeBrand.domain}
-            deliverySettings={deliverySettings}
-          />
-        )}
-      </AnimatePresence>
+
+      {/* Customer Identity & Authentication Modal */}
+      <CustomerAuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={function() { 
+          setIsAuthModalOpen(false); 
+        }}
+        initialMode={authModalInitialMode}
+        onSuccess={function(user) {
+          setCurrentUser(user);
+          setCurrentUserId(user.id);
+        }}
+        showNotification={showNotification}
+        navigate={navigate}
+      />
 
       {/* Route-Aware Single Storefront Footer */}
       <StoreFooter 
@@ -2476,40 +2835,19 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
                   variant="pdp"
                   price={sellingPrice}
                 />
-                <OrderViaWhatsAppButton
-                  label="DIRECT ORDER ON WHATSAPP"
-                  displayPhone={storeBrand.whatsappDisplay}
+                <button
+                  type="button"
                   onClick={function() {
-                    const resolvedThumb = cartService.resolveVariantThumbnail(product, chosenColor);
-                    const singleCart = [
-                      Object.assign({}, product, {
-                        selectedSize: chosenSize,
-                        selectedColor: chosenColor,
-                        quantity: 1,
-                        thumbnail: resolvedThumb,
-                        price: product.price,
-                        originalPrice: product.originalPrice
-                      })
-                    ];
-                    ordersService.createOrder({
-                      customerName: 'Direct WhatsApp Customer',
-                      phone: 'Pending WhatsApp Confirmation',
-                      shippingAddress: {},
-                      itemsSummary: `${product.name} (${chosenColor}/${chosenSize}) x1`,
-                      subtotal: product.price,
-                      totalAmount: product.price,
-                      items: [{
-                        productId: product.id,
-                        productName: product.name,
-                        variantTitle: `${chosenColor} / ${chosenSize}`,
-                        unitPrice: product.price,
-                        quantity: 1
-                      }]
-                    }).catch(function(e) { console.warn('Direct order persist note:', e); });
-                    const url = buildWhatsAppCartOrderUrl(singleCart, product.price, 0, "", 0, product.price, null, storeBrand.whatsappPhone, storeBrand.domain);
-                    window.open(url, "_blank");
+                    const added = addToBag(product, chosenSize, chosenColor);
+                    if (added) {
+                      navigate("/checkout");
+                    }
                   }}
-                />
+                  className="w-full bg-neutral-900 hover:bg-black text-white py-3 px-4 rounded-full font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-2"
+                >
+                  <CreditCard className="w-4 h-4 text-white" />
+                  <span>BUY NOW • PROCEED TO CHECKOUT</span>
+                </button>
               </>
             )}
           </div>
@@ -2932,14 +3270,6 @@ function StoreFooter({
             >
               Catalog
             </button>
-            <span className="text-neutral-300">•</span>
-            <button 
-              type="button" 
-              onClick={function() { navigate("/atelier-admin"); }}
-              className="text-neutral-400 hover:text-[#E51E2B] text-[10px] uppercase font-mono transition-colors"
-            >
-              Atelier Desk
-            </button>
           </div>
         </div>
       </footer>
@@ -2981,6 +3311,13 @@ function StoreFooter({
               <button type="button" onClick={function() { navigate("/shop?universe=anime"); }} className="text-left hover:text-[#E51E2B] transition-colors">Anime Shonen Saga Drops</button>
               <button type="button" onClick={function() { navigate("/shop?category=T-Shirts"); }} className="text-left hover:text-[#E51E2B] transition-colors">Heavyweight T-Shirts (180–240 GSM)</button>
               <button type="button" onClick={function() { navigate("/shop?category=Hoodies & Sweats"); }} className="text-left hover:text-[#E51E2B] transition-colors">French Terry Hoodies (300–350 GSM)</button>
+              <button type="button" onClick={function() { navigate("/track"); }} className="text-left hover:text-[#E51E2B] transition-colors flex items-center gap-1 font-bold text-neutral-800 pt-1">
+                <Truck className="w-3.5 h-3.5 text-[#E51E2B]" />
+                <span>Track Your Order</span>
+              </button>
+              <button type="button" onClick={function() { navigate("/delivery-partner"); }} className="text-left hover:text-[#E51E2B] transition-colors text-[10px] text-neutral-400">
+                Delivery Partner Portal
+              </button>
             </div>
           </div>
 
@@ -3015,7 +3352,6 @@ function StoreFooter({
           <div 
             onClick={onSecretClick}
             className="font-medium text-neutral-500 text-center sm:text-left select-none cursor-pointer hover:text-neutral-700 transition-colors"
-            title="Stealth Trigger: Triple-click to open Atelier Master Studio"
           >
             © {new Date().getFullYear()} TH3EE ({storeBrand.domain}). ALL RIGHTS RESERVED.
           </div>
@@ -3023,13 +3359,6 @@ function StoreFooter({
             <span className="hover:text-black cursor-pointer">TERMS OF SERVICE</span>
             <span>•</span>
             <span className="hover:text-black cursor-pointer">PRIVACY POLICY</span>
-            <span>•</span>
-            <span 
-              onClick={function() { navigate("/atelier-admin"); }}
-              className="hover:text-[#E51E2B] cursor-pointer text-neutral-300"
-            >
-              ATELIER DESK [⌘+⇧+A]
-            </span>
           </div>
         </div>
       </div>
@@ -3039,9 +3368,13 @@ function StoreFooter({
 
 function ShoppingBagDrawer({ 
   cart, 
+  currentUser,
   onClose, 
   onAdjustQty, 
   onRemoveItem,
+  onClearBag,
+  navigate,
+  showNotification,
   cartSubtotal, 
   deliveryCharge, 
   estimatedCartTotal, 
@@ -3068,6 +3401,92 @@ function ShoppingBagDrawer({
       landmark: "" 
     };
   });
+
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isPayingOnline, setIsPayingOnline] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [confirmedOrder, setConfirmedOrder] = useState<{
+    orderNumber: string;
+    amount: number;
+    paymentId?: string;
+    channel: 'online' | 'whatsapp';
+  } | null>(null);
+
+  // Pre-fill delivery details from authenticated customer's profile / saved addresses
+  useEffect(function() {
+    if (currentUser) {
+      customerService.getSavedAddresses(currentUser).then(function(addrs) {
+        if (Array.isArray(addrs) && addrs.length > 0) {
+          setSavedAddresses(addrs);
+          const def = addrs.find(function(a: any) { return a.isDefault; }) || addrs[0];
+          if (def) {
+            setSelectedAddressId(def.id);
+            setDeliveryInfo({
+              fullName: def.fullName || currentUser.name || '',
+              phone: def.phone || currentUser.phone || '',
+              houseNo: def.houseNo || '',
+              street: def.street || '',
+              area: def.area || '',
+              landmark: def.landmark || '',
+              city: def.city || '',
+              state: def.state || '',
+              pincode: def.pincode || '',
+              address: `${def.houseNo ? def.houseNo + ', ' : ''}${def.street || ''}`
+            });
+            return;
+          }
+        }
+      }).catch(function() {});
+
+      setDeliveryInfo(function(prev) {
+        return Object.assign({}, prev, {
+          fullName: prev.fullName || currentUser.name || '',
+          phone: prev.phone || currentUser.phone || ''
+        });
+      });
+    } else {
+      setSavedAddresses([]);
+      setSelectedAddressId('');
+    }
+  }, [currentUser]);
+
+  const handleSelectSavedAddress = function(addrId: string) {
+    setSelectedAddressId(addrId);
+    if (addrId === 'new') {
+      setDeliveryInfo({
+        fullName: currentUser?.name || '',
+        phone: currentUser?.phone || '',
+        houseNo: '',
+        street: '',
+        area: '',
+        landmark: '',
+        city: '',
+        state: '',
+        pincode: '',
+        address: ''
+      });
+      return;
+    }
+    const found = savedAddresses.find(function(a: any) { return a.id === addrId; });
+    if (found) {
+      setDeliveryInfo({
+        fullName: found.fullName || currentUser?.name || '',
+        phone: found.phone || currentUser?.phone || '',
+        houseNo: found.houseNo || '',
+        street: found.street || '',
+        area: found.area || '',
+        landmark: found.landmark || '',
+        city: found.city || '',
+        state: found.state || '',
+        pincode: found.pincode || '',
+        address: `${found.houseNo ? found.houseNo + ', ' : ''}${found.street || ''}`
+      });
+      setAddressErrors({});
+    }
+  };
+
   const [addressErrors, setAddressErrors] = useState<Record<string, string>>({});
   const [showAddressForm, setShowAddressForm] = useState(true);
   const [couponCode, setCouponCode] = useState("");
@@ -3165,21 +3584,48 @@ function ShoppingBagDrawer({
   };
 
   const handleProceedWhatsApp = async function() {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || isPlacingOrder || isPayingOnline) return;
     
     // Address is strictly compulsory
     if (!validateDeliveryAddress()) {
       return;
     }
 
-    const itemsSummary = cart.map(function(it) {
+    setIsPlacingOrder(true);
+    setOrderError(null);
+
+    // Validate customer record prior to order creation for authenticated customers
+    let resolvedCustomerId: string | null = null;
+    if (currentUser) {
+      try {
+        resolvedCustomerId = await customerService.ensureCustomerRecord(currentUser, {
+          name: deliveryInfo.fullName || currentUser.name,
+          phone: deliveryInfo.phone || currentUser.phone
+        });
+        if (!resolvedCustomerId) {
+          throw new Error('Unable to resolve verified customer profile. Please refresh and try again.');
+        }
+      } catch (custErr: any) {
+        console.error('Customer profile validation error:', custErr);
+        setOrderError(custErr?.message || 'Customer account verification failed. Please try again.');
+        setIsPlacingOrder(false);
+        return;
+      }
+    }
+
+    const uniqueOrderNumber = "TH3EE-WA-" + Date.now().toString(36).toUpperCase() + "-" + Math.floor(1000 + Math.random() * 9000);
+
+    const itemsSummary = cart.map(function(it: any) {
       return `${it.name} (${it.selectedColor}/${it.selectedSize}) x${it.quantity}`;
     }).join(', ');
 
     try {
       await ordersService.createOrder({
-        customerName: deliveryInfo.fullName || 'WhatsApp Customer',
-        phone: deliveryInfo.phone || 'Pending',
+        orderNumber: uniqueOrderNumber,
+        customerId: resolvedCustomerId || currentUser?.id, // customerId: currentUser?.id
+        customerEmail: currentUser?.email,
+        customerName: deliveryInfo.fullName || currentUser?.name || 'WhatsApp Customer',
+        phone: deliveryInfo.phone || currentUser?.phone || 'Pending',
         shippingAddress: deliveryInfo,
         itemsSummary: itemsSummary,
         subtotal: cartSubtotal,
@@ -3187,7 +3633,8 @@ function ShoppingBagDrawer({
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         shippingAmount: deliveryCharge,
         totalAmount: finalCartTotal,
-        items: cart.map(function(it) {
+        paymentStatus: 'unpaid',
+        items: cart.map(function(it: any) {
           return {
             productId: it.id,
             productName: it.name,
@@ -3197,13 +3644,225 @@ function ShoppingBagDrawer({
           };
         })
       });
-    } catch (e) {
-      console.warn('Cart order DB persist note:', e);
+
+      // Clear shopping bag ONLY AFTER order has been successfully saved by backend
+      if (onClearBag) {
+        onClearBag();
+      }
+
+      if (showNotification) {
+        showNotification({
+          type: "success",
+          message: `Order #${uniqueOrderNumber} registered! Opening WhatsApp...`
+        });
+      }
+
+      const url = buildWhatsAppCartOrderUrl(
+        cart,
+        cartSubtotal,
+        couponDiscount,
+        appliedCoupon ? appliedCoupon.code : "",
+        deliveryCharge,
+        finalCartTotal,
+        deliveryInfo,
+        whatsappPhone,
+        domain,
+        uniqueOrderNumber
+      );
+      window.open(url, "_blank");
+
+      setConfirmedOrder({
+        orderNumber: uniqueOrderNumber,
+        amount: finalCartTotal,
+        channel: 'whatsapp'
+      });
+    } catch (e: any) {
+      console.error('WhatsApp checkout error:', e);
+      setOrderError(e?.message || "Failed to register order. Your shopping bag has been kept intact. Please check your connection and retry.");
+      if (showNotification) {
+        showNotification({
+          type: "error",
+          message: e?.message || "Failed to create order. Bag retained."
+        });
+      }
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
+
+  const handleProceedRazorpay = async function() {
+    if (cart.length === 0 || isPlacingOrder || isPayingOnline) return;
+
+    if (!validateDeliveryAddress()) {
+      return;
     }
 
-    const url = buildWhatsAppCartOrderUrl(cart, cartSubtotal, couponDiscount, appliedCoupon ? appliedCoupon.code : "", deliveryCharge, finalCartTotal, deliveryInfo, whatsappPhone, domain);
-    window.open(url, "_blank");
+    setIsPayingOnline(true);
+    setIsPlacingOrder(true);
+    setOrderError(null);
+
+    // Validate customer record prior to order creation for authenticated customers
+    let resolvedCustomerId: string | null = null;
+    if (currentUser) {
+      try {
+        resolvedCustomerId = await customerService.ensureCustomerRecord(currentUser, {
+          name: deliveryInfo.fullName || currentUser.name,
+          phone: deliveryInfo.phone || currentUser.phone
+        });
+        if (!resolvedCustomerId) {
+          throw new Error('Unable to resolve verified customer profile. Please refresh and try again.');
+        }
+      } catch (custErr: any) {
+        console.error('Customer profile validation error:', custErr);
+        setOrderError(custErr?.message || 'Customer account verification failed. Please try again.');
+        setIsPlacingOrder(false);
+        setIsPayingOnline(false);
+        return;
+      }
+    }
+
+    try {
+      const paymentOrder = await razorpayService.createPaymentOrder({
+        customerId: resolvedCustomerId || currentUser?.id,
+        customerEmail: currentUser?.email,
+        customerName: deliveryInfo.fullName || currentUser?.name || 'Customer',
+        customerPhone: deliveryInfo.phone || currentUser?.phone || '',
+        deliveryInfo: deliveryInfo,
+        cart: cart,
+        subtotal: cartSubtotal,
+        discountAmount: couponDiscount,
+        shippingAmount: deliveryCharge,
+        totalAmount: finalCartTotal,
+        couponCode: appliedCoupon?.code
+      });
+
+      if (!paymentOrder.success || !paymentOrder.orderId) {
+        throw new Error(paymentOrder.error || 'Unable to initialize online checkout.');
+      }
+
+      await razorpayService.launchCheckout(
+        {
+          orderId: paymentOrder.orderId,
+          orderNumber: paymentOrder.orderNumber,
+          razorpayOrderId: paymentOrder.razorpayOrderId,
+          amount: paymentOrder.amount,
+          currency: paymentOrder.currency,
+          keyId: paymentOrder.keyId,
+          customerName: deliveryInfo.fullName || currentUser?.name || '',
+          customerEmail: currentUser?.email || '',
+          customerPhone: deliveryInfo.phone || currentUser?.phone || ''
+        },
+        {
+          onSuccess: async function(paymentResult) {
+            try {
+              const verifyRes = await razorpayService.verifyPayment({
+                orderId: paymentOrder.orderId,
+                orderNumber: paymentOrder.orderNumber,
+                razorpayOrderId: paymentResult.razorpay_order_id,
+                razorpayPaymentId: paymentResult.razorpay_payment_id,
+                razorpaySignature: paymentResult.razorpay_signature,
+                amount: finalCartTotal
+              });
+
+              if (verifyRes.verified) {
+                if (onClearBag) {
+                  onClearBag();
+                }
+                setConfirmedOrder({
+                  orderNumber: paymentOrder.orderNumber,
+                  amount: finalCartTotal,
+                  paymentId: paymentResult.razorpay_payment_id,
+                  channel: 'online'
+                });
+                if (showNotification) {
+                  showNotification({
+                    type: "success",
+                    message: `Payment verified! Order #${paymentOrder.orderNumber} confirmed.`
+                  });
+                }
+              } else {
+                setOrderError('Payment verification could not be confirmed. Please contact support.');
+              }
+            } catch (vErr: any) {
+              setOrderError(vErr?.message || 'Payment signature verification failed.');
+            } finally {
+              setIsPayingOnline(false);
+              setIsPlacingOrder(false);
+            }
+          },
+          onDismiss: function() {
+            setIsPayingOnline(false);
+            setIsPlacingOrder(false);
+            if (showNotification) {
+              showNotification({
+                type: "info",
+                message: "Payment cancelled. Your bag items remain saved."
+              });
+            }
+          },
+          onError: function(err: any) {
+            setIsPayingOnline(false);
+            setIsPlacingOrder(false);
+            setOrderError(err?.message || "Payment processing failed. Your shopping bag has been kept intact.");
+            if (showNotification) {
+              showNotification({
+                type: "error",
+                message: err?.message || "Payment failed. Bag retained."
+              });
+            }
+          }
+        }
+      );
+    } catch (err: any) {
+      setIsPayingOnline(false);
+      setIsPlacingOrder(false);
+      setOrderError(err?.message || "Failed to initialize payment gateway. Bag retained.");
+      if (showNotification) {
+        showNotification({
+          type: "error",
+          message: err?.message || "Checkout error. Bag retained."
+        });
+      }
+    }
   };
+
+  // Order Confirmed Screen (Ticket Silhouette Receipt)
+  if (confirmedOrder) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs font-mono p-4 flex items-center justify-center">
+        <div className="relative w-full max-w-lg my-auto">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center hover:bg-[#E51E2B] transition-colors cursor-pointer shadow-lg no-print"
+            title="Close Receipt"
+          >
+            ✕
+          </button>
+          <PaymentConfirmationReceipt
+            order={{
+              orderNumber: confirmedOrder.orderNumber,
+              amount: confirmedOrder.amount,
+              paymentId: confirmedOrder.paymentId,
+              paymentMethod: 'Razorpay Verified (UPI/Card/NetBanking)',
+              paymentStatus: 'paid',
+              createdAt: new Date().toISOString(),
+              deliveryEstimate: 'Estimated Dispatch: 24–48 Hours via BlueDart Air Express'
+            }}
+            onTrackOrder={(orderNum) => {
+              onClose();
+              if (navigate) navigate(`/orders/${orderNum}/track`);
+            }}
+            onViewOrders={() => {
+              onClose();
+              if (navigate) navigate('/account');
+            }}
+            onContinueShopping={onClose}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden font-mono">
@@ -3225,7 +3884,7 @@ function ShoppingBagDrawer({
         >
           <div className="flex-1 overflow-y-auto pr-1">
             <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-neutral-200">
-              <h3 className="text-xs font-bold uppercase tracking-wider">TH3EE BAG ({cart.reduce(function(acc, i) { return acc + (Number(i.quantity) || 1); }, 0)})</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider">TH3EE BAG ({cart.reduce(function(acc: number, i: any) { return acc + (Number(i.quantity) || 1); }, 0)})</h3>
               <button type="button" onClick={onClose} className="p-1 hover:text-red-600 transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
@@ -3261,7 +3920,7 @@ function ShoppingBagDrawer({
                     </p>
                   </motion.div>
                 ) : (
-                  cart.map(function(item) {
+                  cart.map(function(item: any) {
                     const itemThumb = item.thumbnail || (item.images && item.images[0]) || (item.colors && item.colors[0]?.images?.[0]);
                     return (
                       <motion.div
@@ -3344,6 +4003,29 @@ function ShoppingBagDrawer({
                   </span>
                 </div>
 
+                {/* Saved Address Selector */}
+                {savedAddresses.length > 0 && (
+                  <div className="mb-2.5">
+                    <label className="text-[10px] uppercase font-bold text-neutral-600 block mb-1">
+                      Saved Addresses
+                    </label>
+                    <select
+                      value={selectedAddressId}
+                      onChange={function(e) { handleSelectSavedAddress(e.target.value); }}
+                      className="w-full p-2 border border-neutral-300 bg-neutral-50 text-xs rounded-xs font-mono"
+                    >
+                      {savedAddresses.map(function(addr: any) {
+                        return (
+                          <option key={addr.id} value={addr.id}>
+                            {addr.label || 'Address'}: {addr.houseNo}, {addr.city} ({addr.pincode}){addr.isDefault ? ' [DEFAULT]' : ''}
+                          </option>
+                        );
+                      })}
+                      <option value="new">+ Enter a different delivery address</option>
+                    </select>
+                  </div>
+                )}
+
                 <div className="space-y-2 text-xs">
                   <div>
                     <input 
@@ -3360,11 +4042,13 @@ function ShoppingBagDrawer({
                   </div>
 
                   <div>
+                    <label htmlFor="field-phone" className="text-[10px] uppercase font-bold text-neutral-500 block mb-1">
+                      Mobile Number *
+                    </label>
                     <input 
                       id="field-phone"
                       type="tel" 
                       inputMode="numeric"
-                      placeholder="10-Digit Mobile Number (e.g. 9876543210) *" 
                       value={deliveryInfo.phone || ""} 
                       onChange={function(e) { handleAddressChange("phone", e.target.value); }} 
                       className={"w-full p-2 border bg-neutral-50 text-xs rounded-xs " + (addressErrors.phone ? "border-red-500 bg-red-50/30" : "border-neutral-300")}
@@ -3540,12 +4224,60 @@ function ShoppingBagDrawer({
               <span>Total</span>
               <span>Rs. {finalCartTotal.toFixed(2)}</span>
             </div>
-            <OrderViaWhatsAppButton
+
+            {orderError && (
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xs flex items-start gap-1.5 leading-snug">
+                <span className="font-bold text-red-800 shrink-0">Note:</span>
+                <span className="flex-1">{orderError}</span>
+              </div>
+            )}
+
+            {/* Online Payment (Razorpay: UPI, Cards, NetBanking, PhonePe) */}
+            <button
+              type="button"
+              onClick={handleProceedRazorpay}
+              disabled={cart.length === 0 || isPlacingOrder}
+              className="w-full py-3.5 px-4 bg-[#E51E2B] hover:bg-black disabled:bg-neutral-300 text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-xs"
+            >
+              {isPayingOnline ? (
+                <>
+                  <Loader2 className="w-4 h-4 text-white" />
+                  <span>Connecting to Razorpay...</span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 text-white" />
+                  <span>Pay Online (UPI / Cards / PhonePe)</span>
+                </>
+              )}
+            </button>
+
+            {/* WhatsApp Alternative (Order registered in DB, payment on WhatsApp) */}
+            <button
+              type="button"
               onClick={handleProceedWhatsApp}
-              disabled={cart.length === 0}
-              label="Order via WhatsApp"
-            />
-            <div className="text-center pt-1">
+              disabled={cart.length === 0 || isPlacingOrder}
+              className="w-full py-2.5 px-4 border border-neutral-900 bg-white hover:bg-neutral-50 disabled:border-neutral-300 disabled:text-neutral-400 text-neutral-900 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
+            >
+              {isPlacingOrder && !isPayingOnline ? (
+                <>
+                  <Loader2 className="w-4 h-4 text-neutral-600" />
+                  <span>Registering Order...</span>
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>Order via WhatsApp</span>
+                </>
+              )}
+            </button>
+
+            <div className="flex items-center justify-center gap-2 text-[10px] text-neutral-400 pt-0.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Encrypted Checkout • Official TH3EE Atelier</span>
+            </div>
+
+            <div className="text-center pt-0.5">
               <a 
                 href="mailto:support@th3ee.in?subject=TH3EE%20Bag%20Support"
                 className="text-[10px] text-neutral-500 hover:text-black transition-colors inline-flex items-center gap-1"
@@ -3742,7 +4474,11 @@ function SecretAtelierAdminView({
 
   useEffect(function() {
     if (isUnlocked) {
-      if (activeTab === "coupons") {
+      if (activeTab === "orders") {
+        ordersService.getOrders().then(function(ords) {
+          if (ords) setOrdersList(ords);
+        }).catch(function() {});
+      } else if (activeTab === "coupons") {
         setCouponsLoading(true);
         couponsService.getCoupons().then(function(coupons) {
           setCouponsList(coupons);
@@ -3764,11 +4500,16 @@ function SecretAtelierAdminView({
 
   useEffect(function() {
     let isMounted = true;
-    authService.getCurrentUser().then(function(user) {
+    authService.getCurrentUser().then(async function(user) {
       if (isMounted && user && user.id) {
-        setAdminUser(user);
-        setIsUnlocked(true);
-      } else if (isMounted) {
+        const isRealAdmin = await authService.verifyAdminStatus(user);
+        if (isMounted && isRealAdmin) {
+          setAdminUser(user);
+          setIsUnlocked(true);
+          return;
+        }
+      }
+      if (isMounted) {
         setAdminUser(null);
         setIsUnlocked(false);
       }
@@ -3785,14 +4526,26 @@ function SecretAtelierAdminView({
     setAuthLoading(true);
     setAuthError("");
     const { user, error } = await authService.signIn(adminEmail.trim(), adminPassword);
-    setAuthLoading(false);
     if (error || !user || !user.id) {
-      setAuthError(error ? error.message : "Authentication failed. Check your InsForge credentials.");
-    } else {
-      setAdminUser(user);
-      setIsUnlocked(true);
-      showNotification("Welcome back to Atelier Studio (" + (user.email || 'Admin') + ")");
+      setAuthLoading(false);
+      setAuthError(error ? error.message : "Authentication failed. Check your credentials.");
+      return;
     }
+
+    // STRICT SERVER-SIDE ADMIN AUTHORIZATION VERIFICATION
+    // Customers can NEVER unlock the admin console:
+    const isRealAdmin = await authService.verifyAdminStatus(user);
+    setAuthLoading(false);
+    if (!isRealAdmin) {
+      setAuthError("403 Forbidden: Access Denied. This account does not possess Atelier administrator privileges.");
+      setIsUnlocked(false);
+      setAdminUser(null);
+      return;
+    }
+
+    setAdminUser(user);
+    setIsUnlocked(true);
+    showNotification("Welcome back to Atelier Studio (" + (user.email || 'Admin') + ")");
   };
 
   const handleLock = async function() {
@@ -4275,6 +5028,7 @@ function SecretAtelierAdminView({
           { id: "delivery", label: "Delivery & Distance Fees", icon: Truck },
           { id: "orders", label: "Orders & Tracking (" + ordersList.length + ")", icon: Truck },
           { id: "coupons", label: "Coupons (" + couponsList.length + ")", icon: Tag },
+          { id: "loyalty", label: "Reward Club", icon: Award },
           { id: "reports", label: "Sales & Performance", icon: BarChart3 },
           { id: "settings", label: "Store Identity & WhatsApp", icon: SlidersHorizontal }
         ].map(function(tab) {
@@ -5223,56 +5977,13 @@ function SecretAtelierAdminView({
 
       {/* TAB 4: ORDERS & TRACKING */}
       {activeTab === "orders" && (
-        <div className="space-y-4">
-          <div className="bg-neutral-50 p-3.5 border border-neutral-200">
-            <h2 className="text-sm font-bold uppercase text-neutral-900">Orders & WhatsApp Tracking Desk</h2>
-            <p className="text-[11px] text-neutral-500">Track and advance order fulfillment for WhatsApp orders.</p>
-          </div>
-
-          <div className="bg-white border border-neutral-200 divide-y divide-neutral-200">
-            {ordersList.map(function(order) {
-              return (
-                <div key={order.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs">{order.id}</span>
-                      <span className={"text-[9px] font-bold px-2 py-0.5 uppercase " + (
-                        order.status === "Delivered" ? "bg-emerald-100 text-emerald-800" :
-                        order.status === "Dispatched" ? "bg-blue-100 text-blue-800" :
-                        order.status === "In Production" ? "bg-amber-100 text-amber-800" : "bg-neutral-100 text-neutral-800"
-                      )}>
-                        {order.status}
-                      </span>
-                    </div>
-                    <div className="text-xs text-neutral-800 font-bold">{order.customerName} • {order.phone}</div>
-                    <div className="text-[11px] text-neutral-500">{order.items}</div>
-                    <div className="text-[10px] text-neutral-400">Total: Rs. {order.total} • Tracking: {order.courier} ({order.trackingNumber})</div>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-end sm:self-auto">
-                    <button
-                      type="button"
-                      onClick={function() { handleAdvanceOrderStatus(order.id); }}
-                      className="px-3 py-1.5 bg-neutral-900 text-white text-xs font-bold uppercase hover:bg-[#E51E2B] transition-colors"
-                    >
-                      Advance Status
-                    </button>
-                    {order.trackingUrl && (
-                      <a
-                        href={order.trackingUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1.5 border border-neutral-300 text-xs font-bold uppercase hover:bg-neutral-100 transition-colors"
-                      >
-                        Track
-                      </a>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <AdminOrdersManager 
+          ordersList={ordersList}
+          setOrdersList={setOrdersList}
+          currentUser={adminUser}
+          navigate={navigate}
+          showNotification={showNotification}
+        />
       )}
 
       {/* TAB 5: COUPONS */}
@@ -5459,6 +6170,14 @@ function SecretAtelierAdminView({
             )}
           </div>
         </div>
+      )}
+
+      {/* TAB: REWARD CLUB */}
+      {activeTab === "loyalty" && (
+        <AdminLoyaltyManager
+          currentUser={adminUser}
+          showNotification={showNotification}
+        />
       )}
 
       {/* TAB 6: SALES & PERFORMANCE */}

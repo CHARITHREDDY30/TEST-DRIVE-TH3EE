@@ -11,3 +11,6 @@ export * from './catalogSync';
 export * from './mappers';
 export * from './cart.service';
 export * from './delivery.service';
+export * from './customer.service';
+export * from './razorpay.service';
+export * from './loyalty.service';

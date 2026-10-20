@@ -412,12 +412,27 @@ export function buildWhatsAppCartOrderUrl(
   return `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
 }
 
+/**
+ * Clears cart items for the specified customer identity and legacy storage.
+ */
+export function clearCustomerCart(userId?: string | null): void {
+  if (typeof window === 'undefined') return;
+  const isolatedKey = getCustomerStorageKey(userId);
+  try {
+    localStorage.removeItem(isolatedKey);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch (err) {
+    console.warn('Failed to clear customer cart:', err);
+  }
+}
+
 export const cartService = {
   getGuestCartToken,
   getCustomerStorageKey,
   resolveVariantThumbnail,
   loadCustomerCart,
   saveCustomerCart,
+  clearCustomerCart,
   addProductToCart,
   adjustVariantQuantity,
   removeVariantFromCart,

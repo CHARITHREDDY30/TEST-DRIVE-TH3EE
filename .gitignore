@@ -18,4 +18,6 @@ dist
 .qwen
 .roo
 .trae
-.windsurf
+# Logs & Backups
+*.log
+scripts/backups/

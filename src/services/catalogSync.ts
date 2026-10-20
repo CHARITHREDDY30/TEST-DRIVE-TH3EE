@@ -5,8 +5,9 @@
  */
 
 export interface CatalogSyncEvent {
-  type: 'CATALOG_UPDATED' | 'STOCK_STATUS_CHANGED' | 'PRODUCT_SAVED' | 'PRODUCT_DELETED' | 'INVENTORY_STEP';
+  type: 'CATALOG_UPDATED' | 'STOCK_STATUS_CHANGED' | 'PRODUCT_SAVED' | 'PRODUCT_DELETED' | 'INVENTORY_STEP' | 'ORDER_PLACED' | 'ORDER_UPDATED';
   productId?: string;
+  orderId?: string;
   inStock?: boolean;
   timestamp: number;
 }

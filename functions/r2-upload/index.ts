@@ -21,31 +21,6 @@ export default async function(req: Request): Promise<Response> {
       edgeFunctionToken: userToken
     });
 
-    // Check user authentication
-    const { data: userData } = await client.auth.getCurrentUser();
-    const userId = userData?.user?.id || (userData as any)?.id;
-    if (!userId) {
-      return new Response(JSON.stringify({ error: 'Unauthorized: Admin authentication required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Verify admin role in admin_users
-    const { data: adminRecord } = await client.database
-      .from('admin_users')
-      .select('role, is_active')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (!adminRecord || adminRecord.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Forbidden: Admin privilege required' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
     const body = await req.json();
     const { filename, contentType, base64Data, folder } = body;
 
@@ -54,6 +29,35 @@ export default async function(req: Request): Promise<Response> {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+
+    const isAvatarUpload = folder === 'avatars' || folder === 'profile';
+
+    // Verify user authentication
+    const { data: userData } = await client.auth.getCurrentUser();
+    const userId = userData?.user?.id || (userData as any)?.id;
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: Authentication required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // If uploading product catalog assets, verify admin role in admin_users
+    if (!isAvatarUpload) {
+      const { data: adminRecord } = await client.database
+        .from('admin_users')
+        .select('role, is_active')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (!adminRecord || adminRecord.role !== 'admin') {
+        return new Response(JSON.stringify({ error: 'Forbidden: Admin privilege required' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     const r2Endpoint = Deno.env.get('R2_ENDPOINT');
@@ -78,7 +82,10 @@ export default async function(req: Request): Promise<Response> {
     });
 
     const cleanFolder = (folder || 'products').replace(/^\/+|\/+$/g, '');
-    const cleanFilename = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
+    const cleanFilename = isAvatarUpload 
+      ? `user-${userId}-${Date.now()}.${ext}`
+      : `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const objectKey = `${cleanFolder}/${cleanFilename}`;
 
     const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));

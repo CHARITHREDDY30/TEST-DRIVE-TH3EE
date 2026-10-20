@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "test": "npx tsx scripts/verify-all-requirements.ts"
+    "test": "npx tsx scripts/verify-all-requirements.ts && npx tsx scripts/verify-auth.ts && npx tsx scripts/verify-checkout-account-fixes.ts && npx tsx scripts/verify-coupon-loyalty-launch.ts",
+    "test:auth": "npx tsx scripts/verify-auth.ts",
+    "test:launch": "npx tsx scripts/verify-coupon-loyalty-launch.ts"
   },
   "dependencies": {
     "@insforge/sdk": "^1.5.2",

@@ -52,14 +52,33 @@ export interface HeroSlide {
 
 export interface Order {
   id: string;
+  orderNumber?: string;
+  customerId?: string;
   customerName: string;
+  customerEmail?: string;
   phone: string;
   items: string;
   total: number;
-  status: "Received" | "In Production" | "Dispatched" | "Delivered" | string;
+  subtotal?: number;
+  discountAmount?: number;
+  shippingAmount?: number;
+  couponCode?: string;
+  status: "Received" | "In Production" | "Dispatched" | "Delivered" | "Packed" | "Out For Delivery" | "Cancelled" | string;
+  paymentStatus?: "paid" | "unpaid" | "pending" | "failed" | "refunded" | string;
+  deliveryStatus?: string;
+  paymentId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  shippingAddress?: any;
+  orderItems?: any[];
   courier?: string;
   trackingNumber?: string;
   trackingUrl?: string;
+  deliveryPartnerId?: string;
+  deliveryNotes?: string;
+  deliveryAttempts?: number;
+  estimatedDeliveryDate?: string;
+  adminNotes?: string;
   date: string;
   createdAt?: string;
   updatedAt?: string;
@@ -119,6 +138,20 @@ export interface DeliveryInfo {
   pincode: string;
 }
 
+export interface OrderTrackingEvent {
+  id: string;
+  orderId: string;
+  status: string;
+  title: string;
+  message?: string;
+  location?: string;
+  carrierName?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  createdBy?: string;
+  createdAt: string;
+}
+
 export interface DeliveryPricingRule {
   id: string;
   name: string;
@@ -140,7 +173,7 @@ export interface DeliverySettings {
 }
 
 export interface RouteState {
-  view: "home" | "shop" | "product" | "admin";
+  view: "home" | "shop" | "product" | "admin" | "account" | "login" | "register" | "verify-email" | "forgot-password" | "reset-password" | "bag" | "checkout" | "order-track" | "delivery-partner" | "verify-pass";
   slug: string | null;
   query: Record<string, string>;
 }
