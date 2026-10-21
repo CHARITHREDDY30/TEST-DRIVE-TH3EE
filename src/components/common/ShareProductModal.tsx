@@ -1,10 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Product, StoreBrandConfig } from '../../types/store';
-import { resolveProductImageUrl } from '../../lib/r2';
+import { 
+  getCanonicalProductUrl, 
+  formatProductShareMessage, 
+  generatePlatformShareUrls, 
+  copyToClipboardSafe, 
+  getProductShareImage,
+  OFFICIAL_SITE_DOMAIN,
+  type ShareTargetItem
+} from '../../lib/share';
+import { shareAnalytics, type ShareChannel } from '../../services/shareAnalytics.service';
 
 export interface ShareProductModalProps {
   product: Product | null;
+  customItem?: ShareTargetItem | null;
   isOpen: boolean;
   onClose: () => void;
   storeBrand?: StoreBrandConfig;
@@ -21,6 +31,24 @@ const WhatsAppGlyph: React.FC<{ className?: string }> = ({ className = 'w-5 h-5'
 const InstagramGlyph: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+  </svg>
+);
+
+const FacebookGlyph: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+
+const TelegramGlyph: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+  </svg>
+);
+
+const XGlyph: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
   </svg>
 );
 
@@ -56,66 +84,120 @@ const CloseGlyph: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' })
 
 export const ShareProductModal: React.FC<ShareProductModalProps> = ({
   product,
+  customItem,
   isOpen,
   onClose,
   storeBrand,
   showNotification,
 }) => {
   const [copied, setCopied] = useState(false);
+  const activeDomain = storeBrand?.domain || OFFICIAL_SITE_DOMAIN;
 
-  // Construct standard universal share URL with hash routing
-  const shareUrl = useMemo(() => {
-    if (!product) return '';
-    if (typeof window === 'undefined') return '';
-    const pathname = window.location.pathname || '/';
-    const match = pathname.match(/^(\/[^\/]+)/);
-    const repoBasePath = match && match[1].toLowerCase() === '/test-drive-th3ee' ? match[1] : '';
-    const origin = window.location.origin;
-    return `${origin}${repoBasePath}/#/products/${product.slug}`;
-  }, [product]);
+  // Resolve target item details (either product or custom collection/wishlist)
+  const item = useMemo(() => {
+    if (customItem) return customItem;
+    if (product) {
+      const canonicalUrl = getCanonicalProductUrl(product, activeDomain);
+      const sellingPrice = Number(product.price);
+      return {
+        type: 'product' as const,
+        id: product.id,
+        slug: product.slug,
+        title: product.name,
+        subtitle: `${product.category}${product.subcategory ? ` • ${product.subcategory}` : ''}`,
+        description: product.description,
+        price: sellingPrice,
+        image: getProductShareImage(product),
+        category: product.category,
+        url: canonicalUrl
+      };
+    }
+    return null;
+  }, [product, customItem, activeDomain]);
 
-  if (!isOpen || !product) return null;
+  const shareTitle = item ? item.title : 'TH3EE Streetwear';
+  const shareUrl = item ? item.url || `https://${activeDomain}` : `https://${activeDomain}`;
+  const shareMessage = useMemo(() => {
+    if (!item) return '';
+    if (item.type === 'product' && product) {
+      return formatProductShareMessage(product, activeDomain);
+    }
+    if (item.type === 'collection') {
+      return `Explore the ${item.title} collection on TH3EE Streetwear! Check out drops here: ${shareUrl}`;
+    }
+    if (item.type === 'wishlist') {
+      return `Check out my curated wishlist drops on TH3EE Streetwear: ${shareUrl}`;
+    }
+    return `${item.title} | TH3EE Streetwear: ${shareUrl}`;
+  }, [item, product, activeDomain, shareUrl]);
 
-  const sellingPrice = Number(product.price);
-  const shareTitle = product.name;
-  const shareMessage = `🔥 Check out "${product.name}" on TH3EE Streetwear!\nHeavyweight Archive Drop · Rs. ${sellingPrice.toFixed(2)}\n\n👉 View Drop: ${shareUrl}`;
+  const platformUrls = useMemo(() => {
+    return generatePlatformShareUrls({
+      title: shareTitle,
+      text: shareMessage,
+      url: shareUrl
+    });
+  }, [shareTitle, shareMessage, shareUrl]);
 
-  // Copy Link Handler
+  if (!isOpen || !item) return null;
+
+  // Track click & record analytics
+  const recordShareAttempt = (channel: ShareChannel) => {
+    shareAnalytics.track('product_share_clicked', {
+      itemId: item.id || item.slug,
+      itemType: item.type,
+      channel
+    });
+  };
+
+  const recordShareComplete = (channel: ShareChannel) => {
+    shareAnalytics.track('product_share_completed', {
+      itemId: item.id || item.slug,
+      itemType: item.type,
+      channel
+    });
+  };
+
+  // 1. Copy Link Action
   const handleCopyLink = async () => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-      } else {
-        const input = document.createElement('textarea');
-        input.value = shareUrl;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-      }
+    recordShareAttempt('copy_link');
+    const success = await copyToClipboardSafe(shareUrl);
+    if (success) {
       setCopied(true);
+      shareAnalytics.track('product_link_copied', {
+        itemId: item.id || item.slug,
+        itemType: item.type,
+        channel: 'copy_link'
+      });
       if (showNotification) {
         showNotification({
           type: 'success',
-          message: 'Product link copied to clipboard!'
+          message: item.type === 'product' ? 'Product link copied!' : 'Link copied to clipboard!'
         });
       }
       setTimeout(() => setCopied(false), 2600);
-    } catch (e) {
-      console.error('Failed to copy link:', e);
+    } else {
+      if (showNotification) {
+        showNotification({
+          type: 'error',
+          message: 'Unable to auto-copy. Please copy from the input box below.'
+        });
+      }
     }
   };
 
-  // WhatsApp Share Handler
+  // 2. WhatsApp Action
   const handleWhatsAppShare = () => {
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    recordShareAttempt('whatsapp');
+    window.open(platformUrls.whatsapp, '_blank', 'noopener,noreferrer');
+    recordShareComplete('whatsapp');
   };
 
-  // Instagram Share Handler
+  // 3. Instagram Action
   const handleInstagramShare = async () => {
-    // Copy the link & caption to clipboard first for easy pasting into Stories or DMs
-    await handleCopyLink();
+    recordShareAttempt('instagram');
+    // Copy link first so user can paste into story stickers or direct message
+    await copyToClipboardSafe(shareUrl);
     if (showNotification) {
       showNotification({
         type: 'success',
@@ -123,35 +205,60 @@ export const ShareProductModal: React.FC<ShareProductModalProps> = ({
       });
     }
 
-    // Attempt Native Share API if on mobile device (natively offers Instagram Direct / Stories)
+    // Attempt Native Share API if supported on mobile (Instagram Stories / Direct integration)
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
           title: shareTitle,
-          text: `Check out "${product.name}" on TH3EE!`,
-          url: shareUrl,
+          text: `Check out "${item.title}" on TH3EE!`,
+          url: shareUrl
         });
+        recordShareComplete('instagram');
         return;
       } catch (err) {
-        // User cancelled or share dismissed, proceed to open Instagram web/app
+        // Dismissed or fallback
       }
     }
 
     // Direct fallback to Instagram
     window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+    recordShareComplete('instagram');
   };
 
-  // Native System Share Handler
+  // 4. Telegram Action
+  const handleTelegramShare = () => {
+    recordShareAttempt('telegram');
+    window.open(platformUrls.telegram, '_blank', 'noopener,noreferrer');
+    recordShareComplete('telegram');
+  };
+
+  // 5. Facebook Action
+  const handleFacebookShare = () => {
+    recordShareAttempt('facebook');
+    window.open(platformUrls.facebook, '_blank', 'noopener,noreferrer');
+    recordShareComplete('facebook');
+  };
+
+  // 6. X (Twitter) Action
+  const handleXShare = () => {
+    recordShareAttempt('x');
+    window.open(platformUrls.x, '_blank', 'noopener,noreferrer');
+    recordShareComplete('x');
+  };
+
+  // 7. Device Native Share Sheet Action
   const handleNativeShare = async () => {
+    recordShareAttempt('native');
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
           title: shareTitle,
           text: shareMessage,
-          url: shareUrl,
+          url: shareUrl
         });
+        recordShareComplete('native');
       } catch (err) {
-        // Dismissed
+        // User cancelled share sheet
       }
     } else {
       handleCopyLink();
@@ -165,6 +272,9 @@ export const ShareProductModal: React.FC<ShareProductModalProps> = ({
       <div 
         className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 font-sans"
         onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-modal-title"
       >
         <motion.div
           initial={{ opacity: 0, y: 36, scale: 0.96 }}
@@ -172,7 +282,7 @@ export const ShareProductModal: React.FC<ShareProductModalProps> = ({
           exit={{ opacity: 0, y: 36, scale: 0.96 }}
           transition={{ duration: 0.22, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-neutral-200 w-full max-w-md p-5 sm:p-6 space-y-5 max-h-[90vh] flex flex-col"
+          className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-neutral-200 w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
@@ -181,8 +291,8 @@ export const ShareProductModal: React.FC<ShareProductModalProps> = ({
                 <ShareGlyph className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-black uppercase text-neutral-900 leading-none">
-                  Share Product
+                <h3 id="share-modal-title" className="text-base sm:text-lg font-black uppercase text-neutral-900 leading-none">
+                  Share {item.type === 'product' ? 'Drop' : item.type === 'collection' ? 'Collection' : 'Drops'}
                 </h3>
                 <span className="text-[10px] font-mono text-neutral-500 font-bold uppercase mt-1 block">
                   Send to friends & socials
@@ -193,94 +303,149 @@ export const ShareProductModal: React.FC<ShareProductModalProps> = ({
               type="button"
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Close"
+              aria-label="Close share dialog"
             >
               <CloseGlyph className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Product Mini Preview Card */}
+          {/* Item Mini Preview Card */}
           <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-200/80">
-            <img
-              src={resolveProductImageUrl((product.colors && product.colors[0] && product.colors[0].images && product.colors[0].images[0]) || (product.images && product.images[0]) || '')}
-              alt={product.name}
-              className="w-14 h-16 sm:w-16 sm:h-18 object-cover rounded-xl bg-neutral-200 shrink-0 border border-neutral-200"
-            />
+            {item.image ? (
+              <img
+                src={item.image}
+                alt={item.title}
+                className="w-14 h-16 sm:w-16 sm:h-18 object-cover rounded-xl bg-neutral-200 shrink-0 border border-neutral-200"
+              />
+            ) : (
+              <div className="w-14 h-16 sm:w-16 sm:h-18 rounded-xl bg-neutral-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                TH3EE
+              </div>
+            )}
             <div className="flex-1 min-w-0 font-mono">
-              <span className="text-[9px] font-bold text-[#E51E2B] uppercase tracking-wider block truncate">
-                {product.category} {product.subcategory ? `• ${product.subcategory}` : ''}
-              </span>
+              {item.subtitle && (
+                <span className="text-[9px] font-bold text-[#E51E2B] uppercase tracking-wider block truncate">
+                  {item.subtitle}
+                </span>
+              )}
               <h4 className="text-xs sm:text-sm font-black text-neutral-900 uppercase truncate mt-0.5">
-                {product.name}
+                {item.title}
               </h4>
-              <span className="text-xs font-black text-neutral-900 mt-1 block">
-                Rs. {sellingPrice.toFixed(2)}
-              </span>
+              {item.price !== undefined && item.price > 0 && (
+                <span className="text-xs font-black text-neutral-900 mt-1 block">
+                  ₹{Math.round(item.price).toFixed(0)}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Three Main Share Actions: WhatsApp, Instagram, Copy Link */}
-          <div className="space-y-2.5">
-            {/* 1. WhatsApp Button */}
+          {/* Primary Quick Channels (WhatsApp & Instagram) */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* WhatsApp */}
             <button
               type="button"
               onClick={handleWhatsAppShare}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-neutral-900 transition-all cursor-pointer group"
+              className="flex items-center gap-2.5 p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-neutral-900 transition-all cursor-pointer group"
+              title="Share on WhatsApp"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#25D366] text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-                  <WhatsAppGlyph className="w-5 h-5" />
-                </div>
-                <div className="text-left">
-                  <span className="text-xs sm:text-sm font-black uppercase text-neutral-900 block leading-tight">
-                    Share via WhatsApp
-                  </span>
-                  <span className="text-[10px] text-neutral-500 font-mono block mt-0.5">
-                    Send drop details directly to chat or status
-                  </span>
-                </div>
+              <div className="w-9 h-9 rounded-xl bg-[#25D366] text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                <WhatsAppGlyph className="w-4 h-4" />
               </div>
-              <span className="text-xs font-mono font-bold text-[#1ea952] group-hover:translate-x-0.5 transition-transform">
-                Open →
-              </span>
+              <div className="text-left min-w-0">
+                <span className="text-xs font-black uppercase text-neutral-900 block leading-tight truncate">
+                  WhatsApp
+                </span>
+                <span className="text-[9px] text-neutral-500 font-mono block">
+                  Chat / Status
+                </span>
+              </div>
             </button>
 
-            {/* 2. Instagram Button */}
+            {/* Instagram */}
             <button
               type="button"
               onClick={handleInstagramShare}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-amber-50 hover:from-pink-100 hover:to-amber-100 border border-pink-200 text-neutral-900 transition-all cursor-pointer group"
+              className="flex items-center gap-2.5 p-3 rounded-2xl bg-gradient-to-r from-pink-50 to-amber-50 hover:from-pink-100 hover:to-amber-100 border border-pink-200 text-neutral-900 transition-all cursor-pointer group"
+              title="Share on Instagram"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-                  <InstagramGlyph className="w-5 h-5" />
-                </div>
-                <div className="text-left">
-                  <span className="text-xs sm:text-sm font-black uppercase text-neutral-900 block leading-tight">
-                    Share on Instagram
-                  </span>
-                  <span className="text-[10px] text-neutral-500 font-mono block mt-0.5">
-                    Copy link & open Stories or Direct Message
-                  </span>
-                </div>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                <InstagramGlyph className="w-4 h-4" />
               </div>
-              <span className="text-xs font-mono font-bold text-pink-600 group-hover:translate-x-0.5 transition-transform">
-                Share →
-              </span>
+              <div className="text-left min-w-0">
+                <span className="text-xs font-black uppercase text-neutral-900 block leading-tight truncate">
+                  Instagram
+                </span>
+                <span className="text-[9px] text-neutral-500 font-mono block">
+                  Stories / DM
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* Secondary Social Channels: Telegram, Facebook, X */}
+          <div className="grid grid-cols-3 gap-2">
+            {/* Telegram */}
+            <button
+              type="button"
+              onClick={handleTelegramShare}
+              className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-neutral-50 hover:bg-[#229ED9]/10 border border-neutral-200 hover:border-[#229ED9]/40 transition-all cursor-pointer group"
+              title="Share on Telegram"
+            >
+              <div className="w-7 h-7 rounded-lg bg-[#229ED9] text-white flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <TelegramGlyph className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase text-neutral-800">Telegram</span>
             </button>
 
-            {/* 3. Copy Link Action */}
-            <div className="flex items-center gap-2 p-1.5 pl-3.5 bg-neutral-100 border border-neutral-200 rounded-2xl">
+            {/* Facebook */}
+            <button
+              type="button"
+              onClick={handleFacebookShare}
+              className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-neutral-50 hover:bg-[#1877F2]/10 border border-neutral-200 hover:border-[#1877F2]/40 transition-all cursor-pointer group"
+              title="Share on Facebook"
+            >
+              <div className="w-7 h-7 rounded-lg bg-[#1877F2] text-white flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <FacebookGlyph className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase text-neutral-800">Facebook</span>
+            </button>
+
+            {/* X (Twitter) */}
+            <button
+              type="button"
+              onClick={handleXShare}
+              className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-neutral-50 hover:bg-black/10 border border-neutral-200 hover:border-black/40 transition-all cursor-pointer group"
+              title="Share on X"
+            >
+              <div className="w-7 h-7 rounded-lg bg-black text-white flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <XGlyph className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase text-neutral-800">X (Twitter)</span>
+            </button>
+          </div>
+
+          {/* Copy Link Container with Accessible Feedback */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[10px] font-mono text-neutral-500 font-bold uppercase block">
+              Permanent Public URL
+            </span>
+            <div className="flex items-center gap-2 p-1.5 pl-3 bg-neutral-100 border border-neutral-200 rounded-2xl">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <LinkGlyph className="w-4 h-4 text-neutral-400 shrink-0" />
-                <span className="text-[11px] font-mono text-neutral-600 truncate">
-                  {shareUrl}
-                </span>
+                <input
+                  type="text"
+                  readOnly
+                  value={shareUrl}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  aria-label="Product share URL"
+                  className="text-[11px] font-mono text-neutral-700 bg-transparent w-full border-none focus:outline-none select-all truncate"
+                />
               </div>
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className={`py-2 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                aria-label="Copy public link to clipboard"
+                className={`py-2 px-3.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                   copied
                     ? 'bg-emerald-600 text-white'
                     : 'bg-neutral-900 hover:bg-[#E51E2B] text-white'
@@ -294,23 +459,27 @@ export const ShareProductModal: React.FC<ShareProductModalProps> = ({
                 ) : (
                   <>
                     <LinkGlyph className="w-3.5 h-3.5" />
-                    <span>Copy Link</span>
+                    <span>Copy</span>
                   </>
                 )}
               </button>
             </div>
+            {/* Screen reader live region for accessibility */}
+            <div className="sr-only" role="status" aria-live="polite">
+              {copied ? 'Product link copied to clipboard successfully' : ''}
+            </div>
           </div>
 
-          {/* Native System Share (Optional on supported mobile devices) */}
+          {/* Native System Share Sheet (Mobile devices & supported browsers) */}
           {hasNativeShare && (
             <div className="pt-2 border-t border-neutral-100">
               <button
                 type="button"
                 onClick={handleNativeShare}
-                className="w-full py-2.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300 text-[11px] font-mono font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300 text-[11px] font-mono font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
               >
                 <ShareGlyph className="w-3.5 h-3.5 text-neutral-600" />
-                <span>More Share Options</span>
+                <span>Open Device Share Sheet</span>
               </button>
             </div>
           )}

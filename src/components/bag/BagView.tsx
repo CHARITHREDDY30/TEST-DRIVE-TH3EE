@@ -18,6 +18,7 @@ interface BagViewProps {
   navigate: (path: string) => void;
   showNotification: (data: any) => void;
   onOpenAuthModal?: () => void;
+  onShareItem?: (item: CartItem) => void;
 }
 
 export const BagView: React.FC<BagViewProps> = ({
@@ -32,7 +33,8 @@ export const BagView: React.FC<BagViewProps> = ({
   onClearBag,
   navigate,
   showNotification,
-  onOpenAuthModal
+  onOpenAuthModal,
+  onShareItem
 }) => {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -298,16 +300,37 @@ export const BagView: React.FC<BagViewProps> = ({
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => onRemoveItem(item.id, item.selectedColor, item.selectedSize)}
-                        className="text-xs font-bold text-neutral-400 hover:text-[#E51E2B] transition-colors flex items-center gap-1 cursor-pointer uppercase tracking-wider"
-                      >
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                        </svg>
-                        <span>Remove</span>
-                      </button>
+                      <div className="flex items-center gap-3">
+                        {onShareItem && (
+                          <button
+                            type="button"
+                            onClick={() => onShareItem(item)}
+                            className="text-xs font-bold text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-1 cursor-pointer uppercase tracking-wider"
+                            title="Share Drop"
+                            aria-label="Share Drop"
+                          >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="18" cy="5" r="3" />
+                              <circle cx="6" cy="12" r="3" />
+                              <circle cx="18" cy="19" r="3" />
+                              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                            </svg>
+                            <span>Share</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => onRemoveItem(item.id, item.selectedColor, item.selectedSize)}
+                          className="text-xs font-bold text-neutral-400 hover:text-[#E51E2B] transition-colors flex items-center gap-1 cursor-pointer uppercase tracking-wider"
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          </svg>
+                          <span>Remove</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
