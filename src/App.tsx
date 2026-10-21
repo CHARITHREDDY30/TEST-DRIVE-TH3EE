@@ -1777,7 +1777,7 @@ export default function App() {
               aria-label="Mobile Bottom Navigation"
               className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200 lg:hidden shadow-[0_-4px_16px_rgba(0,0,0,0.06)] pb-[max(0.4rem,env(safe-area-inset-bottom))]"
             >
-              <div className="grid grid-cols-6 h-14 items-center px-1">
+              <div className="grid grid-cols-5 h-14 items-center px-1">
                 {/* 1. Home */}
                 <button
                   type="button"
@@ -1804,18 +1804,7 @@ export default function App() {
                   <span className="text-[10px] tracking-tight mt-0.5 font-sans">Explore</span>
                 </button>
 
-                {/* 3. Search */}
-                <button
-                  type="button"
-                  onClick={function() { setIsMobileSearchOpen(true); }}
-                  className="flex flex-col items-center justify-center py-1 text-neutral-500 hover:text-neutral-900 transition-colors"
-                  aria-label="Search Drops"
-                >
-                  <Search className="w-5 h-5" />
-                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Search</span>
-                </button>
-
-                {/* 4. Wishlist */}
+                {/* 3. Wishlist */}
                 <button
                   type="button"
                   onClick={function() { navigate("/shop?filter=featured"); }}
