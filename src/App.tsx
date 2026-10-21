@@ -1491,40 +1491,42 @@ export default function App() {
                     setIsMobileNavOpen(false); 
                     window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE%2C%20I%20need%20help", "_blank"); 
                   }} 
-                  className="flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors text-neutral-900"
+                  className="flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] transition-colors text-neutral-900"
                 >
                   <span className="flex items-center gap-2.5">
                     <HelpCircle className="w-4 h-4 text-[#FF2E2E]" />
                     <span>HELP</span>
                   </span>
                 </button>
-
-                {/* 7. SIGNIN/REGISTER */}
-                <button 
-                  type="button" 
-                  onClick={function() { 
-                    setIsMobileNavOpen(false); 
-                    if (currentUser) {
-                      navigate("/account");
-                    } else {
-                      navigate("/login");
-                    }
-                  }} 
-                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] transition-colors ${
-                    routeState.view === "account" || routeState.view === "login" || routeState.view === "register" ? "text-[#E51E2B]" : "text-neutral-900"
-                  }`}
-                >
-                  <span className="flex items-center gap-2.5">
-                    <User className="w-4 h-4 text-[#FF2E2E]" />
-                    <span>{currentUser ? `MY ACCOUNT (${currentUser.name ? currentUser.name.split(' ')[0] : 'PATRON'})` : 'SIGNIN/REGISTER'}</span>
-                  </span>
-                  {currentUser && <span className="w-2 h-2 bg-emerald-500 rounded-full" />}
-                </button>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-neutral-200 text-[10px] text-neutral-500">
-              © {new Date().getFullYear()} {storeBrand.domain} STREETWEAR
+            {/* Bottom Section: SIGNIN/REGISTER and Brand Copyright */}
+            <div className="pt-4 border-t border-neutral-200 space-y-3 font-mono text-xs uppercase font-bold tracking-wider">
+              <button 
+                type="button" 
+                onClick={function() { 
+                  setIsMobileNavOpen(false); 
+                  if (currentUser) {
+                    navigate("/account");
+                  } else {
+                    navigate("/login");
+                  }
+                }} 
+                className={`flex items-center justify-between w-full text-left py-2 hover:text-[#E51E2B] transition-colors ${
+                  routeState.view === "account" || routeState.view === "login" || routeState.view === "register" ? "text-[#E51E2B]" : "text-neutral-900"
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <User className="w-4 h-4 text-[#FF2E2E]" />
+                  <span>{currentUser ? `MY ACCOUNT (${currentUser.name ? currentUser.name.split(' ')[0] : 'PATRON'})` : 'SIGNIN/REGISTER'}</span>
+                </span>
+                {currentUser && <span className="w-2 h-2 bg-emerald-500 rounded-full" />}
+              </button>
+
+              <div className="text-[10px] text-neutral-400 font-normal">
+                © {new Date().getFullYear()} {storeBrand.domain} STREETWEAR
+              </div>
             </div>
           </div>
         </div>
@@ -3759,7 +3761,12 @@ function ShoppingBagDrawer({
     if (!couponCode.trim()) return;
     setCouponLoading(true);
     setCouponMessage("");
-    const result = await couponsService.validateCoupon(couponCode, cartSubtotal);
+    const result = await couponsService.validateCoupon(
+      couponCode, 
+      cartSubtotal, 
+      currentUser?.id || null, 
+      currentUser?.email || null
+    );
     setCouponLoading(false);
     if (result.valid) {
       setAppliedCoupon(result.coupon || { code: couponCode.trim().toUpperCase() });

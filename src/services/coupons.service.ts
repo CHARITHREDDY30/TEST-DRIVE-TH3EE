@@ -66,15 +66,48 @@ export const couponsService = {
     }
 
     const cleanCode = code.trim().toUpperCase();
+    let effectiveCustomerId = customerId || null;
+    let effectiveCustomerEmail = customerEmail ? customerEmail.trim().toLowerCase() : null;
 
     if (isInsForgeConfigured()) {
       try {
+        if (!effectiveCustomerId && !effectiveCustomerEmail) {
+          try {
+            const u = await insforge.auth.getCurrentUser();
+            const userObj = (u as any)?.data?.user || (u as any)?.user;
+            if (userObj) {
+              effectiveCustomerId = userObj.id;
+              effectiveCustomerEmail = userObj.email ? userObj.email.trim().toLowerCase() : null;
+            }
+          } catch {}
+        }
+
+        // Check local lifetime blacklist first
+        if (effectiveCustomerId || effectiveCustomerEmail) {
+          try {
+            const keys: string[] = [];
+            if (effectiveCustomerId) keys.push(`th3ee_used_coupons_${effectiveCustomerId}`);
+            if (effectiveCustomerEmail) keys.push(`th3ee_used_coupons_${effectiveCustomerEmail}`);
+            for (const k of keys) {
+              const used: string[] = JSON.parse(localStorage.getItem(k) || '[]');
+              if (used.includes(cleanCode)) {
+                return {
+                  valid: false,
+                  discount: 0,
+                  message: "You've already used this coupon on your account.",
+                  alreadyRedeemed: true
+                };
+              }
+            }
+          } catch {}
+        }
+
         // 1. First attempt secure RPC check enforcing 1 successful redemption per account
         const { data: rpcData, error: rpcErr } = await (insforge.database as any).rpc('validate_coupon_for_customer', {
           p_coupon_code: cleanCode,
           p_subtotal: subtotal,
-          p_customer_id: customerId || null,
-          p_customer_email: customerEmail ? customerEmail.trim().toLowerCase() : null
+          p_customer_id: effectiveCustomerId,
+          p_customer_email: effectiveCustomerEmail
         });
 
         if (!rpcErr && rpcData) {
@@ -124,24 +157,46 @@ export const couponsService = {
           return { valid: false, discount: 0, message: 'This coupon is no longer active' };
         }
 
-        // Check if customer already has a completed redemption record
-        if (customerId || customerEmail) {
+        // Check if customer already has a redemption or order record
+        if (effectiveCustomerId || effectiveCustomerEmail) {
           let redQuery = insforge.database
             .from('coupon_redemptions')
             .select('id')
-            .eq('coupon_id', coupon.id)
-            .eq('status', 'completed');
+            .eq('coupon_id', coupon.id);
 
-          if (customerId && customerEmail) {
-            redQuery = redQuery.or(`customer_id.eq.${customerId},customer_email.eq.${customerEmail.trim().toLowerCase()}`);
-          } else if (customerId) {
-            redQuery = redQuery.eq('customer_id', customerId);
-          } else if (customerEmail) {
-            redQuery = redQuery.eq('customer_email', customerEmail.trim().toLowerCase());
+          if (effectiveCustomerId && effectiveCustomerEmail) {
+            redQuery = redQuery.or(`customer_id.eq.${effectiveCustomerId},customer_email.eq.${effectiveCustomerEmail}`);
+          } else if (effectiveCustomerId) {
+            redQuery = redQuery.eq('customer_id', effectiveCustomerId);
+          } else if (effectiveCustomerEmail) {
+            redQuery = redQuery.eq('customer_email', effectiveCustomerEmail);
           }
 
           const { data: existingRedemption } = await redQuery.maybeSingle();
           if (existingRedemption) {
+            return {
+              valid: false,
+              discount: 0,
+              message: "You've already used this coupon on your account.",
+              alreadyRedeemed: true
+            };
+          }
+
+          let ordQuery = insforge.database
+            .from('orders')
+            .select('id')
+            .ilike('coupon_code', cleanCode);
+
+          if (effectiveCustomerId && effectiveCustomerEmail) {
+            ordQuery = ordQuery.or(`customer_id.eq.${effectiveCustomerId},customer_email.eq.${effectiveCustomerEmail}`);
+          } else if (effectiveCustomerId) {
+            ordQuery = ordQuery.eq('customer_id', effectiveCustomerId);
+          } else if (effectiveCustomerEmail) {
+            ordQuery = ordQuery.eq('customer_email', effectiveCustomerEmail);
+          }
+
+          const { data: existingOrder } = await ordQuery.maybeSingle();
+          if (existingOrder) {
             return {
               valid: false,
               discount: 0,

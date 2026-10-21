@@ -370,6 +370,36 @@ export const ordersService = {
         }
       }
 
+      // Commit coupon redemption immediately for customer lifetime tracking
+      if (params.couponCode && params.couponCode.trim()) {
+        const cleanCoupon = params.couponCode.trim().toUpperCase();
+        try {
+          await (insforge.database as any).rpc('commit_coupon_redemption', {
+            p_order_id: orderId,
+            p_order_number: orderNumber,
+            p_coupon_code: cleanCoupon,
+            p_customer_id: validCustomerId,
+            p_customer_email: params.customerEmail ? params.customerEmail.trim().toLowerCase() : null,
+            p_discount_amount: params.discountAmount || 0
+          });
+        } catch (couponCommitErr) {
+          console.warn('Coupon redemption commit note:', couponCommitErr);
+        }
+
+        try {
+          const keys: string[] = [];
+          if (validCustomerId) keys.push(`th3ee_used_coupons_${validCustomerId}`);
+          if (params.customerEmail) keys.push(`th3ee_used_coupons_${params.customerEmail.trim().toLowerCase()}`);
+          keys.forEach(k => {
+            const existing: string[] = JSON.parse(localStorage.getItem(k) || '[]');
+            if (!existing.includes(cleanCoupon)) {
+              existing.push(cleanCoupon);
+              localStorage.setItem(k, JSON.stringify(existing));
+            }
+          });
+        } catch {}
+      }
+
       return mapDbOrderToFrontend(orderRow);
     }
 

@@ -49,7 +49,12 @@ export const BagView: React.FC<BagViewProps> = ({
     setCouponLoading(true);
     setCouponMessage('');
     try {
-      const result = await couponsService.validateCoupon(couponCode, cartSubtotal);
+      const result = await couponsService.validateCoupon(
+        couponCode, 
+        cartSubtotal, 
+        currentUser?.id || null, 
+        currentUser?.email || null
+      );
       if (result.valid) {
         setAppliedCoupon(result.coupon || { code: couponCode.trim().toUpperCase() });
         setCouponDiscount(result.discount);
