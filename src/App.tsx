@@ -59,6 +59,7 @@ import { DeliveryPartnerView } from './components/delivery/DeliveryPartnerView';
 import { AdminOrdersManager } from './components/admin/AdminOrdersManager';
 import { AdminLoyaltyManager } from './components/admin/AdminLoyaltyManager';
 import { VerifyPassView } from './components/loyalty/VerifyPassView';
+import { ShareProductModal } from './components/common/ShareProductModal';
 import type { AuthUser } from './types/auth';
 
 // Self-contained zero-dependency inline SVG icons
@@ -412,6 +413,43 @@ function CheckCircle2({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+    </svg>
+  );
+}
+
+function Share2({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+    </svg>
+  );
+}
+
+function WhatsAppGlyph({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.01-1.24-.74-.66-1.25-1.48-1.39-1.73-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.45-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.08 0 1.22.89 2.41 1.02 2.58.13.17 1.76 2.68 4.26 3.76.6.26 1.06.41 1.42.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.18-.48-.3" />
+    </svg>
+  );
+}
+
+function InstagramGlyph({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+    </svg>
+  );
+}
+
+function LinkGlyph({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
     </svg>
   );
 }
@@ -972,6 +1010,7 @@ export default function App() {
 
   const [selectedUniverseModal, setSelectedUniverseModal] = useState(null);
   const [quickViewItem, setQuickViewItem] = useState(null);
+  const [shareProductItem, setShareProductItem] = useState<Product | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
   const [isCategoriesDropdownOpen, setIsCategoriesDropdownOpen] = useState(false);
@@ -1518,6 +1557,7 @@ export default function App() {
                 setQuickViewItem={setQuickViewItem}
                 setSelectedUniverseModal={setSelectedUniverseModal}
                 onOpenCategoriesPopup={function() { setIsCategoriesPopupOpen(true); }}
+                onShare={setShareProductItem}
               />
             )}
 
@@ -1545,6 +1585,7 @@ export default function App() {
             navigate={navigate}
             addToBag={addToBag}
             setQuickViewItem={setQuickViewItem}
+            onShare={setShareProductItem}
           />
         )}
 
@@ -1556,6 +1597,8 @@ export default function App() {
             initialColor={routeState.query.color}
             navigate={navigate}
             addToBag={addToBag}
+            onShare={setShareProductItem}
+            showNotification={showNotification}
           />
         )}
 
@@ -1811,8 +1854,18 @@ export default function App() {
           onClose={function() { setQuickViewItem(null); }}
           onNavigate={function(url) { setQuickViewItem(null); navigate(url); }}
           onAddToBag={function(p, size, color) { addToBag(p, size, color); setQuickViewItem(null); }}
+          onShare={function(p) { setShareProductItem(p); }}
         />
       )}
+
+      {/* Product Social & Universal Share Modal */}
+      <ShareProductModal
+        product={shareProductItem}
+        isOpen={Boolean(shareProductItem)}
+        onClose={function() { setShareProductItem(null); }}
+        storeBrand={storeBrand}
+        showNotification={showNotification}
+      />
 
       {/* Dedicated Interactive Mobile Search Modal */}
       <MobileSearchModal 
@@ -1959,7 +2012,8 @@ function HomePageView({
   addToBag, 
   setQuickViewItem, 
   setSelectedUniverseModal,
-  onOpenCategoriesPopup
+  onOpenCategoriesPopup,
+  onShare = function() {}
 }: any) {
   const [mobileHeroSlide, setMobileHeroSlide] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
@@ -2285,6 +2339,7 @@ function HomePageView({
                   navigate={navigate} 
                   addToBag={addToBag} 
                   onQuickView={setQuickViewItem}
+                  onShare={onShare}
                 />
               </div>
             );
@@ -2304,8 +2359,9 @@ function ShopAllView({
   storeBrand,
   navigate, 
   addToBag, 
-  setQuickViewItem 
-}) {
+  setQuickViewItem,
+  onShare = function() {}
+}: any) {
   if (!initialQuery) initialQuery = {};
   const [selectedCategory, setSelectedCategory] = useState(initialQuery.category || "All");
   const [selectedUniverse, setSelectedUniverse] = useState(initialQuery.universe || "All");
@@ -2589,6 +2645,7 @@ function ShopAllView({
                     navigate={navigate} 
                     addToBag={addToBag} 
                     onQuickView={setQuickViewItem}
+                    onShare={onShare}
                   />
                 );
               })}
@@ -2766,7 +2823,7 @@ function OrderViaWhatsAppButton({
   );
 }
 
-function ProductCard({ product, navigate, addToBag, onQuickView = function() {} }: any) {
+function ProductCard({ product, navigate, addToBag, onQuickView = function() {}, onShare = function() {} }: any) {
   const [selectedColor, setSelectedColor] = useState((product.colors && product.colors[0] && product.colors[0].name) || "Standard");
   const [selectedSize, setSelectedSize] = useState("L");
   const colorObj = (product.colors && product.colors.find(function(c) { return c.name === selectedColor; })) || (product.colors && product.colors[0]);
@@ -2803,17 +2860,31 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
             </span>
           )}
 
-          {onQuickView && (
-            <button 
-              type="button"
-              onClick={function(e) { e.stopPropagation(); onQuickView(product); }}
-              className={"absolute bottom-2 sm:bottom-2.5 right-2 sm:right-2.5 bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors " + (isOutOfStock ? "top-auto" : "")}
-              title="Quick View"
-              aria-label="Quick View"
-            >
-              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-          )}
+          {/* Action buttons (Share & Quick View) */}
+          <div className="absolute bottom-2 sm:bottom-2.5 right-2 sm:right-2.5 flex items-center gap-1 sm:gap-1.5 z-10">
+            {onShare && (
+              <button 
+                type="button"
+                onClick={function(e) { e.stopPropagation(); onShare(product); }}
+                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer"
+                title="Share Drop"
+                aria-label="Share Drop"
+              >
+                <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
+            {onQuickView && (
+              <button 
+                type="button"
+                onClick={function(e) { e.stopPropagation(); onQuickView(product); }}
+                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer"
+                title="Quick View"
+                aria-label="Quick View"
+              >
+                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="p-2.5 xs:p-3 sm:p-4 space-y-1.5">
@@ -2909,7 +2980,16 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {} 
   );
 }
 
-function ProductDetailPageView({ product, allProducts, storeBrand, initialColor, navigate, addToBag }) {
+function ProductDetailPageView({ 
+  product, 
+  allProducts, 
+  storeBrand, 
+  initialColor, 
+  navigate, 
+  addToBag,
+  onShare,
+  showNotification
+}: any) {
   if (!product) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 font-mono text-center space-y-3">
@@ -2934,11 +3014,22 @@ function ProductDetailPageView({ product, allProducts, storeBrand, initialColor,
       initialColor={initialColor}
       navigate={navigate}
       addToBag={addToBag}
+      onShare={onShare}
+      showNotification={showNotification}
     />
   );
 }
 
-function ProductDetailInner({ product, allProducts, storeBrand, initialColor, navigate, addToBag }) {
+function ProductDetailInner({ 
+  product, 
+  allProducts, 
+  storeBrand, 
+  initialColor, 
+  navigate, 
+  addToBag,
+  onShare,
+  showNotification
+}: any) {
   const [chosenColor, setChosenColor] = useState(initialColor || (product.colors && product.colors[0] && product.colors[0].name) || "Standard");
   const [chosenSize, setChosenSize] = useState("L");
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
@@ -3039,12 +3130,27 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
 
         <div className="space-y-5 sm:space-y-6 w-full">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#E51E2B]">
-              <span>{product.category}</span>
-              <span>•</span>
-              <span>{product.subcategory || "Original Release"}</span>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#E51E2B]">
+                  <span>{product.category}</span>
+                  <span>•</span>
+                  <span>{product.subcategory || "Original Release"}</span>
+                </div>
+                <h1 className="text-xl sm:text-3xl font-black uppercase text-neutral-900 tracking-tight leading-snug">{product.name}</h1>
+              </div>
+              {onShare && (
+                <button
+                  type="button"
+                  onClick={function() { onShare(product); }}
+                  className="p-2 sm:p-2.5 rounded-full border border-neutral-300 hover:border-neutral-900 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-[#E51E2B] transition-all shrink-0 shadow-2xs group cursor-pointer flex items-center justify-center"
+                  title="Share Drop"
+                  aria-label="Share Drop"
+                >
+                  <Share2 className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
+                </button>
+              )}
             </div>
-            <h1 className="text-xl sm:text-3xl font-black uppercase text-neutral-900 tracking-tight leading-snug">{product.name}</h1>
             
             <div className="flex items-center gap-2 pt-1">
               {!product.inStock ? (
@@ -3177,6 +3283,103 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
             )}
           </div>
 
+          {/* Social Share Squad Bar: WhatsApp, Instagram, Copy Link */}
+          <div className="p-3 sm:p-3.5 bg-neutral-50 border border-neutral-200/90 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Share2 className="w-3.5 h-3.5 text-[#E51E2B]" />
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-neutral-900">
+                  Share drop with friends
+                </span>
+              </div>
+              {onShare && (
+                <button
+                  type="button"
+                  onClick={function() { onShare(product); }}
+                  className="text-[10px] font-mono font-bold text-[#E51E2B] hover:underline uppercase cursor-pointer"
+                >
+                  All options →
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                onClick={function() {
+                  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                  const url = `${origin}${getAppBasePath()}/#/products/${product.slug}`;
+                  const msg = `🔥 Check out "${product.name}" on TH3EE Streetwear!\nHeavyweight Archive Drop · Rs. ${sellingPrice.toFixed(2)}\n\n👉 View Drop: ${url}`;
+                  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+                }}
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2 rounded-xl bg-white hover:bg-[#25D366]/10 border border-neutral-200 hover:border-[#25D366]/50 text-neutral-800 text-[10px] sm:text-xs font-bold transition-all cursor-pointer group"
+                title="Share on WhatsApp"
+              >
+                <WhatsAppGlyph className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#25D366] group-hover:scale-110 transition-transform shrink-0" />
+                <span className="truncate">WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={async function() {
+                  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                  const url = `${origin}${getAppBasePath()}/#/products/${product.slug}`;
+                  try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                      await navigator.clipboard.writeText(url);
+                    }
+                    if (showNotification) {
+                      showNotification({ type: 'success', message: 'Product link copied! Opening Instagram...' });
+                    }
+                  } catch {}
+                  if (typeof navigator !== 'undefined' && navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: product.name,
+                        text: `Check out "${product.name}" on TH3EE!`,
+                        url: url,
+                      });
+                      return;
+                    } catch {}
+                  }
+                  window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+                }}
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2 rounded-xl bg-white hover:bg-pink-50 border border-neutral-200 hover:border-pink-300 text-neutral-800 text-[10px] sm:text-xs font-bold transition-all cursor-pointer group"
+                title="Share on Instagram"
+              >
+                <InstagramGlyph className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-600 group-hover:scale-110 transition-transform shrink-0" />
+                <span className="truncate">Instagram</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={async function() {
+                  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                  const url = `${origin}${getAppBasePath()}/#/products/${product.slug}`;
+                  try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                      await navigator.clipboard.writeText(url);
+                    } else {
+                      const input = document.createElement('textarea');
+                      input.value = url;
+                      document.body.appendChild(input);
+                      input.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(input);
+                    }
+                    if (showNotification) {
+                      showNotification({ type: 'success', message: 'Product link copied to clipboard!' });
+                    }
+                  } catch {}
+                }}
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2 rounded-xl bg-white hover:bg-neutral-100 border border-neutral-200 hover:border-neutral-400 text-neutral-800 text-[10px] sm:text-xs font-bold transition-all cursor-pointer group"
+                title="Copy Link"
+              >
+                <LinkGlyph className="w-3.5 h-3.5 text-neutral-700 group-hover:scale-110 transition-transform shrink-0" />
+                <span className="truncate">Copy Link</span>
+              </button>
+            </div>
+          </div>
+
           <div className="pt-4 border-t border-neutral-200 space-y-3 text-xs">
             <p className="text-neutral-600 leading-relaxed">{product.description}</p>
             {product.specs && product.specs.length > 0 && (
@@ -3234,6 +3437,7 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
                   navigate={navigate} 
                   addToBag={addToBag} 
                   onQuickView={function() {}} 
+                  onShare={onShare}
                 />
               );
             })}
@@ -3244,7 +3448,7 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
   );
 }
 
-function QuickViewModal({ product, onClose, onNavigate, onAddToBag }) {
+function QuickViewModal({ product, onClose, onNavigate, onAddToBag, onShare = function() {} }: any) {
   const [size, setSize] = useState("L");
   const [color, setColor] = useState((product.colors && product.colors[0] && product.colors[0].name) || "Standard");
 
@@ -3260,7 +3464,22 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag }) {
       <div className="bg-white max-w-lg w-full p-4 sm:p-6 relative shadow-2xl font-mono space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-start pb-2 border-b">
           <h3 className="text-xs sm:text-sm font-black uppercase text-neutral-900 truncate pr-3">{product.name}</h3>
-          <button type="button" onClick={onClose} className="p-1 hover:text-red-600"><X className="w-5 h-5" /></button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onShare && (
+              <button 
+                type="button" 
+                onClick={function() { onShare(product); }} 
+                className="p-1 hover:text-[#E51E2B] text-neutral-700 transition-colors cursor-pointer"
+                title="Share Drop"
+                aria-label="Share Drop"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="p-1 hover:text-red-600 transition-colors cursor-pointer" aria-label="Close">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <div className="flex flex-col sm:row gap-4">
           <div className="w-full sm:w-32 h-44 sm:h-40 bg-neutral-100 shrink-0 overflow-hidden">
@@ -3337,6 +3556,18 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag }) {
           >
             Full Details
           </button>
+          {onShare && (
+            <button
+              type="button"
+              onClick={function() { onShare(product); }}
+              className="py-2 px-3 border border-neutral-300 hover:border-black font-bold text-xs uppercase rounded-full hover:bg-neutral-50 transition-colors flex items-center justify-center gap-1.5 text-neutral-800 cursor-pointer"
+              title="Share Drop"
+              aria-label="Share Drop"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Share</span>
+            </button>
+          )}
           <AddToBagButton
             product={product}
             selectedSize={size}
