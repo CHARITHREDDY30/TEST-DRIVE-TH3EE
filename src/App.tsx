@@ -2565,13 +2565,15 @@ function AddToBagButton({
   }
 
   const baseClasses = variant === 'pdp'
-    ? 'w-full py-3.5 sm:py-4 text-xs uppercase font-bold tracking-wider rounded-full flex items-center justify-center gap-2 transition-all shadow-xs focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-2'
+    ? 'w-full py-3.5 sm:py-4 text-xs uppercase font-bold tracking-wider rounded-full flex items-center justify-center gap-2 transition-all shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF002B] focus:ring-offset-2'
     : variant === 'card'
     ? 'w-full py-1.5 text-[9px] xs:text-[10px] font-mono font-bold uppercase tracking-wider rounded-full flex items-center justify-center gap-1.5 transition-all shadow-2xs focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1'
     : 'flex-1 py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-full flex items-center justify-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1';
 
   const stateClasses = btnState === 'success'
     ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+    : variant === 'pdp'
+    ? 'bg-[#FF002B] hover:bg-[#E00026] active:bg-[#CC0022] text-white shadow-sm hover:shadow-md'
     : 'bg-neutral-900 hover:bg-[#E51E2B] text-white';
 
   return (
@@ -2617,9 +2619,9 @@ function AddToBagButton({
             transition={{ duration: 0.15 }}
             className="flex items-center gap-1.5"
           >
-            <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+            <ShoppingBag className="w-3.5 h-3.5 shrink-0 text-white" />
             {variant === 'pdp' ? (
-              <span>ADD TO BAG • RS. {(price ?? product.price).toFixed(2)}</span>
+              <span>ADD TO BAG · RS. {(price ?? product.price).toFixed(2)}</span>
             ) : variant === 'card' ? (
               <span>Add to Bag ({selectedSize || 'L'})</span>
             ) : (
@@ -3064,10 +3066,10 @@ function ProductDetailInner({ product, allProducts, storeBrand, initialColor, na
                       navigate("/checkout");
                     }
                   }}
-                  className="w-full bg-neutral-900 hover:bg-black text-white py-3 px-4 rounded-full font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-2"
+                  className="w-full bg-[#171717] hover:bg-black active:bg-[#0d0d0d] active:scale-[0.99] text-white py-3.5 sm:py-4 px-4 rounded-full font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <CreditCard className="w-4 h-4 text-white" />
-                  <span>BUY NOW • PROCEED TO CHECKOUT</span>
+                  <CreditCard className="w-4 h-4 text-white shrink-0" />
+                  <span>BUY NOW · PROCEED TO CHECKOUT</span>
                 </button>
               </>
             )}
