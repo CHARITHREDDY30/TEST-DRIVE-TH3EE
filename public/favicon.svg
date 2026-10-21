@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1A1A" />
+      <stop offset="100%" stop-color="#0A0A0A" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Background Container -->
+  <rect width="128" height="128" rx="28" fill="url(#brandGrad)" stroke="#2C2C2C" stroke-width="3" />
+  
+  <!-- Subtle Red Accent Glow Dot -->
+  <circle cx="106" cy="24" r="5" fill="#E51E2B" filter="url(#glow)" />
+
+  <!-- Monolithic TH3EE Typography Mark -->
+  <text x="64" y="78" font-family="'Montserrat', 'Inter', -apple-system, sans-serif" font-weight="900" font-size="34" letter-spacing="-1.5" text-anchor="middle" fill="#FFFFFF">
+    TH<tspan fill="#E51E2B">3</tspan>EE
+  </text>
+  
+  <!-- Minimalist Atelier Subline -->
+  <rect x="36" y="92" width="56" height="2" fill="#E51E2B" rx="1" />
+</svg>

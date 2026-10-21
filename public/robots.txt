@@ -1,0 +1,21 @@
+# Robots.txt for TH3EE Streetwear
+# Domain: https://th3ee.in
+
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /products/
+Allow: /track-order
+Disallow: /admin
+Disallow: /account
+Disallow: /checkout
+Disallow: /delivery
+Disallow: /auth/
+Disallow: /order-receipt
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Host and Sitemap
+Host: https://th3ee.in
+Sitemap: https://th3ee.in/sitemap.xml

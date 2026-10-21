@@ -23,6 +23,23 @@ function setCanonicalLink(href: string) {
   element.setAttribute('href', href);
 }
 
+function setJsonLd(id: string, data: object | null) {
+  if (typeof document === 'undefined') return;
+  let script = document.getElementById(id) as HTMLScriptElement | null;
+  if (!data) {
+    if (script) script.remove();
+    return;
+  }
+  if (!script) {
+    script = document.createElement('script');
+    script.id = id;
+    script.type = 'application/ld+json';
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(data);
+}
+
+
 export const seoService = {
   /**
    * Dynamically sets Open Graph and Twitter Card tags for a specific product.
@@ -59,7 +76,60 @@ export const seoService = {
     setMetaTag('name', 'twitter:image', imageUrl);
 
     setCanonicalLink(canonicalUrl);
+
+    // Dynamic Product & Breadcrumb Schema.org Structured Data
+    setJsonLd('th3ee-client-product-jsonld', {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Product",
+          "name": product.name,
+          "image": [imageUrl],
+          "description": description,
+          "sku": product.sku || product.id,
+          "brand": {
+            "@type": "Brand",
+            "name": "TH3EE"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": canonicalUrl,
+            "priceCurrency": "INR",
+            "price": price,
+            "availability": product.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "seller": {
+              "@type": "Organization",
+              "name": "TH3EE"
+            }
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": `https://${brandDomain}/`
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Shop",
+              "item": `https://${brandDomain}/shop`
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": product.name,
+              "item": canonicalUrl
+            }
+          ]
+        }
+      ]
+    });
   },
+
 
   /**
    * Dynamically sets Open Graph and Twitter Card tags for a collection or category page.
@@ -108,5 +178,7 @@ export const seoService = {
     setMetaTag('name', 'twitter:description', description);
 
     setCanonicalLink(canonicalUrl);
+    setJsonLd('th3ee-client-product-jsonld', null);
   }
 };
+

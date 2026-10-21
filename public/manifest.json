@@ -1,0 +1,19 @@
+{
+  "name": "TH3EE Streetwear Atelier",
+  "short_name": "TH3EE",
+  "description": "Heavyweight 240+ GSM graphic oversized tees, Baahubali universe drops, and limited edition cult streetwear.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle", "fashion"]
+}

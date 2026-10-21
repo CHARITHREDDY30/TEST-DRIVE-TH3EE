@@ -1,0 +1,7 @@
+Contact: mailto:security@th3ee.in
+Contact: https://wa.me/919121798653
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: en, te, hi
+Canonical: https://th3ee.in/.well-known/security.txt
+Policy: https://th3ee.in/
+Acknowledgments: https://th3ee.in/
