@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { loyaltyService, type CustomerLoyaltySummary, type LoyaltyStamp, type LoyaltyRewardClaim } from '../../services/loyalty.service';
 import { productsService } from '../../services/products.service';
 import { PassQRCode, downloadPassBadge } from '../common/PassQRCodes';
+import { TH3EEBoardingPass } from './TH3EEBoardingPass';
 import type { AuthUser, SavedAddress } from '../../types/auth';
 import type { Product } from '../../types/store';
 
@@ -598,9 +599,8 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-neutral-800/80">
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#E51E2B]" />
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#F5F4F0]">
-                  TH3EE REWARD CLUB • CULT PASS
+                  TH3EE REWARD CLUB // CULT PASS
                 </span>
               </div>
               <p className="text-xs text-neutral-400 font-sans">
@@ -807,75 +807,25 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
               )}
             </div>
 
-            {/* RIGHT PANEL (5 cols on lg): DIGITAL WALLET PASS STUB WITH SCAN DETAILS */}
-            <div className="lg:col-span-5 flex flex-col">
-              <div className="h-full bg-[#FAF9F5] text-neutral-900 rounded-2xl p-5 sm:p-6 border border-[#E7E4DC] shadow-sm flex flex-col justify-between items-center text-center relative">
-                {/* QR Code Container */}
-                <div className="space-y-2 flex flex-col items-center">
-                  <div className="bg-white p-3 rounded-xl border border-neutral-300 shadow-xs">
-                    <PassQRCode value={passVerificationUrl} size={144} />
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-black tracking-widest uppercase text-neutral-900 block">
-                      TH3EE MEMBER PASS
-                    </span>
-                    <span className="text-[9px] text-neutral-500 font-mono uppercase tracking-wider block mt-0.5">
-                      PASS ID: TH3EE-{memberCode} • ATELIER VERIFIED
-                    </span>
-                    {/* Explicit Date Mention */}
-                    <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded-md">
-                      <span className="text-[9px] text-neutral-500 font-mono font-bold">DATE:</span>
-                      <span className="text-[9px] text-neutral-900 font-mono font-black">{passDate}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Member Details & Realtime Stamps Count */}
-                <div className="my-3 py-2.5 border-y border-[#E7E4DC] w-full space-y-1.5 text-center">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-[#E51E2B]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />
-                    <span className="text-[10px] font-black uppercase tracking-wider">
-                      {activeCount} / 07 STAMPS COLLECTED
-                    </span>
-                  </div>
-                  <p className="text-xs font-bold uppercase text-neutral-900 pt-0.5">
-                    {currentUser?.name || 'TH3EE Patron'}
-                  </p>
-                  <p className="text-[10px] text-neutral-500 font-mono truncate">
-                    {currentUser?.email || ''}
-                  </p>
-                </div>
-
-                {/* Scan Action & Download */}
-                <div className="w-full space-y-2">
-                  <p className="text-[9px] text-neutral-500 font-sans leading-tight">
-                    Scan with any phone camera to display member details and live stamp balance.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={handleDownloadPass}
-                      disabled={isDownloading}
-                      className="w-full py-2 px-2.5 bg-[#E51E2B] hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-                    >
-                      <DownloadIcon className="w-3.5 h-3.5" />
-                      <span>{isDownloading ? 'Saving...' : 'Download Pass QR'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsVerifyModalOpen(true)}
-                      className="w-full py-2 px-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-                    >
-                      <span>Pass Details</span>
-                    </button>
-                  </div>
-                  <span className="text-[8px] text-neutral-400 font-sans block">
-                    Each stamp expires 12 calendar months from delivery date • Non-transferable
-                  </span>
-                </div>
-              </div>
+            {/* RIGHT PANEL (5 cols on lg): AUTHENTIC TH3EE BOARDING PASS */}
+            <div className="lg:col-span-5 flex flex-col items-center justify-start">
+              <TH3EEBoardingPass
+                memberCode={memberCode}
+                memberName={currentUser?.name || 'TH3EE Patron'}
+                memberEmail={currentUser?.email || ''}
+                activeStampsCount={activeCount}
+                totalStamps={TOTAL_STAMPS}
+                dateStr={passDate}
+                verificationUrl={passVerificationUrl}
+                onDownload={handleDownloadPass}
+                showTopBar={false}
+                showDownloadButton={true}
+                isDownloading={isDownloading}
+                notchBgColor="bg-[#121215]"
+              />
             </div>
           </div>
+
 
           {/* Stamp Expiry Note */}
           <div className="mt-6 pt-3 border-t border-neutral-800 text-[10px] text-neutral-500 text-center font-sans">
@@ -884,136 +834,36 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
         </div>
       </div>
 
-      {/* Interactive Pass Verification Modal (Displays Scanned Member Details & Collected Stamps) */}
+      {/* Interactive Boarding Pass Modal */}
       <AnimatePresence>
         {isVerifyModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs font-mono">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              className="relative w-full max-w-lg bg-[#FAF9F5] text-neutral-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-neutral-300 space-y-5"
+              className="relative w-full max-w-[390px] my-auto"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
-                    MEMBER PASS DETAILS
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsVerifyModalOpen(false)}
-                  className="text-neutral-400 hover:text-neutral-900 text-sm font-bold p-1 cursor-pointer"
-                  aria-label="Close"
-                >
-                  <CloseIcon className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Pass details summary */}
-              <div className="space-y-3 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 text-left">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500 uppercase">Cardholder Name</span>
-                  <span className="text-xs font-black uppercase text-neutral-900">{currentUser?.name || 'TH3EE Patron'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500 uppercase">Member Pass ID</span>
-                  <span className="text-xs font-mono font-bold text-neutral-900">TH3EE-{memberCode}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500 uppercase">Email Address</span>
-                  <span className="text-xs font-mono text-neutral-700">{currentUser?.email || ''}</span>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
-                  <span className="text-[10px] text-neutral-500 uppercase">Stamps Collected</span>
-                  <span className="text-sm font-black font-mono text-[#E51E2B]">{activeCount} / 07 STAMPS</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500 uppercase">Remaining For Free Tee</span>
-                  <span className="text-xs font-bold text-neutral-900">{stampsRemaining} stamps left</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500 uppercase">Verification Status</span>
-                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                    <CheckIcon className="w-3.5 h-3.5" />
-                    Atelier Verified
-                  </span>
-                </div>
-                <div className="flex items-center justify-between pt-1 border-t border-neutral-100">
-                  <span className="text-[10px] text-neutral-500 uppercase">Issued / Verified Date</span>
-                  <span className="text-xs font-mono font-bold text-neutral-900">{passDate}</span>
-                </div>
-              </div>
-
-              {/* Visual mini-stamps */}
-              <div className="bg-white p-3 rounded-2xl border border-neutral-200">
-                <span className="text-[9px] font-bold uppercase text-neutral-500 block mb-2 text-center">
-                  Live Stamp Punchcard Log
-                </span>
-                <div className="grid grid-cols-4 gap-2 text-center">
-                  {Array.from({ length: 7 }, (_, i) => {
-                    const isCollected = i < activeCount;
-                    return (
-                      <div key={i} className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black ${
-                          isCollected ? 'bg-[#E51E2B] text-white shadow-xs' : 'border border-dashed border-neutral-300 text-neutral-400'
-                        }`}>
-                          {isCollected ? '3' : `0${i+1}`}
-                        </div>
-                        <span className="text-[7px] text-neutral-500 font-mono mt-0.5">
-                          {isCollected ? 'COLLECTED' : 'PENDING'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[8px] font-black ${
-                      isRewardUnlocked ? 'bg-amber-500 text-neutral-950 font-black' : 'border border-dashed border-amber-300 text-amber-600'
-                    }`}>
-                      TEE
-                    </div>
-                    <span className="text-[7px] text-amber-700 font-mono mt-0.5">
-                      {isRewardUnlocked ? 'READY' : 'REWARD'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={handleDownloadPass}
-                  disabled={isDownloading}
-                  className="w-full sm:flex-1 py-2.5 bg-[#E51E2B] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-md flex items-center justify-center gap-1.5"
-                >
-                  <DownloadIcon className="w-3.5 h-3.5" />
-                  <span>{isDownloading ? 'Saving...' : 'Download Pass QR'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsVerifyModalOpen(false);
-                    if (typeof window !== 'undefined') {
-                      window.open(passVerificationUrl, '_blank');
-                    }
-                  }}
-                  className="w-full sm:flex-1 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-md"
-                >
-                  Open Full Pass View
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsVerifyModalOpen(false)}
-                  className="w-full sm:w-auto py-2.5 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
-                >
-                  Close
-                </button>
-              </div>
+              <TH3EEBoardingPass
+                memberCode={memberCode}
+                memberName={currentUser?.name || 'TH3EE Patron'}
+                memberEmail={currentUser?.email || ''}
+                activeStampsCount={activeCount}
+                totalStamps={TOTAL_STAMPS}
+                dateStr={passDate}
+                verificationUrl={passVerificationUrl}
+                onDownload={handleDownloadPass}
+                onClose={() => setIsVerifyModalOpen(false)}
+                showTopBar={true}
+                showDownloadButton={true}
+                isDownloading={isDownloading}
+                notchBgColor="bg-black/85"
+              />
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
 
       {/* Patron Audit Ledger & Rules Tabs (Preserved customer history) */}
       <div className="bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">

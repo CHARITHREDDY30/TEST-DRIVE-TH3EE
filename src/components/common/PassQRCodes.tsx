@@ -140,112 +140,234 @@ export interface DownloadPassBadgeOptions {
 
 /**
  * Client-side High-Resolution Pass Card Exporter
- * Generates an authentic, high-res digital pass PNG containing the scannable QR Code,
- * member details, stamps balance, and explicit date of verification.
+ * Generates an authentic, luxury digital Boarding Pass PNG matching the TH3EE theme
+ * containing the scannable QR Code, member details, stamps, and explicit date.
  */
 export async function downloadPassBadge(opts: DownloadPassBadgeOptions): Promise<void> {
   if (typeof window === 'undefined') return;
 
   const width = 720;
-  const height = 980;
+  const height = 1040;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  // Background gradient: Luxury Obsidian Black
+  // Background: Sleek Luxury Atelier Studio Backdrop
   const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-  bgGrad.addColorStop(0, '#161619');
-  bgGrad.addColorStop(0.5, '#0E0E11');
-  bgGrad.addColorStop(1, '#060608');
+  bgGrad.addColorStop(0, '#18181B');
+  bgGrad.addColorStop(0.5, '#0F0F12');
+  bgGrad.addColorStop(1, '#08080A');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, width, height);
 
-  // Outer Border
-  ctx.strokeStyle = '#27272A';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(16, 16, width - 32, height - 32);
+  // Boarding Pass White Card
+  const cardW = 580;
+  const cardH = 830;
+  const cardX = (width - cardW) / 2;
+  const cardY = 50;
+  const cardRadius = 32;
 
-  // Top Red Accent Line
-  ctx.fillStyle = '#E51E2B';
-  ctx.fillRect(16, 16, width - 32, 6);
+  // Soft Card Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 16;
 
-  // Header: TH3EE REWARD CLUB • CULT PASS
-  ctx.fillStyle = '#E51E2B';
+  // Draw Card Body
+  ctx.fillStyle = '#FFFFFF';
   ctx.beginPath();
-  ctx.arc(54, 62, 7, 0, Math.PI * 2);
+  ctx.roundRect(cardX, cardY, cardW, cardH, cardRadius);
   ctx.fill();
 
-  ctx.fillStyle = '#F4F4F5';
-  ctx.font = '900 17px monospace, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('TH3EE REWARD CLUB • CULT PASS', 72, 68);
+  // Reset shadow for card contents
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
 
-  ctx.fillStyle = '#A1A1AA';
+  // 1. Card Header: TH3EE Logo & Pass ID
+  ctx.fillStyle = '#111113';
+  ctx.font = '900 24px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('TH', cardX + 36, cardY + 54);
+
+  const thWidth = ctx.measureText('TH').width;
+  ctx.fillStyle = '#E51E2B';
+  ctx.fillText('3', cardX + 36 + thWidth, cardY + 54);
+
+  const threeWidth = ctx.measureText('3').width;
+  ctx.fillStyle = '#111113';
+  ctx.fillText('EE', cardX + 36 + thWidth + threeWidth, cardY + 54);
+
+  // Small Atelier Badge
+  ctx.fillStyle = '#FEF2F2';
+  ctx.beginPath();
+  ctx.roundRect(cardX + 36 + thWidth + threeWidth + 34, cardY + 36, 74, 22, 6);
+  ctx.fill();
+  ctx.fillStyle = '#E51E2B';
+  ctx.font = '700 11px monospace';
+  ctx.fillText('ATELIER', cardX + 36 + thWidth + threeWidth + 44, cardY + 51);
+
+  // Pass ID on Right
+  const cleanCode = opts.memberCode.replace(/^TH3EE-/i, '').toUpperCase();
+  ctx.fillStyle = '#9CA3AF';
   ctx.font = '700 14px monospace';
   ctx.textAlign = 'right';
-  ctx.fillText(`PASS #${opts.memberCode}`, width - 54, 68);
+  ctx.fillText(`ID TH3EE-${cleanCode}`, cardX + cardW - 36, cardY + 52);
 
-  // Divider
-  ctx.strokeStyle = '#27272A';
-  ctx.lineWidth = 1;
+  // Header Divider
+  ctx.strokeStyle = '#F3F4F6';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(50, 95);
-  ctx.lineTo(width - 50, 95);
+  ctx.moveTo(cardX + 36, cardY + 76);
+  ctx.lineTo(cardX + cardW - 36, cardY + 76);
   ctx.stroke();
 
-  // Member Information
-  ctx.fillStyle = '#FFFFFF';
+  // 2. Hero Route Block: PATRON -> CULT
+  ctx.fillStyle = '#111113';
   ctx.font = '900 32px sans-serif';
   ctx.textAlign = 'left';
-  const displayName = (opts.memberName || 'TH3EE PATRON').toUpperCase();
-  ctx.fillText(displayName, 50, 142);
+  ctx.fillText('PATRON', cardX + 36, cardY + 128);
 
-  ctx.fillStyle = '#A1A1AA';
-  ctx.font = '500 16px monospace';
-  ctx.fillText(opts.memberEmail || '', 50, 172);
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = '600 12px sans-serif';
+  ctx.fillText('ATELIER MEMBER', cardX + 36, cardY + 148);
 
-  // Stamps Pill Badge
-  ctx.fillStyle = '#260B0E';
-  ctx.strokeStyle = '#E51E2B';
-  ctx.lineWidth = 1.5;
-  const pillText = `● ${opts.stampsCount.toString().padStart(2, '0')} / ${(opts.totalStamps || 7).toString().padStart(2, '0')} STAMPS COLLECTED`;
-  ctx.font = '900 14px monospace';
-  const pillWidth = ctx.measureText(pillText).width + 32;
-  
-  // Draw rounded pill
-  const pillX = 50;
-  const pillY = 194;
-  const pillH = 34;
+  // Center Arrow Badge
+  const badgeCenterX = cardX + cardW / 2;
+  const badgeCenterY = cardY + 130;
+  ctx.fillStyle = '#E51E2B';
   ctx.beginPath();
-  ctx.roundRect(pillX, pillY, pillWidth, pillH, 17);
+  ctx.arc(badgeCenterX, badgeCenterY, 20, 0, Math.PI * 2);
   ctx.fill();
+
+  // Draw arrow inside badge
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(badgeCenterX - 8, badgeCenterY);
+  ctx.lineTo(badgeCenterX + 8, badgeCenterY);
+  ctx.lineTo(badgeCenterX + 3, badgeCenterY - 5);
+  ctx.moveTo(badgeCenterX + 8, badgeCenterY);
+  ctx.lineTo(badgeCenterX + 3, badgeCenterY + 5);
   ctx.stroke();
 
-  ctx.fillStyle = '#FF384D';
-  ctx.fillText(pillText, pillX + 16, pillY + 22);
+  // Right Side: CULT VIP
+  ctx.fillStyle = '#E51E2B';
+  ctx.font = '900 32px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('CULT', cardX + cardW - 36, cardY + 128);
 
-  // White Container for QR Code (High contrast for instant camera scan)
-  const qrBoxSize = 390;
-  const qrBoxX = (width - qrBoxSize) / 2;
-  const qrBoxY = 250;
-  ctx.fillStyle = '#FFFFFF';
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = '600 12px sans-serif';
+  ctx.fillText('VIP TIER PASS', cardX + cardW - 36, cardY + 148);
+
+  // Divider
+  ctx.strokeStyle = '#F3F4F6';
   ctx.beginPath();
-  ctx.roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize + 70, 24);
+  ctx.moveTo(cardX + 36, cardY + 172);
+  ctx.lineTo(cardX + cardW - 36, cardY + 172);
+  ctx.stroke();
+
+  // 3. Details Row 1 (3 Columns: Stamps | Reward | Status)
+  const col1X = cardX + 36;
+  const col2X = cardX + 220;
+  const col3X = cardX + cardW - 36;
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = '600 12px sans-serif';
+  ctx.fillText('STAMPS', col1X, cardY + 200);
+  ctx.fillStyle = '#111113';
+  ctx.font = '900 18px monospace';
+  ctx.fillText(`${opts.stampsCount.toString().padStart(2, '0')} / ${(opts.totalStamps || 7).toString().padStart(2, '0')}`, col1X, cardY + 226);
+
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = '600 12px sans-serif';
+  ctx.fillText('REWARD', col2X, cardY + 200);
+  ctx.fillStyle = '#E51E2B';
+  ctx.font = '900 18px monospace';
+  const remainingCount = Math.max(0, (opts.totalStamps || 7) - opts.stampsCount);
+  ctx.fillText(opts.stampsCount >= (opts.totalStamps || 7) ? 'READY' : `${remainingCount} LEFT`, col2X, cardY + 226);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = '600 12px sans-serif';
+  ctx.fillText('STATUS', col3X, cardY + 200);
+  ctx.fillStyle = '#059669';
+  ctx.font = '900 18px monospace';
+  ctx.fillText('VERIFIED', col3X, cardY + 226);
+
+  // Divider
+  ctx.strokeStyle = '#F3F4F6';
+  ctx.beginPath();
+  ctx.moveTo(cardX + 36, cardY + 246);
+  ctx.lineTo(cardX + cardW - 36, cardY + 246);
+  ctx.stroke();
+
+  // 4. Details Row 2 (Passenger & Date)
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = '600 12px sans-serif';
+  ctx.fillText('CARDHOLDER / PASSENGER', col1X, cardY + 274);
+  ctx.fillStyle = '#111113';
+  ctx.font = '900 18px sans-serif';
+  const displayName = (opts.memberName || 'TH3EE PATRON').toUpperCase();
+  ctx.fillText(displayName, col1X, cardY + 300);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = '600 12px sans-serif';
+  ctx.fillText('DATE', col3X, cardY + 274);
+  ctx.fillStyle = '#111113';
+  ctx.font = '900 18px monospace';
+  ctx.fillText(opts.dateStr, col3X, cardY + 300);
+
+  // 5. Perforation Ticket Notch Line
+  const notchY = cardY + 340;
+  const notchRadius = 18;
+
+  // Left notch cutout (drawn with background color)
+  ctx.fillStyle = '#121215';
+  ctx.beginPath();
+  ctx.arc(cardX, notchY, notchRadius, -Math.PI / 2, Math.PI / 2);
   ctx.fill();
 
-  // Generate real QR code onto canvas
+  // Right notch cutout
+  ctx.beginPath();
+  ctx.arc(cardX + cardW, notchY, notchRadius, Math.PI / 2, -Math.PI / 2);
+  ctx.fill();
+
+  // Dashed ticket separator line
+  ctx.strokeStyle = '#E5E7EB';
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.moveTo(cardX + notchRadius + 6, notchY);
+  ctx.lineTo(cardX + cardW - notchRadius - 6, notchY);
+  ctx.stroke();
+  ctx.setLineDash([]); // Reset dash
+
+  // 6. Centered Authentic QR Code
+  const qrBoxY = cardY + 375;
+  const qrTargetSize = 250;
+  const qrBoxX = (width - qrTargetSize) / 2;
+
   try {
     const qr = QRCode.create(opts.verificationUrl, { errorCorrectionLevel: 'M' });
     const moduleCount = qr.modules.size;
     const margin = 2;
     const totalModules = moduleCount + margin * 2;
-    const qrTargetSize = 340;
     const cellSize = Math.floor(qrTargetSize / totalModules);
     const actualQrSize = cellSize * totalModules;
-    const qrStartX = qrBoxX + Math.floor((qrBoxSize - actualQrSize) / 2);
-    const qrStartY = qrBoxY + 22;
+    const qrStartX = (width - actualQrSize) / 2;
+    const qrStartY = qrBoxY;
+
+    // Draw white QR backing
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(qrStartX - 8, qrStartY - 8, actualQrSize + 16, actualQrSize + 16);
 
     ctx.fillStyle = '#000000';
     for (let r = 0; r < moduleCount; r++) {
@@ -264,57 +386,88 @@ export async function downloadPassBadge(opts: DownloadPassBadgeOptions): Promise
     console.error('Error drawing QR code on canvas:', err);
   }
 
-  // QR Label inside white container
-  ctx.fillStyle = '#111113';
-  ctx.font = '900 17px sans-serif';
+  // QR subtext
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = '600 12px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('TH3EE MEMBER PASS', width / 2, qrBoxY + qrBoxSize + 32);
+  ctx.fillText('SCAN WITH ANY PHONE CAMERA', width / 2, qrBoxY + qrTargetSize + 22);
 
-  ctx.fillStyle = '#71717A';
-  ctx.font = '700 12px monospace';
-  ctx.fillText('ATELIER VERIFIED • SCAN WITH PHONE CAMERA', width / 2, qrBoxY + qrBoxSize + 52);
+  // 7. Bottom Ticket Details Strip (Signature Crimson Red Bar)
+  const stripW = cardW - 56;
+  const stripH = 68;
+  const stripX = cardX + 28;
+  const stripY = cardY + cardH - 104;
 
-  // PROMINENT DATE SECTION (MANDATORY REQUIREMENT)
-  const dateBoxW = 540;
-  const dateBoxH = 64;
-  const dateBoxX = (width - dateBoxW) / 2;
-  const dateBoxY = 745;
-
-  ctx.fillStyle = '#18181B';
-  ctx.strokeStyle = '#3F3F46';
-  ctx.lineWidth = 1.5;
+  ctx.fillStyle = '#E51E2B';
   ctx.beginPath();
-  ctx.roundRect(dateBoxX, dateBoxY, dateBoxW, dateBoxH, 16);
+  ctx.roundRect(stripX, stripY, stripW, stripH, 18);
   ctx.fill();
+
+  // 3 strip columns
+  const sCol1 = stripX + stripW * 0.17;
+  const sCol2 = stripX + stripW * 0.5;
+  const sCol3 = stripX + stripW * 0.83;
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+  ctx.font = '600 11px sans-serif';
+  ctx.fillText('TIER', sCol1, stripY + 24);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 14px sans-serif';
+  ctx.fillText('CULT VIP', sCol1, stripY + 48);
+
+  // Column divider 1
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(stripX + stripW * 0.33, stripY + 14);
+  ctx.lineTo(stripX + stripW * 0.33, stripY + stripH - 14);
   ctx.stroke();
 
-  ctx.fillStyle = '#10B981';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+  ctx.font = '600 11px sans-serif';
+  ctx.fillText('PERK', sCol2, stripY + 24);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 14px sans-serif';
+  ctx.fillText('FREE TEE', sCol2, stripY + 48);
+
+  // Column divider 2
   ctx.beginPath();
-  ctx.arc(dateBoxX + 30, dateBoxY + dateBoxH / 2, 5, 0, Math.PI * 2);
+  ctx.moveTo(stripX + stripW * 0.66, stripY + 14);
+  ctx.lineTo(stripX + stripW * 0.66, stripY + stripH - 14);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+  ctx.font = '600 11px sans-serif';
+  ctx.fillText('CYCLE', sCol3, stripY + 24);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 14px sans-serif';
+  ctx.fillText(opts.stampsCount >= (opts.totalStamps || 7) ? 'UNLOCKED' : `${remainingCount} LEFT`, sCol3, stripY + 48);
+
+  // 8. Bottom Full-width Pill Button: "Save and Download"
+  const btnW = cardW;
+  const btnH = 58;
+  const btnX = cardX;
+  const btnY = cardY + cardH + 24;
+
+  ctx.fillStyle = '#171717';
+  ctx.beginPath();
+  ctx.roundRect(btnX, btnY, btnW, btnH, 29);
   ctx.fill();
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = '900 18px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText(`ISSUED / VERIFIED: ${opts.dateStr}`, dateBoxX + 48, dateBoxY + 38);
-
-  // Footer Instructions
-  ctx.fillStyle = '#A1A1AA';
-  ctx.font = '500 14px sans-serif';
+  ctx.font = '900 15px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Scan with any smartphone camera to view live balance & redemption status.', width / 2, 855);
+  ctx.fillText('SAVE AND DOWNLOAD PASS', width / 2, btnY + 36);
 
+  // Footer copyright
   ctx.fillStyle = '#71717A';
   ctx.font = '600 12px monospace';
-  ctx.fillText('Each stamp valid 12 months • Non-transferable • th3ee.in', width / 2, 885);
-
-  ctx.fillStyle = '#3F3F46';
-  ctx.font = '500 11px monospace';
-  ctx.fillText('TH3EE™ CLOTHING CO. // ALL RIGHTS RESERVED', width / 2, 925);
+  ctx.fillText('TH3EE™ CLOTHING CO. // ATELIER CULT PASS', width / 2, height - 32);
 
   // Convert to image download
   const cleanDate = (opts.dateStr || 'DATE').replace(/[^a-zA-Z0-9-]/g, '-');
-  const filename = `TH3EE-PASS-${opts.memberCode}-${cleanDate}.png`;
+  const filename = `TH3EE-BOARDING-PASS-${cleanCode}-${cleanDate}.png`;
 
   canvas.toBlob((blob) => {
     if (!blob) return;
@@ -328,4 +481,5 @@ export async function downloadPassBadge(opts: DownloadPassBadgeOptions): Promise
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, 'image/png');
 }
+
 
