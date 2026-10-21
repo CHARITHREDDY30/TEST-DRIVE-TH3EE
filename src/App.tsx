@@ -975,6 +975,7 @@ export default function App() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
   const [isCategoriesDropdownOpen, setIsCategoriesDropdownOpen] = useState(false);
+  const [isCategoriesPopupOpen, setIsCategoriesPopupOpen] = useState(false);
   const categoriesDropdownRef = useRef(null);
 
   const [navSearchQuery, setNavSearchQuery] = useState("");
@@ -1407,52 +1408,20 @@ export default function App() {
                 </button>
 
                 {/* 3. CATEGORY */}
-                <div>
-                  <button 
-                    type="button" 
-                    onClick={function() { setIsMobileCategoryOpen(!isMobileCategoryOpen); }} 
-                    className="flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors text-neutral-900"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Layers className="w-4 h-4 text-[#FF2E2E]" />
-                      <span>CATEGORY</span>
-                    </span>
-                    <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isMobileCategoryOpen ? "rotate-180 text-[#E51E2B]" : ""}`} />
-                  </button>
-
-                  {isMobileCategoryOpen && (
-                    <div className="pl-4 pr-1 py-2.5 space-y-2 bg-neutral-50 border-l-2 border-[#E51E2B] my-1 rounded-r-md">
-                      <button
-                        type="button"
-                        onClick={function() {
-                          setIsMobileNavOpen(false);
-                          navigate("/shop");
-                        }}
-                        className="w-full text-left py-1 text-[11px] font-bold text-neutral-700 hover:text-[#E51E2B] flex items-center justify-between"
-                      >
-                        <span>All Universes & Collections</span>
-                        <ArrowRight className="w-3 h-3 text-neutral-400" />
-                      </button>
-                      <div className="grid grid-cols-2 gap-1.5 pt-1 max-h-48 overflow-y-auto">
-                        {universeCategoriesList.map(function(u) {
-                          return (
-                            <button
-                              type="button"
-                              key={u.id}
-                              onClick={function() {
-                                setIsMobileNavOpen(false);
-                                navigate("/shop?universe=" + u.id);
-                              }}
-                              className="p-1.5 bg-white hover:bg-neutral-100 text-[10px] font-bold text-left truncate border border-neutral-200"
-                            >
-                              {u.title}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <button 
+                  type="button" 
+                  onClick={function() { 
+                    setIsMobileNavOpen(false); 
+                    setIsCategoriesPopupOpen(true); 
+                  }} 
+                  className="flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors text-neutral-900"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Layers className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>CATEGORY</span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-neutral-400" />
+                </button>
 
                 {/* 4. TSHIRT */}
                 <button 
@@ -1548,6 +1517,7 @@ export default function App() {
                 addToBag={addToBag}
                 setQuickViewItem={setQuickViewItem}
                 setSelectedUniverseModal={setSelectedUniverseModal}
+                onOpenCategoriesPopup={function() { setIsCategoriesPopupOpen(true); }}
               />
             )}
 
@@ -1732,6 +1702,108 @@ export default function App() {
         </div>
       )}
 
+      {/* ALL CATEGORIES DIRECTORY POPUP MODAL (Clean luxury card with background images, NO subcategories) */}
+      <AnimatePresence>
+        {isCategoriesPopupOpen && (
+          <div 
+            className="fixed inset-0 z-[75] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4"
+            onClick={function() { setIsCategoriesPopupOpen(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 36, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 36, scale: 0.96 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              onClick={function(e) { e.stopPropagation(); }}
+              className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-neutral-200 w-full max-w-md sm:max-w-xl p-5 sm:p-6 space-y-4 max-h-[85vh] flex flex-col font-sans"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black uppercase text-neutral-900 leading-none">
+                    All Categories
+                  </h3>
+                  <span className="text-[10px] sm:text-xs font-mono text-neutral-500 font-bold uppercase mt-1.5 block tracking-wider">
+                    {universeCategoriesList.length} Categories Available
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={function() { setIsCategoriesPopupOpen(false); }}
+                  className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Grid of Categories with Background Images (NO subcategories) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 overflow-y-auto pr-1 py-1 max-h-[58vh]">
+                {universeCategoriesList.map(function(cat) {
+                  const focalClass = cat.focalPoint === 'top' ? 'object-top' : (cat.focalPoint === 'bottom' ? 'object-bottom' : 'object-center');
+                  const overlayOp = typeof cat.overlayOpacity === 'number' ? cat.overlayOpacity : 0.65;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={function() {
+                        setIsCategoriesPopupOpen(false);
+                        navigate("/shop?universe=" + cat.id);
+                        showNotification("Filtered: " + cat.title);
+                      }}
+                      style={{ backgroundColor: cat.bgColor || '#171717' }}
+                      className="group relative h-24 sm:h-28 rounded-2xl overflow-hidden cursor-pointer shadow-xs hover:shadow-md border border-neutral-200/80 active:scale-[0.98] transition-all text-left flex flex-col justify-end p-2.5 sm:p-3"
+                    >
+                      {/* Background Image */}
+                      {cat.image ? (
+                        <img
+                          src={resolveProductImageUrl(cat.image)}
+                          onError={handleImageLoadError}
+                          alt={cat.title}
+                          className={"absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 " + focalClass}
+                        />
+                      ) : (
+                        <div className="absolute inset-0" style={{ backgroundColor: cat.bgColor || '#171717' }} />
+                      )}
+
+                      {/* Dark Gradient Overlay for contrast */}
+                      <div
+                        className={"absolute inset-0 bg-gradient-to-t " + (cat.bgGradient || "from-neutral-950 via-neutral-900/80 to-neutral-950/40")}
+                        style={{ opacity: overlayOp }}
+                      />
+
+                      {/* Content on top */}
+                      <div className="relative z-10 w-full">
+                        <span className="text-[7px] sm:text-[8px] font-mono uppercase tracking-widest text-neutral-300 font-semibold leading-none truncate block">
+                          {cat.subtitle}
+                        </span>
+                        <h4 className="text-xs sm:text-sm font-black uppercase tracking-tight text-white mt-0.5 leading-tight truncate group-hover:text-[#E51E2B] transition-colors">
+                          {cat.title}
+                        </h4>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Footer Option */}
+              <div className="pt-2 border-t border-neutral-100">
+                <button
+                  type="button"
+                  onClick={function() {
+                    setIsCategoriesPopupOpen(false);
+                    navigate("/shop");
+                  }}
+                  className="w-full py-2.5 bg-neutral-900 hover:bg-[#E51E2B] text-white text-[11px] font-mono font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer text-center"
+                >
+                  Browse All Drops & Products →
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Quick View Item Modal */}
       {quickViewItem && (
         <QuickViewModal 
@@ -1796,7 +1868,7 @@ export default function App() {
                   type="button"
                   onClick={function() { navigate("/shop"); }}
                   className={`flex flex-col items-center justify-center py-1 transition-colors ${
-                    routeState.view === "shop" ? "text-[#FF2E2E] font-bold" : "text-neutral-500 hover:text-neutral-900"
+                    routeState.view === "shop" && !isCategoriesPopupOpen ? "text-[#FF2E2E] font-bold" : "text-neutral-500 hover:text-neutral-900"
                   }`}
                   aria-label="Explore Universes"
                 >
@@ -1804,15 +1876,17 @@ export default function App() {
                   <span className="text-[10px] tracking-tight mt-0.5 font-sans">Explore</span>
                 </button>
 
-                {/* 3. Wishlist */}
+                {/* 3. Category */}
                 <button
                   type="button"
-                  onClick={function() { navigate("/shop?filter=featured"); }}
-                  className="flex flex-col items-center justify-center py-1 text-neutral-500 hover:text-neutral-900 transition-colors"
-                  aria-label="Wishlist"
+                  onClick={function() { setIsCategoriesPopupOpen(true); }}
+                  className={`flex flex-col items-center justify-center py-1 transition-colors ${
+                    isCategoriesPopupOpen ? "text-[#FF2E2E] font-bold" : "text-neutral-500 hover:text-neutral-900"
+                  }`}
+                  aria-label="Category"
                 >
-                  <Heart className="w-5 h-5" />
-                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Wishlist</span>
+                  <Layers className="w-5 h-5" />
+                  <span className="text-[10px] tracking-tight mt-0.5 font-sans">Category</span>
                 </button>
 
                 {/* 5. Bag */}
@@ -1884,8 +1958,9 @@ function HomePageView({
   navigate, 
   addToBag, 
   setQuickViewItem, 
-  setSelectedUniverseModal 
-}) {
+  setSelectedUniverseModal,
+  onOpenCategoriesPopup
+}: any) {
   const [mobileHeroSlide, setMobileHeroSlide] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const touchStartXRef = useRef(0);
@@ -2135,7 +2210,7 @@ function HomePageView({
 
             <button
               type="button"
-              onClick={function() { navigate("/shop"); }}
+              onClick={onOpenCategoriesPopup || function() { navigate("/shop"); }}
               className="mt-2.5 w-full py-2 rounded-xl bg-white border border-neutral-300 hover:border-black active:bg-neutral-50 text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-900 flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
             >
               <span>More Universes ({universeCategoriesList.length})</span>
