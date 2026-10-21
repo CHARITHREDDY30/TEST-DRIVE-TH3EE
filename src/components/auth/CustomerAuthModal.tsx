@@ -477,9 +477,9 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
 
   // Card Content
   const portalCard = (
-    <div className="w-full md:max-w-4xl transition-all duration-300 relative min-h-screen md:min-h-0 flex flex-col justify-center">
+    <div className="w-full md:max-w-4xl transition-all duration-300 relative flex flex-col justify-center my-auto">
       {/* Main Card: Full-screen seamless page on mobile (no curved popup edges), elevated rounded card on desktop */}
-      <div className="bg-white rounded-none md:rounded-[36px] shadow-none md:th3ee-card-shadow overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-screen md:min-h-[540px] border-none md:border md:border-white relative w-full">
+      <div className="bg-white rounded-none md:rounded-[36px] shadow-none md:th3ee-card-shadow overflow-hidden grid grid-cols-1 md:grid-cols-12 border-none md:border md:border-white relative w-full md:min-h-[540px]">
         
         {/* Modal Close Button if in modal mode on desktop */}
         {isModal && onClose && (
@@ -496,7 +496,7 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
         {/* ========================================================= */}
         {/* LEFT / TOP COLUMN: VECTOR ARTWORK IN TH3EE RED (CHANGE 2) */}
         {/* ========================================================= */}
-        <div className="md:col-span-6 relative bg-gradient-to-br from-[#fff2f2] via-[#ffe8e8] to-[#fff7f7] flex flex-col items-center justify-center p-6 sm:p-8 overflow-hidden min-h-[240px] md:min-h-full border-b md:border-b-0 md:border-r border-red-100/60 select-none">
+        <div className="md:col-span-6 relative bg-gradient-to-br from-[#fff2f2] via-[#ffe8e8] to-[#fff7f7] flex flex-col items-center justify-center py-4 px-6 sm:p-8 overflow-hidden min-h-[160px] sm:min-h-[220px] md:min-h-full border-b md:border-b-0 md:border-r border-red-100/60 select-none">
           
           {/* Organic Soft Curved Wave inside the backdrop */}
           <svg className="absolute -top-10 -left-10 w-72 h-72 sm:w-96 sm:h-96 opacity-40 text-red-200 pointer-events-none" viewBox="0 0 200 200" fill="currentColor">
@@ -526,7 +526,7 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
           </div>
 
           {/* PRIMARY VECTOR ARTWORK RECOLORED IN TH3EE RED & WHITE */}
-          <div className="relative w-full max-w-[280px] sm:max-w-[340px] md:max-w-[370px] h-48 sm:h-64 md:h-76 flex items-center justify-center my-auto">
+          <div className="relative w-full max-w-[220px] sm:max-w-[320px] md:max-w-[370px] h-36 sm:h-56 md:h-76 flex items-center justify-center my-auto">
             <svg viewBox="0 0 400 340" className="w-full h-full drop-shadow-sm select-none" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Baseline Ground in Brand Red */}
               <path d="M40 310H360" stroke="#FF2E2E" strokeWidth="4.5" strokeLinecap="round" opacity="0.85"/>
@@ -621,10 +621,10 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
         {/* ========================================================= */}
         {/* RIGHT / BOTTOM COLUMN: AUTHENTICATION FORM (CHANGE 2)     */}
         {/* ========================================================= */}
-        <div className="md:col-span-6 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-center bg-white relative z-10">
+        <div className="md:col-span-6 px-5 py-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-center bg-white relative z-10">
           
           {/* Headings */}
-          <div className="text-center md:text-left mb-5 sm:mb-7">
+          <div className="text-center md:text-left mb-4 sm:mb-6">
             <h1 className="font-poppins font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
               {mode === 'login' && 'Welcome!'}
               {mode === 'register' && 'Join TH3EE'}
@@ -812,7 +812,7 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
                     onClick={() => switchMode('forgot-password')} 
                     className="text-xs sm:text-[13px] text-brand-500 hover:text-brand-700 font-semibold transition-colors cursor-pointer"
                   >
-                    Forgot Password?
+                    Forgot password?
                   </button>
                 </div>
               )}
@@ -1097,7 +1097,7 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
           {/* ================= OR LOGIN WITH SOCIAL ================= */}
           {(mode === 'login' || mode === 'register') && (
             <>
-              <div className="relative my-6 text-center">
+              <div className="relative my-4 sm:my-6 text-center">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200" />
                 </div>
@@ -1149,7 +1149,7 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
           )}
 
           {/* Bottom Card Brand Microcopy */}
-          <div className="mt-6 text-center text-xs text-slate-400 font-sans">
+          <div className="mt-4 sm:mt-6 text-center text-xs text-slate-400 font-sans">
             TH3EE Clothing Identity Protection
           </div>
 
@@ -1179,7 +1179,7 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
 
   // Dedicated Full-Page Mode (for mobile & desktop routes /login, /register, etc.)
   return (
-    <div className="bg-white md:bg-[#faf5f5] font-sans min-h-screen relative flex flex-col justify-between text-slate-800 antialiased select-none overflow-x-hidden p-0 md:p-6 lg:p-8">
+    <div className="bg-white md:bg-[#faf5f5] font-sans min-h-screen min-h-[100dvh] relative flex flex-col text-slate-800 antialiased select-none overflow-x-hidden p-0 md:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-6">
       {/* Ambient TH3EE Red Corner Organic Blobs */}
       <div className="blob-top-left hidden md:block" />
       <div className="blob-bottom-right hidden md:block" />
@@ -1224,33 +1224,9 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
       </header>
 
       {/* Main Viewport Responsive Container */}
-      <main className="relative z-20 flex-1 flex items-stretch md:items-center justify-center w-full p-0 md:px-4 md:my-auto md:py-6">
+      <main className="relative z-20 flex-1 flex flex-col items-center justify-center w-full p-0 md:px-4 py-2 sm:py-4 md:py-6">
         {portalCard}
       </main>
-
-      {/* Bottom Bar with Safe Area */}
-      <footer className="relative z-20 px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-1.5 text-center bg-white md:bg-transparent border-t border-neutral-100 md:border-t-0">
-        <div className="font-medium text-slate-600">TH3EE™ CLOTHING CO. // ALL RIGHTS RESERVED</div>
-        <div className="flex items-center space-x-4">
-          <button 
-            type="button" 
-            onClick={() => showNotification?.('TH3EE patron data is encrypted and protected with industry-standard cryptographic keys.')} 
-            className="hover:text-brand-500 transition-colors cursor-pointer"
-          >
-            Privacy
-          </button>
-          <span>•</span>
-          <button 
-            type="button" 
-            onClick={() => showNotification?.('Official TH3EE membership terms: Authentic limited silhouettes and exclusive drops.')} 
-            className="hover:text-brand-500 transition-colors cursor-pointer"
-          >
-            Terms
-          </button>
-          <span>•</span>
-          <span>v3.3</span>
-        </div>
-      </footer>
     </div>
   );
 };
