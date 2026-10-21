@@ -28,15 +28,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Single Page App Redirect Restore for GitHub Pages -->
+    <!-- Single Page App Redirect Restore & Base Href Anchor for GitHub Pages -->
     <script type="text/javascript">
       (function(l) {
-        if (l.search[1] === '/' ) {
+        var pathname = l.pathname || '/';
+        var match = pathname.match(/^(\/[^\/]+)/);
+        var isTestDrive = match && match[1].toLowerCase() === '/test-drive-th3ee';
+        var basePath = isTestDrive ? match[1] + '/' : '/';
+        document.write('<base href="' + basePath + '">');
+
+        if (l.search && l.search[1] === '/') {
           var decoded = l.search.slice(1).split('&').map(function(s) { 
             return s.replace(/~and~/g, '&');
           }).join('?');
           window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
+              (isTestDrive ? match[1] : '') + decoded + l.hash
           );
         }
       }(window.location));
@@ -45,7 +51,16 @@
     <link rel="stylesheet" crossorigin href="./assets/index-JdNtTM_v.css">
   
     <!-- Base URL for absolute asset resolution on subroutes -->
-    <base href="/" />
+    <!-- <base href="/" /> -->
+    <script type="text/javascript">
+      (function(l) {
+        var p = l.pathname || '/';
+        var m = p.match(/^(/[^/]+)/);
+        var isTest = m && m[1].toLowerCase() === '/test-drive-th3ee';
+        var b = isTest ? m[1] + '/' : '/';
+        document.write('<base href="' + b + '">');
+      }(window.location));
+    </script>
 
     <!-- Dynamic Social Preview Metadata by TH3EE Prerender Engine -->
     <title>BAAHUBALI: THE BEGINNING CULT GRAPHIC TEE — TH3EE Streetwear</title>

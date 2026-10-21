@@ -35,7 +35,16 @@ function generateMetadataTags(params: {
 
   let tags = `
     <!-- Base URL for absolute asset resolution on subroutes -->
-    <base href="/" />
+    <!-- <base href="/" /> -->
+    <script type="text/javascript">
+      (function(l) {
+        var p = l.pathname || '/';
+        var m = p.match(/^(\/[^\/]+)/);
+        var isTest = m && m[1].toLowerCase() === '/test-drive-th3ee';
+        var b = isTest ? m[1] + '/' : '/';
+        document.write('<base href="' + b + '">');
+      }(window.location));
+    </script>
 
     <!-- Dynamic Social Preview Metadata by TH3EE Prerender Engine -->
     <title>${escapedTitle}</title>
