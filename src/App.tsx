@@ -263,6 +263,14 @@ function MessageCircle({ className = "w-4 h-4" }) {
   );
 }
 
+function HelpCircle({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/>
+    </svg>
+  );
+}
+
 function Eye({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -965,6 +973,7 @@ export default function App() {
   const [selectedUniverseModal, setSelectedUniverseModal] = useState(null);
   const [quickViewItem, setQuickViewItem] = useState(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
   const [isCategoriesDropdownOpen, setIsCategoriesDropdownOpen] = useState(false);
   const categoriesDropdownRef = useRef(null);
 
@@ -1364,23 +1373,133 @@ export default function App() {
                 <button type="button" onClick={function() { setIsMobileNavOpen(false); }} className="p-1.5 text-neutral-600 hover:text-[#E51E2B]"><X className="w-5 h-5" /></button>
               </div>
 
-              <form onSubmit={function(e) { e.preventDefault(); setIsMobileNavOpen(false); setIsMobileSearchOpen(true); }} className="mt-4">
-                <div 
-                  onClick={function() { setIsMobileNavOpen(false); setIsMobileSearchOpen(true); }}
-                  className="relative cursor-pointer"
+              <div className="mt-6 space-y-2 text-xs uppercase font-bold tracking-wider">
+                {/* 1. HOME */}
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/"); }} 
+                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${
+                    routeState.view === "home" ? "text-[#E51E2B]" : "text-neutral-900"
+                  }`}
                 >
-                  <input 
-                    type="text" 
-                    readOnly
-                    placeholder="Search drops..." 
-                    value={navSearchQuery}
-                    className="w-full pl-9 pr-3 py-2 bg-neutral-50 border border-neutral-300 text-xs rounded-full focus:outline-none cursor-pointer"
-                  />
-                  <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                </div>
-              </form>
+                  <span className="flex items-center gap-2.5">
+                    <Home className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>HOME</span>
+                  </span>
+                  {routeState.view === "home" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
+                </button>
 
-              <div className="mt-6 space-y-3.5 text-xs uppercase font-bold tracking-wider">
+                {/* 2. SHOP ALL */}
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop"); }} 
+                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${
+                    routeState.view === "shop" && !routeState.query.category && !routeState.query.universe ? "text-[#E51E2B]" : "text-neutral-900"
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>SHOP ALL</span>
+                  </span>
+                  {routeState.view === "shop" && !routeState.query.category && !routeState.query.universe && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />
+                  )}
+                </button>
+
+                {/* 3. CATEGORY */}
+                <div>
+                  <button 
+                    type="button" 
+                    onClick={function() { setIsMobileCategoryOpen(!isMobileCategoryOpen); }} 
+                    className="flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors text-neutral-900"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Layers className="w-4 h-4 text-[#FF2E2E]" />
+                      <span>CATEGORY</span>
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isMobileCategoryOpen ? "rotate-180 text-[#E51E2B]" : ""}`} />
+                  </button>
+
+                  {isMobileCategoryOpen && (
+                    <div className="pl-4 pr-1 py-2.5 space-y-2 bg-neutral-50 border-l-2 border-[#E51E2B] my-1 rounded-r-md">
+                      <button
+                        type="button"
+                        onClick={function() {
+                          setIsMobileNavOpen(false);
+                          navigate("/shop");
+                        }}
+                        className="w-full text-left py-1 text-[11px] font-bold text-neutral-700 hover:text-[#E51E2B] flex items-center justify-between"
+                      >
+                        <span>All Universes & Collections</span>
+                        <ArrowRight className="w-3 h-3 text-neutral-400" />
+                      </button>
+                      <div className="grid grid-cols-2 gap-1.5 pt-1 max-h-48 overflow-y-auto">
+                        {universeCategoriesList.map(function(u) {
+                          return (
+                            <button
+                              type="button"
+                              key={u.id}
+                              onClick={function() {
+                                setIsMobileNavOpen(false);
+                                navigate("/shop?universe=" + u.id);
+                              }}
+                              className="p-1.5 bg-white hover:bg-neutral-100 text-[10px] font-bold text-left truncate border border-neutral-200"
+                            >
+                              {u.title}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. TSHIRT */}
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=T-Shirts"); }} 
+                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${
+                    routeState.query.category === "T-Shirts" ? "text-[#E51E2B]" : "text-neutral-900"
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Shirt className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>TSHIRT</span>
+                  </span>
+                  {routeState.query.category === "T-Shirts" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
+                </button>
+
+                {/* 5. HODDIES & SWEATS */}
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=Hoodies & Sweats"); }} 
+                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${
+                    routeState.query.category === "Hoodies & Sweats" ? "text-[#E51E2B]" : "text-neutral-900"
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Flame className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>HODDIES & SWEATS</span>
+                  </span>
+                  {routeState.query.category === "Hoodies & Sweats" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
+                </button>
+
+                {/* 6. HELP */}
+                <button 
+                  type="button" 
+                  onClick={function() { 
+                    setIsMobileNavOpen(false); 
+                    window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE%2C%20I%20need%20help", "_blank"); 
+                  }} 
+                  className="flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors text-neutral-900"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <HelpCircle className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>HELP</span>
+                  </span>
+                </button>
+
+                {/* 7. SIGNIN/REGISTER */}
                 <button 
                   type="button" 
                   onClick={function() { 
@@ -1391,99 +1510,16 @@ export default function App() {
                       navigate("/login");
                     }
                   }} 
-                  className="flex items-center justify-between w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
+                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] transition-colors ${
+                    routeState.view === "account" || routeState.view === "login" || routeState.view === "register" ? "text-[#E51E2B]" : "text-neutral-900"
+                  }`}
                 >
                   <span className="flex items-center gap-2.5">
                     <User className="w-4 h-4 text-[#FF2E2E]" />
-                    <span>{currentUser ? `Profile (${currentUser.name ? currentUser.name.split(' ')[0] : 'Patron'})` : 'Sign In / Register'}</span>
+                    <span>{currentUser ? `MY ACCOUNT (${currentUser.name ? currentUser.name.split(' ')[0] : 'PATRON'})` : 'SIGNIN/REGISTER'}</span>
                   </span>
                   {currentUser && <span className="w-2 h-2 bg-emerald-500 rounded-full" />}
                 </button>
-                <button 
-                  type="button" 
-                  onClick={function() { 
-                    setIsMobileNavOpen(false); 
-                    navigate("/bag");
-                  }} 
-                  className="flex items-center justify-between w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <ShoppingBag className="w-4 h-4 text-[#FF2E2E]" />
-                    <span>Shopping Bag</span>
-                  </span>
-                  <span className="bg-black text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    {cart.reduce(function(c, i) { return c + (i.quantity || 1); }, 0)}
-                  </span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={function() { setIsMobileNavOpen(false); navigate("/"); }} 
-                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
-                >
-                  <Home className="w-4 h-4 text-[#FF2E2E]" />
-                  <span>Home</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop"); }} 
-                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
-                >
-                  <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
-                  <span>Explore / Shop All Drops</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=T-Shirts"); }} 
-                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
-                >
-                  <Shirt className="w-4 h-4 text-[#FF2E2E]" />
-                  <span>T-Shirts</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop?category=Hoodies & Sweats"); }} 
-                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
-                >
-                  <Flame className="w-4 h-4 text-[#FF2E2E]" />
-                  <span>Hoodies & Sweats</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={function() { setIsMobileNavOpen(false); navigate("/shop?filter=featured"); }} 
-                  className="flex items-center gap-2.5 w-full text-left py-1 hover:text-[#E51E2B] border-b border-neutral-100"
-                >
-                  <Heart className="w-4 h-4 text-[#FF2E2E]" />
-                  <span>Wishlist</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={function() { setIsMobileNavOpen(false); window.open("https://wa.me/" + storeBrand.whatsappPhone + "?text=Hi%20TH3EE", "_blank"); }} 
-                  className="flex items-center gap-2.5 w-full text-left py-1 text-neutral-600 hover:text-black"
-                >
-                  <Truck className="w-4 h-4 text-[#FF2E2E]" />
-                  <span>Order Support</span>
-                </button>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-neutral-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <Compass className="w-4 h-4 text-[#FF2E2E]" />
-                  <span className="text-[10px] font-bold uppercase text-neutral-400">13 Universes</span>
-                </div>
-                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
-                  {universeCategoriesList.map(function(u) {
-                    return (
-                      <button
-                        type="button"
-                        key={u.id}
-                        onClick={function() { setIsMobileNavOpen(false); navigate("/shop?universe=" + u.id); }}
-                        className="p-1.5 bg-neutral-50 hover:bg-neutral-100 text-[10px] font-bold text-left truncate border border-neutral-200"
-                      >
-                        {u.title}
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
             </div>
 
