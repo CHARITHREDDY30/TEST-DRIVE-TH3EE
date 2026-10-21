@@ -588,12 +588,26 @@ function parseCurrentRoute(): RouteState {
     params.forEach(function(v, k) { query[k] = v; });
   }
 
+  // Strip query parameters and hash fragments from path before route comparison
+  const queryIdx = path.indexOf("?");
+  if (queryIdx !== -1) {
+    path = path.substring(0, queryIdx);
+  }
+  const hashIdx = path.indexOf("#");
+  if (hashIdx !== -1) {
+    path = path.substring(0, hashIdx);
+  }
+  if (path.length > 1 && path.endsWith("/")) {
+    path = path.slice(0, -1);
+  }
+
   let view: RouteState["view"] = "home";
   let slug: string | null = null;
 
   if (path.indexOf("/products/") === 0) {
     view = "product";
-    slug = decodeURIComponent(path.replace("/products/", ""));
+    const rawSlug = path.slice("/products/".length);
+    slug = decodeURIComponent(rawSlug).trim();
   } else if (path.indexOf("/shop") === 0) {
     view = "shop";
   } else if (path === "/bag" || path.indexOf("/bag") === 0 || path === "/cart" || path.indexOf("/cart") === 0) {
@@ -639,6 +653,8 @@ export default function App() {
 
   // Dynamic Product Catalog (Initialized from baseline, hydrated via InsForge service)
   const [productsList, setProductsList] = useState<Product[]>(INITIAL_MASTER_PRODUCTS);
+  const [isCatalogLoading, setIsCatalogLoading] = useState<boolean>(true);
+  const [isDirectProductLoading, setIsDirectProductLoading] = useState<boolean>(false);
 
   // Dynamic Hero Slides
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(INITIAL_HERO_SLIDES);
@@ -671,7 +687,8 @@ export default function App() {
     let isMounted = true;
     productsService.getProducts().then(function(prods) {
       if (isMounted && prods && prods.length > 0) setProductsList(prods);
-    }).catch(function(err) { console.warn('Products fetch notice:', err); });
+    }).catch(function(err) { console.warn('Products fetch notice:', err); })
+      .finally(function() { if (isMounted) setIsCatalogLoading(false); });
 
     categoriesService.getCategories().then(function(cats) {
       if (isMounted && cats && cats.length > 0) setUniverseCategoriesList(cats);
@@ -753,18 +770,26 @@ export default function App() {
   const navigate = function(path) {
     refreshCatalog();
     const parts = (path || "/").split("?");
-    const pathPart = parts[0];
+    let pathPart = parts[0] || "/";
     const queryPart = parts[1];
     const query = {};
     if (queryPart) {
       const params = new URLSearchParams(queryPart);
       params.forEach(function(v, k) { query[k] = v; });
     }
+    const hashIdx = pathPart.indexOf("#");
+    if (hashIdx !== -1) {
+      pathPart = pathPart.substring(0, hashIdx);
+    }
+    if (pathPart.length > 1 && pathPart.endsWith("/")) {
+      pathPart = pathPart.slice(0, -1);
+    }
     let view: RouteState["view"] = "home";
     let slug = null;
     if (pathPart.indexOf("/products/") === 0) {
       view = "product";
-      slug = decodeURIComponent(pathPart.replace("/products/", ""));
+      const rawSlug = pathPart.slice("/products/".length);
+      slug = decodeURIComponent(rawSlug).trim();
     } else if (pathPart.indexOf("/shop") === 0) {
       view = "shop";
     } else if (pathPart === "/bag" || pathPart.indexOf("/bag") === 0 || pathPart === "/cart" || pathPart.indexOf("/cart") === 0) {
@@ -1158,12 +1183,50 @@ export default function App() {
 
   const currentProduct = useMemo(function() {
     if (!routeState.slug) return null;
+    const target = routeState.slug.trim();
+    const targetNorm = target.toLowerCase().replace(/[\s_]+/g, '-');
+
     return productsList.find(function(p) {
-      return p.slug === routeState.slug || 
-             p.sku === routeState.slug || 
-             String(p.id) === routeState.slug;
+      if (p.slug === target) return true;
+      const pSlugNorm = (p.slug || '').toLowerCase().replace(/[\s_]+/g, '-');
+      if (pSlugNorm === targetNorm) return true;
+      const pNameNorm = (p.name || '').toLowerCase().replace(/[\s_]+/g, '-');
+      if (pNameNorm === targetNorm) return true;
+      if (p.sku && p.sku.toLowerCase() === target.toLowerCase()) return true;
+      if (String(p.id) === target) return true;
+      return false;
     }) || null;
   }, [routeState.slug, productsList]);
+
+  // Dedicated single-product fallback fetch when user navigates directly to a cold product URL
+  useEffect(function() {
+    if (routeState.view === 'product' && routeState.slug && !currentProduct) {
+      let isMounted = true;
+      setIsDirectProductLoading(true);
+      productsService.getProductBySlug(routeState.slug)
+        .then(function(fetched) {
+          if (isMounted && fetched) {
+            setProductsList(function(prev) {
+              const cleanFetchedSlug = (fetched.slug || '').toLowerCase().replace(/[\s_]+/g, '-');
+              if (prev.some(function(p) { 
+                return p.id === fetched.id || 
+                       (p.slug || '').toLowerCase().replace(/[\s_]+/g, '-') === cleanFetchedSlug; 
+              })) {
+                return prev;
+              }
+              return [fetched].concat(prev);
+            });
+          }
+        })
+        .catch(function(err) {
+          console.warn('Direct product cold-fetch notice:', err);
+        })
+        .finally(function() {
+          if (isMounted) setIsDirectProductLoading(false);
+        });
+      return function() { isMounted = false; };
+    }
+  }, [routeState.view, routeState.slug, currentProduct]);
 
   // Synchronize dynamic Open Graph & Twitter Card metadata with current route and product
   useEffect(function() {
@@ -1718,6 +1781,7 @@ export default function App() {
             addToBag={addToBag}
             onShare={handleShareProduct}
             showNotification={showNotification}
+            isLoading={isCatalogLoading || isDirectProductLoading}
           />
         )}
 
@@ -3161,9 +3225,20 @@ function ProductDetailPageView({
   navigate, 
   addToBag,
   onShare = function() {},
-  showNotification
+  showNotification,
+  isLoading = false
 }: any) {
   if (!product) {
+    if (isLoading) {
+      return (
+        <div className="min-h-[55vh] flex flex-col items-center justify-center p-6 font-mono text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#E51E2B] rounded-full animate-spin" />
+          <h2 className="text-xs uppercase font-bold text-neutral-600 tracking-wider">
+            Loading Drop Silhouette...
+          </h2>
+        </div>
+      );
+    }
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 font-mono text-center space-y-3">
         <h2 className="text-lg font-bold uppercase">Drop Not Found</h2>
@@ -7185,7 +7260,15 @@ function SecretAtelierAdminView({
               setIsUnlocked(false);
               return;
             }
-            productsService.saveProduct(updated).then(function(saved) {
+            // Sanitize slug to URL-friendly lowercase hyphenated form to ensure flawless route matching
+            const safeSlug = (updated.slug || updated.name || 'custom-drop')
+              .toLowerCase()
+              .trim()
+              .replace(/[\s_]+/g, '-')
+              .replace(/[^a-z0-9-]/g, '');
+            const sanitizedProduct = Object.assign({}, updated, { slug: safeSlug });
+
+            productsService.saveProduct(sanitizedProduct).then(function(saved) {
               setProductsList(function(prev) {
                 const idx = prev.findIndex(function(p) { return p.id === saved.id || p.slug === saved.slug; });
                 if (idx > -1) {

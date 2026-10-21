@@ -17,10 +17,27 @@ export interface ShareTargetItem {
 }
 
 /**
- * Returns the canonical, publicly accessible URL for a product on th3ee.in.
+ * Returns the canonical, publicly accessible URL for a product on th3ee.in or the active test environment.
  */
 export function getCanonicalProductUrl(product: Product | { slug: string }, domain: string = OFFICIAL_SITE_DOMAIN): string {
-  const cleanSlug = encodeURIComponent(product.slug).replace(/%2F/g, '/');
+  const rawSlug = product.slug || '';
+  // Normalize slug: replace spaces/underscores with hyphens and ensure clean URL-safe formatting
+  const safeSlug = rawSlug.trim().toLowerCase().replace(/[\s_]+/g, '-');
+  const cleanSlug = encodeURIComponent(safeSlug).replace(/%2F/g, '/');
+
+  // In browser context: if currently running on a preview or test deployment (such as github.io or localhost),
+  // share the active origin and basePath so shared links work immediately for anyone opening them from the test environment.
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    const hostname = window.location.hostname.toLowerCase();
+    const isTestOrLocal = hostname.includes('github.io') || hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isTestOrLocal) {
+      const pathname = window.location.pathname || '/';
+      const match = pathname.match(/^(\/[^\/]+)/);
+      const basePath = (match && match[1].toLowerCase() === '/test-drive-th3ee') ? match[1] : '';
+      return `${window.location.origin}${basePath}/products/${cleanSlug}`;
+    }
+  }
+
   return `https://${domain}/products/${cleanSlug}`;
 }
 
@@ -28,13 +45,25 @@ export function getCanonicalProductUrl(product: Product | { slug: string }, doma
  * Returns the canonical URL for a collection or universe.
  */
 export function getCanonicalCollectionUrl(param: { category?: string; universe?: string }, domain: string = OFFICIAL_SITE_DOMAIN): string {
+  let subpath = '/shop';
   if (param.category) {
-    return `https://${domain}/shop?category=${encodeURIComponent(param.category)}`;
+    subpath = `/shop?category=${encodeURIComponent(param.category)}`;
+  } else if (param.universe) {
+    subpath = `/shop?universe=${encodeURIComponent(param.universe)}`;
   }
-  if (param.universe) {
-    return `https://${domain}/shop?universe=${encodeURIComponent(param.universe)}`;
+
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    const hostname = window.location.hostname.toLowerCase();
+    const isTestOrLocal = hostname.includes('github.io') || hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isTestOrLocal) {
+      const pathname = window.location.pathname || '/';
+      const match = pathname.match(/^(\/[^\/]+)/);
+      const basePath = (match && match[1].toLowerCase() === '/test-drive-th3ee') ? match[1] : '';
+      return `${window.location.origin}${basePath}${subpath}`;
+    }
   }
-  return `https://${domain}/shop`;
+
+  return `https://${domain}${subpath}`;
 }
 
 /**

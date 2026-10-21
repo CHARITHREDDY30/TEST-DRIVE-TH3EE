@@ -26,23 +26,49 @@ export const productsService = {
     return INITIAL_MASTER_PRODUCTS;
   },
 
-  async getProductBySlug(slug: string): Promise<Product | null> {
+  async getProductBySlug(rawSlug: string): Promise<Product | null> {
+    if (!rawSlug) return null;
+    const cleanSlug = rawSlug.trim().toLowerCase().replace(/[\s_]+/g, '-');
+
     if (isInsForgeConfigured()) {
       try {
+        // Query by exact match on slug, sanitized slug, legacy_id, or UUID id
         const { data, error } = await insforge.database
           .from('products')
           .select('*')
-          .eq('slug', slug)
-          .single();
+          .or(`slug.eq.${cleanSlug},slug.eq.${rawSlug},legacy_id.eq.${rawSlug},id.eq.${rawSlug}`)
+          .maybeSingle();
 
         if (!error && data) {
           return mapDbProductToFrontend(data);
+        }
+
+        // Secondary fallback: case-insensitive name match if slug didn't match directly
+        const cleanNameQuery = rawSlug.replace(/[-_]/g, ' ').trim();
+        if (cleanNameQuery) {
+          const { data: byName } = await insforge.database
+            .from('products')
+            .select('*')
+            .ilike('name', `%${cleanNameQuery}%`)
+            .limit(1);
+
+          if (byName && byName.length > 0) {
+            return mapDbProductToFrontend(byName[0]);
+          }
         }
       } catch (err) {
         console.warn('InsForge single product query failed:', err);
       }
     }
-    const found = INITIAL_MASTER_PRODUCTS.find(p => p.slug === slug);
+
+    const normTarget = cleanSlug;
+    const found = INITIAL_MASTER_PRODUCTS.find(p => 
+      p.slug.toLowerCase().replace(/[\s_]+/g, '-') === normTarget ||
+      p.slug === rawSlug ||
+      p.sku === rawSlug ||
+      String(p.id) === rawSlug ||
+      (p.name && p.name.toLowerCase().replace(/[\s_]+/g, '-') === normTarget)
+    );
     return found || null;
   },
 
