@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { PassQRCode } from '../common/PassQRCodes';
+import { PassQRCode, downloadPassBadge } from '../common/PassQRCodes';
 
 interface VerifyPassViewProps {
   navigate?: (path: string) => void;
@@ -8,16 +8,24 @@ interface VerifyPassViewProps {
 }
 
 export const VerifyPassView: React.FC<VerifyPassViewProps> = ({ navigate, onExploreCatalog }) => {
-  // Extract query parameters from URL
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  // Extract query parameters from URL (supporting standard search and hash-routing query)
+  const searchParams = typeof window !== 'undefined'
+    ? new URLSearchParams(
+        window.location.search ||
+        (window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '')
+      )
+    : new URLSearchParams();
+
   const memberId = searchParams.get('id') || 'PATRON';
   const memberName = searchParams.get('name') || 'TH3EE Cult Patron';
   const memberEmail = searchParams.get('email') || '';
   const stampsCollected = Math.min(7, Math.max(0, parseInt(searchParams.get('stamps') || '0', 10)));
   const stampsRemaining = Math.max(0, 7 - stampsCollected);
   const isRewardReady = stampsCollected >= 7;
+  const passDate = searchParams.get('date') || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
 
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+
 
   return (
     <div className="min-h-[85vh] bg-[#0A0A0C] text-neutral-100 py-10 px-4 sm:px-6 font-mono flex flex-col items-center justify-center">
@@ -74,12 +82,18 @@ export const VerifyPassView: React.FC<VerifyPassViewProps> = ({ navigate, onExpl
               <span className="text-[10px] tracking-wider text-neutral-300 uppercase font-mono px-2.5 py-1 bg-neutral-900 border border-neutral-700 rounded-md">
                 PASS ID: TH3EE-{memberId}
               </span>
-              <span className="text-[9px] text-emerald-400 font-mono mt-1 font-bold flex items-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1.5 animate-pulse" />
-                ACTIVE & VERIFIED
-              </span>
+              <div className="flex items-center gap-1.5 mt-1 font-mono">
+                <span className="text-[9px] text-emerald-400 font-bold flex items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1.5 animate-pulse" />
+                  VERIFIED
+                </span>
+                <span className="text-[9px] text-neutral-400">
+                  • {passDate}
+                </span>
+              </div>
             </div>
           </div>
+
 
           {/* TWO COLUMN / LANDSCAPE DISPLAY (Stamps on Left, Pass QR on Right) */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
@@ -205,22 +219,48 @@ export const VerifyPassView: React.FC<VerifyPassViewProps> = ({ navigate, onExpl
             {/* RIGHT: High-Res Pass QR Code Stub */}
             <div className="md:col-span-5 flex flex-col items-center justify-center bg-[#FAF9F5] text-neutral-900 border border-[#E7E4DC] rounded-2xl p-5 shadow-sm text-center">
               <div className="bg-white p-2.5 rounded-xl border border-neutral-300 shadow-xs">
-                <PassQRCode value={currentUrl} size={140} />
+                <PassQRCode value={currentUrl} size={144} />
               </div>
 
-              <div className="mt-3 space-y-0.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-900 block">
+              <div className="mt-3 space-y-1.5 w-full flex flex-col items-center">
+                <span className="text-[11px] font-black uppercase tracking-widest text-neutral-900 block">
                   DIGITAL CULT PASS
                 </span>
-                <span className="text-[8px] font-mono text-neutral-500 uppercase tracking-wider block">
-                  PASS #{memberId}
+                <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider block">
+                  PASS #{memberId} • ATELIER VERIFIED
                 </span>
-                <span className="text-[8px] text-neutral-400 font-sans block mt-1">
+                {/* Prominent Date Mention */}
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-100 border border-neutral-300 rounded-md">
+                  <span className="text-[9px] text-neutral-500 font-mono font-bold">DATE:</span>
+                  <span className="text-[9px] text-neutral-900 font-mono font-black">{passDate}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => downloadPassBadge({
+                    memberName,
+                    memberEmail,
+                    memberCode: memberId,
+                    stampsCount: stampsCollected,
+                    totalStamps: 7,
+                    dateStr: passDate,
+                    verificationUrl: currentUrl || (typeof window !== 'undefined' ? window.location.href : ''),
+                  })}
+                  className="w-full mt-2 py-2 px-3 bg-[#E51E2B] hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  <span>Download Pass QR</span>
+                </button>
+                <span className="text-[8px] text-neutral-400 font-sans block pt-1">
                   12-month stamp validity • Non-transferable
                 </span>
               </div>
             </div>
           </div>
+
 
           {/* Action Navigation Footer */}
           <div className="mt-6 pt-5 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3">

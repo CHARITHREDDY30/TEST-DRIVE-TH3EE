@@ -2,11 +2,19 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { loyaltyService, type CustomerLoyaltySummary, type LoyaltyStamp, type LoyaltyRewardClaim } from '../../services/loyalty.service';
 import { productsService } from '../../services/products.service';
-import { PassQRCode } from '../common/PassQRCodes';
+import { PassQRCode, downloadPassBadge } from '../common/PassQRCodes';
 import type { AuthUser, SavedAddress } from '../../types/auth';
 import type { Product } from '../../types/store';
 
 // Inline Icons to guarantee zero dependency issues
+const DownloadIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
 const AwardIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="8" r="7" />
@@ -462,13 +470,64 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
   const stampsRemaining = Math.max(0, TOTAL_STAMPS - activeCount);
   const memberCode = currentUser?.id ? currentUser.id.slice(0, 6).toUpperCase() : 'PATRON';
 
+  // Explicit pass verification & issuance date
+  const passDate = useMemo(() => {
+    if (summary.activeStamps && summary.activeStamps.length > 0) {
+      const latestStamp = summary.activeStamps[summary.activeStamps.length - 1];
+      if (latestStamp?.earnedAt) {
+        const d = new Date(latestStamp.earnedAt);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+        }
+      }
+    }
+    const now = new Date();
+    return now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+  }, [summary.activeStamps]);
+
   // Realtime pass verification URL encoded in QR Code
   const passVerificationUrl = useMemo(() => {
     if (typeof window === 'undefined') return `TH3EE-PASS:${currentUser?.id || 'ANON'}`;
     const nameParam = encodeURIComponent(currentUser?.name || 'TH3EE Patron');
     const emailParam = encodeURIComponent(currentUser?.email || '');
-    return `${window.location.origin}/verify-pass?id=${memberCode}&name=${nameParam}&email=${emailParam}&stamps=${activeCount}&remaining=${stampsRemaining}`;
-  }, [currentUser, memberCode, activeCount, stampsRemaining]);
+    const dateParam = encodeURIComponent(passDate);
+
+    // Auto-detect base path (e.g. /TEST-DRIVE-TH3EE or "")
+    const pathname = window.location.pathname || '/';
+    const match = pathname.match(/^(\/[^\/]+)/);
+    const repoBasePath = match && match[1].toLowerCase() === '/test-drive-th3ee' ? match[1] : '';
+    const siteBase = `${window.location.origin}${repoBasePath}`;
+
+    // Hash route #/verify-pass guarantees 100% universal loading on any static host or GitHub Pages without 404
+    return `${siteBase}/#/verify-pass?id=${memberCode}&name=${nameParam}&email=${emailParam}&stamps=${activeCount}&remaining=${stampsRemaining}&date=${dateParam}`;
+  }, [currentUser, memberCode, activeCount, stampsRemaining, passDate]);
+
+  // High-Resolution Pass QR Download Handler
+  const [isDownloading, setIsDownloading] = useState(false);
+  const handleDownloadPass = async () => {
+    try {
+      setIsDownloading(true);
+      await downloadPassBadge({
+        memberName: currentUser?.name || 'TH3EE Patron',
+        memberEmail: currentUser?.email || '',
+        memberCode,
+        stampsCount: activeCount,
+        totalStamps: TOTAL_STAMPS,
+        dateStr: passDate,
+        verificationUrl: passVerificationUrl,
+      });
+      if (showNotification) {
+        showNotification({
+          type: 'success',
+          message: 'Official Cult Member Pass QR downloaded successfully!'
+        });
+      }
+    } catch (err) {
+      console.error('Failed to download pass badge:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Map 7 slots
   const slots = useMemo(() => {
@@ -763,11 +822,16 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                     <span className="text-[9px] text-neutral-500 font-mono uppercase tracking-wider block mt-0.5">
                       PASS ID: TH3EE-{memberCode} • ATELIER VERIFIED
                     </span>
+                    {/* Explicit Date Mention */}
+                    <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded-md">
+                      <span className="text-[9px] text-neutral-500 font-mono font-bold">DATE:</span>
+                      <span className="text-[9px] text-neutral-900 font-mono font-black">{passDate}</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Member Details & Realtime Stamps Count */}
-                <div className="my-4 py-3 border-y border-[#E7E4DC] w-full space-y-1.5 text-center">
+                <div className="my-3 py-2.5 border-y border-[#E7E4DC] w-full space-y-1.5 text-center">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-[#E51E2B]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />
                     <span className="text-[10px] font-black uppercase tracking-wider">
@@ -782,18 +846,29 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                   </p>
                 </div>
 
-                {/* Scan Action & Preview */}
+                {/* Scan Action & Download */}
                 <div className="w-full space-y-2">
                   <p className="text-[9px] text-neutral-500 font-sans leading-tight">
                     Scan with any phone camera to display member details and live stamp balance.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setIsVerifyModalOpen(true)}
-                    className="w-full py-2 px-3 bg-neutral-900 hover:bg-[#E51E2B] text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-                  >
-                    <span>View Scanned Pass Details</span>
-                  </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadPass}
+                      disabled={isDownloading}
+                      className="w-full py-2 px-2.5 bg-[#E51E2B] hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                    >
+                      <DownloadIcon className="w-3.5 h-3.5" />
+                      <span>{isDownloading ? 'Saving...' : 'Download Pass QR'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsVerifyModalOpen(true)}
+                      className="w-full py-2 px-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                    >
+                      <span>Pass Details</span>
+                    </button>
+                  </div>
                   <span className="text-[8px] text-neutral-400 font-sans block">
                     Each stamp expires 12 calendar months from delivery date • Non-transferable
                   </span>
@@ -865,6 +940,10 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                     Atelier Verified
                   </span>
                 </div>
+                <div className="flex items-center justify-between pt-1 border-t border-neutral-100">
+                  <span className="text-[10px] text-neutral-500 uppercase">Issued / Verified Date</span>
+                  <span className="text-xs font-mono font-bold text-neutral-900">{passDate}</span>
+                </div>
               </div>
 
               {/* Visual mini-stamps */}
@@ -901,7 +980,16 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadPass}
+                  disabled={isDownloading}
+                  className="w-full sm:flex-1 py-2.5 bg-[#E51E2B] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <DownloadIcon className="w-3.5 h-3.5" />
+                  <span>{isDownloading ? 'Saving...' : 'Download Pass QR'}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -910,14 +998,14 @@ export const LoyaltyClubCard: React.FC<LoyaltyClubCardProps> = ({
                       window.open(passVerificationUrl, '_blank');
                     }
                   }}
-                  className="flex-1 py-2.5 bg-[#E51E2B] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-md"
+                  className="w-full sm:flex-1 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-md"
                 >
                   Open Full Pass View
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsVerifyModalOpen(false)}
-                  className="py-2.5 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+                  className="w-full sm:w-auto py-2.5 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
                 >
                   Close
                 </button>
