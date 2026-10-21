@@ -3160,7 +3160,7 @@ function ProductDetailPageView({
   initialColor, 
   navigate, 
   addToBag,
-  onShare,
+  onShare = function() {},
   showNotification
 }: any) {
   if (!product) {
@@ -3200,7 +3200,7 @@ function ProductDetailInner({
   initialColor, 
   navigate, 
   addToBag,
-  onShare,
+  onShare = function() {},
   showNotification
 }: any) {
   const [chosenColor, setChosenColor] = useState(initialColor || (product.colors && product.colors[0] && product.colors[0].name) || "Standard");
