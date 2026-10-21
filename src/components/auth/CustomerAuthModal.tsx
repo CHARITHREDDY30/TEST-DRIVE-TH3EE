@@ -31,6 +31,7 @@ export interface CustomerAuthPortalProps {
   isModal?: boolean;
   isOpen?: boolean;
   onClose?: () => void;
+  showPortalHeader?: boolean;
 }
 
 export interface CustomerAuthModalProps {
@@ -53,7 +54,8 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
   navigate,
   isModal = false,
   isOpen = true,
-  onClose
+  onClose,
+  showPortalHeader = false
 }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
@@ -1179,49 +1181,42 @@ export const CustomerAuthPortal: React.FC<CustomerAuthPortalProps> = ({
 
   // Dedicated Full-Page Mode (for mobile & desktop routes /login, /register, etc.)
   return (
-    <div className="bg-white md:bg-[#faf5f5] font-sans min-h-screen min-h-[100dvh] relative flex flex-col text-slate-800 antialiased select-none overflow-x-hidden p-0 md:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-6">
+    <div className="bg-white md:bg-[#faf5f5] font-sans relative flex flex-col text-slate-800 antialiased select-none overflow-x-hidden p-0 md:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-6">
       {/* Ambient TH3EE Red Corner Organic Blobs */}
       <div className="blob-top-left hidden md:block" />
       <div className="blob-bottom-right hidden md:block" />
 
-      {/* Mobile Notch / Safe Area Spacer */}
-      <div className="h-[env(safe-area-inset-top,0px)] w-full" />
-
-      {/* Header with Authentic TH3EE Brand Logo */}
-      <header className="relative z-20 w-full max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between border-b border-neutral-100 md:border-b-0 bg-white md:bg-transparent">
-        <button 
-          type="button" 
-          onClick={() => navigate?.('/')} 
-          className="flex items-center space-x-3 group cursor-pointer"
-        >
-          <div className="px-3.5 py-1.5 rounded-xl bg-brand-500 text-white shadow-md shadow-brand-500/25 flex items-center justify-center transition-transform group-hover:scale-105">
-            <span className="th3ee-logo-text text-base sm:text-lg">
-              <span className="text-white">TH</span>
-              <span className="text-brand-500 bg-white px-[2px] rounded-sm mx-[1px]">3</span>
-              <span className="text-white">EE</span>
-            </span>
-          </div>
-          <div className="hidden xs:block">
-            <span className="text-[10px] tracking-[0.25em] uppercase font-bold text-slate-400 block leading-none">CLOTHING CO.</span>
-          </div>
-        </button>
-
-        {/* Security Status Badge & Back button */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/85 backdrop-blur-md border border-red-100 shadow-sm text-[11px] sm:text-xs font-medium text-slate-600">
-            <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
-            <span>Official Portal</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate?.('/')}
-            className="text-xs font-bold text-slate-600 hover:text-brand-500 px-3 py-1 rounded-full bg-white/90 border border-slate-200 shadow-2xs hover:border-brand-500 transition-colors cursor-pointer flex items-center gap-1.5"
+      {/* Optional Standalone Header (Suppressed when integrated with site primary nav) */}
+      {showPortalHeader && (
+        <header className="relative z-20 w-full max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between border-b border-neutral-100 md:border-b-0 bg-white md:bg-transparent">
+          <button 
+            type="button" 
+            onClick={() => navigate?.('/')} 
+            className="flex items-center space-x-3 group cursor-pointer"
           >
-            <span>Storefront</span>
-            <X className="w-3.5 h-3.5" />
+            <div className="px-3.5 py-1.5 rounded-xl bg-brand-500 text-white shadow-md shadow-brand-500/25 flex items-center justify-center transition-transform group-hover:scale-105">
+              <span className="th3ee-logo-text text-base sm:text-lg">
+                <span className="text-white">TH</span>
+                <span className="text-brand-500 bg-white px-[2px] rounded-sm mx-[1px]">3</span>
+                <span className="text-white">EE</span>
+              </span>
+            </div>
+            <div className="hidden xs:block">
+              <span className="text-[10px] tracking-[0.25em] uppercase font-bold text-slate-400 block leading-none">CLOTHING CO.</span>
+            </div>
           </button>
-        </div>
-      </header>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => navigate?.('/')}
+              className="text-xs font-bold text-slate-600 hover:text-brand-500 px-3 py-1 rounded-full bg-white/90 border border-slate-200 shadow-2xs hover:border-brand-500 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Home</span>
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* Main Viewport Responsive Container */}
       <main className="relative z-20 flex-1 flex flex-col items-center justify-center w-full p-0 md:px-4 py-2 sm:py-4 md:py-6">

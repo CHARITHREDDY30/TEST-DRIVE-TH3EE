@@ -1099,13 +1099,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* When on dedicated Change 2 Auth routes, suppress storefront chrome so Change 2 renders cleanly as official portal */}
-      {(() => {
-        const isAuthView = ["login", "register", "forgot-password", "reset-password", "verify-email"].includes(routeState.view);
-        if (isAuthView) return null;
-
-        return (
-          <>
+      {/* Primary Storefront Navigation & Announcement Banner */}
             {/* Announcement Banner */}
             <div className="bg-[#111111] text-white text-[10px] sm:text-[11px] font-mono tracking-wider py-1.5 sm:py-2 px-3 sm:px-4 border-b border-neutral-800">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -1499,16 +1493,13 @@ export default function App() {
           </div>
         </div>
       )}
-          </>
-        );
-      })()}
 
       {/* Main View Router */}
       {(() => {
         const isAuthView = ["login", "register", "forgot-password", "reset-password", "verify-email"].includes(routeState.view);
 
         return (
-          <main className={`flex-1 w-full overflow-x-hidden ${!isAuthView ? 'pb-16 lg:pb-0' : ''}`}>
+          <main className="flex-1 w-full overflow-x-hidden pb-16 lg:pb-0">
             {routeState.view === "home" && (
               <HomePageView 
                 productsList={productsList}
@@ -1740,7 +1731,6 @@ export default function App() {
       {/* Route-Aware Single Storefront Footer & Persistent Mobile Bottom Navigation */}
       {(() => {
         const isAuthView = ["login", "register", "forgot-password", "reset-password", "verify-email"].includes(routeState.view);
-        if (isAuthView) return null;
 
         return (
           <>
@@ -1844,12 +1834,14 @@ export default function App() {
               </div>
             </nav>
 
-            <StoreFooter 
-              isHomePage={routeState.view === "home"}
-              storeBrand={storeBrand}
-              navigate={navigate}
-              onSecretClick={handleFooterSecretClick}
-            />
+            {!isAuthView && (
+              <StoreFooter 
+                isHomePage={routeState.view === "home"}
+                storeBrand={storeBrand}
+                navigate={navigate}
+                onSecretClick={handleFooterSecretClick}
+              />
+            )}
           </>
         );
       })()}
