@@ -1,18 +1,49 @@
 {
-  "name": "TH3EE Streetwear Atelier",
+  "name": "TH3EE | Oversized T-Shirts & Streetwear",
   "short_name": "TH3EE",
-  "description": "Heavyweight 240+ GSM graphic oversized tees, Baahubali universe drops, and limited edition cult streetwear.",
+  "description": "Discover TH3EE streetwear — oversized graphic T-shirts and hoodies designed for everyday self-expression. Shop the latest drops at th3ee.in.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#111111",
-  "theme_color": "#111111",
+  "background_color": "#FF3131",
+  "theme_color": "#FF3131",
   "orientation": "portrait-primary",
   "icons": [
     {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/favicon.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
   ],
   "categories": ["shopping", "lifestyle", "fashion"]

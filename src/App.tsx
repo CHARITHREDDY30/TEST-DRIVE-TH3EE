@@ -69,6 +69,8 @@ import { AdminOrdersManager } from './components/admin/AdminOrdersManager';
 import { AdminLoyaltyManager } from './components/admin/AdminLoyaltyManager';
 import { VerifyPassView } from './components/loyalty/VerifyPassView';
 import { ShareProductModal } from './components/common/ShareProductModal';
+import { CustomDtfView } from './components/pages/CustomDtfView';
+import { AboutView } from './components/pages/AboutView';
 import type { AuthUser } from './types/auth';
 
 // Self-contained zero-dependency inline SVG icons
@@ -610,6 +612,10 @@ function parseCurrentRoute(): RouteState {
     slug = decodeURIComponent(rawSlug).trim();
   } else if (path.indexOf("/shop") === 0) {
     view = "shop";
+  } else if (path.indexOf("/custom-dtf") === 0 || path.indexOf("/dtf") === 0) {
+    view = "custom-dtf";
+  } else if (path.indexOf("/about") === 0) {
+    view = "about";
   } else if (path === "/bag" || path.indexOf("/bag") === 0 || path === "/cart" || path.indexOf("/cart") === 0) {
     view = "bag";
   } else if (path === "/checkout" || path.indexOf("/checkout") === 0) {
@@ -1233,8 +1239,12 @@ export default function App() {
     if (routeState.view === 'product' && currentProduct) {
       seoService.setProductSEO(currentProduct, storeBrand?.domain);
     } else if (routeState.view === 'shop') {
-      const categoryName = routeState.query.category || routeState.query.universe || 'All Streetwear Drops';
+      const categoryName = routeState.query.category || routeState.query.universe;
       seoService.setCollectionSEO(categoryName, undefined, storeBrand?.domain);
+    } else if (routeState.view === 'custom-dtf') {
+      seoService.setCustomDtfSEO(storeBrand?.domain);
+    } else if (routeState.view === 'about') {
+      seoService.setAboutSEO(storeBrand?.domain);
     } else if (routeState.view === 'home') {
       seoService.setDefaultSEO(storeBrand?.domain);
     }
@@ -1450,6 +1460,28 @@ export default function App() {
                 </div>
               )}
             </div>
+
+            <button 
+              type="button"
+              onClick={function() { navigate("/custom-dtf"); }} 
+              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap ${routeState.view === "custom-dtf" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
+            >
+              Custom DTF
+              {routeState.view === "custom-dtf" && (
+                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#E51E2B]" />
+              )}
+            </button>
+
+            <button 
+              type="button"
+              onClick={function() { navigate("/about"); }} 
+              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap ${routeState.view === "about" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
+            >
+              About
+              {routeState.view === "about" && (
+                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#E51E2B]" />
+              )}
+            </button>
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 flex-nowrap">
@@ -1672,7 +1704,37 @@ export default function App() {
                   {routeState.query.category === "Hoodies & Sweats" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
                 </button>
 
-                {/* 6. HELP */}
+                {/* 5. CUSTOM DTF */}
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/custom-dtf"); }} 
+                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${
+                    routeState.view === "custom-dtf" ? "text-[#E51E2B]" : "text-neutral-900"
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>CUSTOM DTF PRINTING</span>
+                  </span>
+                  {routeState.view === "custom-dtf" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
+                </button>
+
+                {/* 6. ABOUT */}
+                <button 
+                  type="button" 
+                  onClick={function() { setIsMobileNavOpen(false); navigate("/about"); }} 
+                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${
+                    routeState.view === "about" ? "text-[#E51E2B]" : "text-neutral-900"
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Home className="w-4 h-4 text-[#FF2E2E]" />
+                    <span>ABOUT TH3EE</span>
+                  </span>
+                  {routeState.view === "about" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
+                </button>
+
+                {/* 7. HELP */}
                 <button 
                   type="button" 
                   onClick={function() { 
@@ -1898,6 +1960,19 @@ export default function App() {
           <DeliveryPartnerView 
             navigate={navigate}
             showNotification={showNotification}
+          />
+        )}
+
+        {routeState.view === "custom-dtf" && (
+          <CustomDtfView 
+            navigate={navigate}
+            storeBrand={storeBrand}
+          />
+        )}
+
+        {routeState.view === "about" && (
+          <AboutView 
+            navigate={navigate}
           />
         )}
       </main>
@@ -4123,7 +4198,7 @@ function StoreFooter({
           <div className="space-y-3">
             <Th3eeBrandLogo onClick={function() { navigate("/"); }} domain={storeBrand.domain} />
             <p className="text-neutral-600 text-xs max-w-sm leading-relaxed">
-              Independent Indian streetwear atelier crafting 180–350 GSM loopback cotton heavyweight silhouettes inspired by cult cinema, anime, and comic universes.
+              Discover TH3EE streetwear — oversized graphic T-shirts and hoodies designed for everyday self-expression. Shop the latest drops at th3ee.in.
             </p>
             <div className="flex flex-col space-y-1.5 pt-1 text-xs">
               <a 
@@ -4142,10 +4217,12 @@ function StoreFooter({
             </div>
           </div>
 
-          {/* Column 2: Collections & Sagas */}
+          {/* Column 2: Collections & Studio */}
           <div className="space-y-2">
-            <span className="font-bold uppercase tracking-wider text-neutral-900 block mb-2 text-[11px]">Collections & Sagas</span>
+            <span className="font-bold uppercase tracking-wider text-neutral-900 block mb-2 text-[11px]">Collections & Studio</span>
             <div className="flex flex-col space-y-2 text-neutral-600 font-medium">
+              <button type="button" onClick={function() { navigate("/custom-dtf"); }} className="text-left text-[#E51E2B] font-bold hover:underline transition-colors">Custom DTF Studio (Tirupati)</button>
+              <button type="button" onClick={function() { navigate("/about"); }} className="text-left hover:text-[#E51E2B] transition-colors">About TH3EE Label</button>
               <button type="button" onClick={function() { navigate("/shop?universe=tfi&subcategory=Baahubali"); }} className="text-left hover:text-[#E51E2B] transition-colors">Baahubali & TFI Cult Cinema</button>
               <button type="button" onClick={function() { navigate("/shop?universe=anime"); }} className="text-left hover:text-[#E51E2B] transition-colors">Anime Shonen Saga Drops</button>
               <button type="button" onClick={function() { navigate("/shop?category=T-Shirts"); }} className="text-left hover:text-[#E51E2B] transition-colors">Heavyweight T-Shirts (180–240 GSM)</button>

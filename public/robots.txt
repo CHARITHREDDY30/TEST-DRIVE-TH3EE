@@ -4,13 +4,24 @@
 User-agent: *
 Allow: /
 Allow: /shop
+Allow: /custom-dtf
+Allow: /about
 Allow: /products/
 Allow: /track-order
+Allow: /*.ico$
+Allow: /*.png$
+Allow: /*.svg$
 Disallow: /admin
 Disallow: /account
 Disallow: /checkout
 Disallow: /delivery
+Disallow: /delivery-partner
 Disallow: /auth/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
 Disallow: /order-receipt
 
 # Crawl-delay for polite crawling

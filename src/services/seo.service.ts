@@ -134,48 +134,109 @@ export const seoService = {
   /**
    * Dynamically sets Open Graph and Twitter Card tags for a collection or category page.
    */
-  setCollectionSEO(collectionTitle: string, description?: string, brandDomain: string = OFFICIAL_SITE_DOMAIN) {
+  setCollectionSEO(collectionTitle?: string, description?: string, brandDomain: string = OFFICIAL_SITE_DOMAIN) {
     if (typeof document === 'undefined') return;
 
-    const title = `${collectionTitle} — TH3EE Streetwear Archive`;
-    const desc = description || `Explore the ${collectionTitle} collection on TH3EE Streetwear. Premium heavyweight drops, graphic oversized tees, and limited pieces.`;
-    const canonicalUrl = `https://${brandDomain}/shop?category=${encodeURIComponent(collectionTitle)}`;
+    const isGeneralShop = !collectionTitle || collectionTitle === 'All Streetwear Drops' || collectionTitle === 'Shop';
+    const title = isGeneralShop ? 'Shop Premium T-Shirts | TH3EE' : `${collectionTitle} | TH3EE Premium Streetwear`;
+    const desc = isGeneralShop 
+      ? "Explore TH3EE's luxury T-shirt collection. Elevated fits, soft-touch fabrics and understated design for those who dress with intent."
+      : (description || `Explore ${collectionTitle} on TH3EE. Premium luxury T-shirts and custom drops crafted in Tirupati.`);
+    const canonicalUrl = isGeneralShop 
+      ? `https://${brandDomain}/shop`
+      : `https://${brandDomain}/shop?category=${encodeURIComponent(collectionTitle)}`;
 
     document.title = title;
 
     setMetaTag('name', 'description', desc);
-    setMetaTag('property', 'og:site_name', 'TH3EE Streetwear');
+    setMetaTag('property', 'og:site_name', 'TH3EE');
     setMetaTag('property', 'og:type', 'website');
     setMetaTag('property', 'og:title', title);
     setMetaTag('property', 'og:description', desc);
     setMetaTag('property', 'og:url', canonicalUrl);
+    setMetaTag('property', 'og:image', `https://${brandDomain}/og-image.png`);
     setMetaTag('name', 'twitter:card', 'summary_large_image');
     setMetaTag('name', 'twitter:title', title);
     setMetaTag('name', 'twitter:description', desc);
+    setMetaTag('name', 'twitter:image', `https://${brandDomain}/og-image.png`);
 
     setCanonicalLink(canonicalUrl);
   },
 
   /**
-   * Resets SEO back to default storefront metadata.
+   * Sets SEO for Custom DTF page.
+   */
+  setCustomDtfSEO(brandDomain: string = OFFICIAL_SITE_DOMAIN) {
+    if (typeof document === 'undefined') return;
+
+    const title = 'Custom DTF Printed T-Shirts | TH3EE Tirupati';
+    const desc = 'Design your own premium T-shirt with TH3EE. High-definition DTF printing, rich colour and a lasting finish on quality fabric, made in Tirupati.';
+    const canonicalUrl = `https://${brandDomain}/custom-dtf`;
+
+    document.title = title;
+    setMetaTag('name', 'description', desc);
+    setMetaTag('property', 'og:site_name', 'TH3EE');
+    setMetaTag('property', 'og:type', 'website');
+    setMetaTag('property', 'og:title', title);
+    setMetaTag('property', 'og:description', desc);
+    setMetaTag('property', 'og:url', canonicalUrl);
+    setMetaTag('property', 'og:image', `https://${brandDomain}/og-image.png`);
+    setMetaTag('name', 'twitter:card', 'summary_large_image');
+    setMetaTag('name', 'twitter:title', title);
+    setMetaTag('name', 'twitter:description', desc);
+    setMetaTag('name', 'twitter:image', `https://${brandDomain}/og-image.png`);
+
+    setCanonicalLink(canonicalUrl);
+  },
+
+  /**
+   * Sets SEO for About page.
+   */
+  setAboutSEO(brandDomain: string = OFFICIAL_SITE_DOMAIN) {
+    if (typeof document === 'undefined') return;
+
+    const title = 'About TH3EE | Luxury Clothing from Tirupati';
+    const desc = "TH3EE is built on precision, restraint and craft. Discover the story behind Tirupati's luxury T-shirt label and the philosophy behind every piece.";
+    const canonicalUrl = `https://${brandDomain}/about`;
+
+    document.title = title;
+    setMetaTag('name', 'description', desc);
+    setMetaTag('property', 'og:site_name', 'TH3EE');
+    setMetaTag('property', 'og:type', 'website');
+    setMetaTag('property', 'og:title', title);
+    setMetaTag('property', 'og:description', desc);
+    setMetaTag('property', 'og:url', canonicalUrl);
+    setMetaTag('property', 'og:image', `https://${brandDomain}/og-image.png`);
+    setMetaTag('name', 'twitter:card', 'summary_large_image');
+    setMetaTag('name', 'twitter:title', title);
+    setMetaTag('name', 'twitter:description', desc);
+    setMetaTag('name', 'twitter:image', `https://${brandDomain}/og-image.png`);
+
+    setCanonicalLink(canonicalUrl);
+  },
+
+  /**
+   * Resets SEO back to default storefront metadata (Homepage).
    */
   setDefaultSEO(brandDomain: string = OFFICIAL_SITE_DOMAIN) {
     if (typeof document === 'undefined') return;
 
-    const title = 'TH3EE — Heavyweight Streetwear & Drops';
-    const description = 'TH3EE — heavyweight 240+ GSM graphic oversized tees, Baahubali universe drops, and limited edition cult streetwear.';
+    const title = 'TH3EE | Oversized T-Shirts & Streetwear';
+    const description = 'Discover TH3EE streetwear — oversized graphic T-shirts and hoodies designed for everyday self-expression. Shop the latest drops at th3ee.in.';
     const canonicalUrl = `https://${brandDomain}/`;
 
     document.title = title;
     setMetaTag('name', 'description', description);
-    setMetaTag('property', 'og:site_name', 'TH3EE Streetwear');
+    setMetaTag('property', 'og:site_name', 'TH3EE');
     setMetaTag('property', 'og:type', 'website');
     setMetaTag('property', 'og:title', title);
     setMetaTag('property', 'og:description', description);
     setMetaTag('property', 'og:url', canonicalUrl);
+    setMetaTag('property', 'og:image', `https://${brandDomain}/og-image.png`);
     setMetaTag('name', 'twitter:card', 'summary_large_image');
     setMetaTag('name', 'twitter:title', title);
     setMetaTag('name', 'twitter:description', description);
+    setMetaTag('name', 'twitter:image', `https://${brandDomain}/og-image.png`);
 
     setCanonicalLink(canonicalUrl);
     setJsonLd('th3ee-client-product-jsonld', null);

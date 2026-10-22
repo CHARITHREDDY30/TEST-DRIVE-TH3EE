@@ -55,7 +55,7 @@
       ]
     },
     {
-      "source": "/(favicon.svg|site.webmanifest|manifest.json)",
+      "source": "/(favicon\\.ico|favicon-.*\\.png|apple-touch-icon\\.png|android-chrome-.*\\.png|logo.*\\.png|og-image\\.png|favicon\\.svg|site\\.webmanifest|manifest\\.json)",
       "headers": [
         {
           "key": "Cache-Control",

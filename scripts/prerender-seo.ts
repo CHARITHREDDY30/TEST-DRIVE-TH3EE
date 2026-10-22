@@ -42,7 +42,7 @@ function generateMetadataTags(params: {
     <link rel="canonical" href="${escapedUrl}" />
 
     <!-- Open Graph (Facebook, WhatsApp, Telegram, LinkedIn) -->
-    <meta property="og:site_name" content="TH3EE Streetwear" />
+    <meta property="og:site_name" content="TH3EE" />
     <meta property="og:type" content="${type}" />
     <meta property="og:title" content="${escapedTitle}" />
     <meta property="og:description" content="${escapedDesc}" />
@@ -163,17 +163,12 @@ function generateSitemapXml(): string {
   // Static core pages
   xml += `  <url>\n    <loc>${domain}/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
   xml += `  <url>\n    <loc>${domain}/shop</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+  xml += `  <url>\n    <loc>${domain}/shop/t-shirts</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+  xml += `  <url>\n    <loc>${domain}/shop/hoodies-sweats</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+  xml += `  <url>\n    <loc>${domain}/shop/baahubali</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+  xml += `  <url>\n    <loc>${domain}/custom-dtf</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+  xml += `  <url>\n    <loc>${domain}/about</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
   xml += `  <url>\n    <loc>${domain}/track-order</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.5</priority>\n  </url>\n`;
-
-  // Category and Universe filters
-  const categories = ['T-Shirts', 'Hoodies & Sweats'];
-  for (const cat of categories) {
-    xml += `  <url>\n    <loc>${domain}/shop?category=${encodeURIComponent(cat)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
-  }
-
-  for (const univ of INITIAL_UNIVERSE_CATEGORIES) {
-    xml += `  <url>\n    <loc>${domain}/shop?universe=${encodeURIComponent(univ.id)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
-  }
 
   // All master products
   for (const product of INITIAL_MASTER_PRODUCTS) {
@@ -223,8 +218,8 @@ async function prerenderAll() {
     const imageUrl = resolveProductImageUrl(rawImage);
     const canonicalUrl = `https://${INITIAL_OFFICIAL_DOMAIN}/products/${product.slug}`;
     const price = Math.round(Number(product.price));
-    const title = `${product.name} — TH3EE Streetwear`;
-    const description = `Check out "${product.name}" at TH3EE! Heavyweight 240+ GSM graphic drop · ₹${price}. ${product.description || 'Limited edition archive streetwear.'}`;
+    const title = `${product.name} | TH3EE Oversized Streetwear`;
+    const description = `Shop "${product.name}" at TH3EE. Heavyweight graphic oversized streetwear tee · ₹${price}. ${product.description || 'Designed for everyday self-expression.'}`;
 
     const metadataTags = generateMetadataTags({
       title,
@@ -250,6 +245,49 @@ async function prerenderAll() {
 
   console.log(`✔ Prerendered ${productCount} product pages with rich Open Graph, Twitter & Schema.org cards`);
 
+  // Dedicated core pages: Shop, Custom DTF, About
+  const dedicatedPages = [
+    {
+      dirName: 'shop',
+      title: 'Shop Premium T-Shirts | TH3EE',
+      description: "Explore TH3EE's luxury T-shirt collection. Elevated fits, soft-touch fabrics and understated design for those who dress with intent.",
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/shop`
+    },
+    {
+      dirName: 'custom-dtf',
+      title: 'Custom DTF Printed T-Shirts | TH3EE Tirupati',
+      description: 'Design your own premium T-shirt with TH3EE. High-definition DTF printing, rich colour and a lasting finish on quality fabric, made in Tirupati.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/custom-dtf`
+    },
+    {
+      dirName: 'about',
+      title: 'About TH3EE | Luxury Clothing from Tirupati',
+      description: "TH3EE is built on precision, restraint and craft. Discover the story behind Tirupati's luxury T-shirt label and the philosophy behind every piece.",
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/about`
+    }
+  ];
+
+  for (const page of dedicatedPages) {
+    const tags = generateMetadataTags({
+      title: page.title,
+      description: page.description,
+      imageUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/og-image.png`,
+      canonicalUrl: page.canonicalUrl,
+      type: 'website'
+    });
+
+    const rendered = injectMetadataIntoHtml(baseHtml, tags);
+
+    for (const outDir of targetDirs) {
+      if (!fs.existsSync(outDir)) continue;
+      const pageDir = path.resolve(outDir, page.dirName);
+      fs.mkdirSync(pageDir, { recursive: true });
+      fs.writeFileSync(path.resolve(pageDir, 'index.html'), rendered, 'utf-8');
+    }
+  }
+
+  console.log('✔ Prerendered Shop, Custom DTF, and About dedicated SEO pages');
+
   // Prerender categories & universes
   const collections = [
     { name: 'T-Shirts', slug: 't-shirts', type: 'category' as const },
@@ -259,9 +297,9 @@ async function prerenderAll() {
 
   for (const col of collections) {
     const canonicalUrl = `https://${INITIAL_OFFICIAL_DOMAIN}/shop?${col.type}=${encodeURIComponent(col.name)}`;
-    const title = `${col.name} — TH3EE Heavyweight Archive`;
-    const description = `Explore the ${col.name} collection on TH3EE Streetwear. Heavyweight drops and graphic oversized silhouettes.`;
-    const imageUrl = resolveProductImageUrl(INITIAL_MASTER_PRODUCTS[0]?.images?.[0] || '');
+    const title = `${col.name} | TH3EE Premium Archive`;
+    const description = `Explore the ${col.name} collection on TH3EE. Refined fabrics, sharp fits, and luxury custom DTF prints made in Tirupati.`;
+    const imageUrl = `https://${INITIAL_OFFICIAL_DOMAIN}/og-image.png`;
 
     const tags = generateMetadataTags({
       title,
@@ -291,8 +329,24 @@ async function prerenderAll() {
   }
   console.log('✔ Generated fresh sitemap.xml with all live products and category filters');
 
-  // Ensure security.txt and robots.txt are in dist/
-  const staticFilesToSync = ['robots.txt', 'favicon.svg', 'site.webmanifest', 'manifest.json'];
+  // Ensure all icon and brand assets are synced to dist/
+  const staticFilesToSync = [
+    'robots.txt',
+    'favicon.ico',
+    'favicon-16x16.png',
+    'favicon-32x32.png',
+    'favicon-48x48.png',
+    'favicon-96x96.png',
+    'apple-touch-icon.png',
+    'android-chrome-192x192.png',
+    'android-chrome-512x512.png',
+    'logo.png',
+    'logo-512.png',
+    'og-image.png',
+    'favicon.svg',
+    'site.webmanifest',
+    'manifest.json'
+  ];
   for (const file of staticFilesToSync) {
     const srcPath = path.resolve(publicDir, file);
     if (fs.existsSync(srcPath) && fs.existsSync(distDir)) {
