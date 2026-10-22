@@ -1473,28 +1473,6 @@ export default function App() {
                 </div>
               )}
             </div>
-
-            <button 
-              type="button"
-              onClick={function() { navigate("/custom-dtf"); }} 
-              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap ${routeState.view === "custom-dtf" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
-            >
-              Custom DTF
-              {routeState.view === "custom-dtf" && (
-                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#E51E2B]" />
-              )}
-            </button>
-
-            <button 
-              type="button"
-              onClick={function() { navigate("/about"); }} 
-              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap ${routeState.view === "about" ? "text-[#E51E2B]" : "text-neutral-700 hover:text-black"}`}
-            >
-              About
-              {routeState.view === "about" && (
-                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#E51E2B]" />
-              )}
-            </button>
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 flex-nowrap">
@@ -1720,34 +1698,22 @@ export default function App() {
                 {/* 5. CUSTOM DTF */}
                 <button 
                   type="button" 
-                  onClick={function() { setIsMobileNavOpen(false); navigate("/custom-dtf"); }} 
-                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${
-                    routeState.view === "custom-dtf" ? "text-[#E51E2B]" : "text-neutral-900"
-                  }`}
+                  onClick={function() { 
+                    setIsMobileNavOpen(false); 
+                    const text = encodeURIComponent("Hi TH3EE! I want to order custom DTF printed T-shirts. Here are my requirements:");
+                    const phone = storeBrand.whatsappPhone || '919121798653';
+                    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+                  }} 
+                  className="flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors text-neutral-900"
                 >
                   <span className="flex items-center gap-2.5">
                     <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
                     <span>CUSTOM DTF PRINTING</span>
                   </span>
-                  {routeState.view === "custom-dtf" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
+                  <ArrowRight className="w-4 h-4 text-neutral-400" />
                 </button>
 
-                {/* 6. ABOUT */}
-                <button 
-                  type="button" 
-                  onClick={function() { setIsMobileNavOpen(false); navigate("/about"); }} 
-                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${
-                    routeState.view === "about" ? "text-[#E51E2B]" : "text-neutral-900"
-                  }`}
-                >
-                  <span className="flex items-center gap-2.5">
-                    <Home className="w-4 h-4 text-[#FF2E2E]" />
-                    <span>ABOUT TH3EE</span>
-                  </span>
-                  {routeState.view === "about" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
-                </button>
-
-                {/* 7. HELP */}
+                {/* 6. HELP */}
                 <button 
                   type="button" 
                   onClick={function() { 
