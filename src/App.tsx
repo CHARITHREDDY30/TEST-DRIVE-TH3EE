@@ -612,6 +612,13 @@ function parseCurrentRoute(): RouteState {
     slug = decodeURIComponent(rawSlug).trim();
   } else if (path.indexOf("/shop") === 0) {
     view = "shop";
+    if (path === "/shop/t-shirts") {
+      query["category"] = "T-Shirts";
+    } else if (path === "/shop/hoodies-sweats") {
+      query["category"] = "Hoodies & Sweats";
+    } else if (path === "/shop/baahubali") {
+      query["universe"] = "Baahubali Universe";
+    }
   } else if (path.indexOf("/custom-dtf") === 0 || path.indexOf("/dtf") === 0) {
     view = "custom-dtf";
   } else if (path.indexOf("/about") === 0) {
@@ -798,6 +805,13 @@ export default function App() {
       slug = decodeURIComponent(rawSlug).trim();
     } else if (pathPart.indexOf("/shop") === 0) {
       view = "shop";
+      if (pathPart === "/shop/t-shirts") {
+        query["category"] = "T-Shirts";
+      } else if (pathPart === "/shop/hoodies-sweats") {
+        query["category"] = "Hoodies & Sweats";
+      } else if (pathPart === "/shop/baahubali") {
+        query["universe"] = "Baahubali Universe";
+      }
     } else if (pathPart === "/bag" || pathPart.indexOf("/bag") === 0 || pathPart === "/cart" || pathPart.indexOf("/cart") === 0) {
       view = "bag";
     } else if (pathPart === "/checkout" || pathPart.indexOf("/checkout") === 0) {
@@ -1269,7 +1283,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#FBFBFB] text-[#121212] antialiased flex flex-col justify-between selection:bg-[#E51E2B] selection:text-white overflow-x-hidden w-full">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
         *, html, body, button, input, textarea, select {
           font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         }
@@ -2443,14 +2456,14 @@ function HomePageView({
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-4 items-end max-w-6xl mx-auto mt-8 sm:mt-10">
             <div className="bg-[#FF6F3C] rounded-2xl sm:rounded-3xl overflow-hidden aspect-[3/4.2] shadow-xs">
-              <img src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=700&auto=format&fit=crop&q=80" alt="Look 1" className="w-full h-full object-cover object-center mix-blend-multiply opacity-95 hover:scale-105 transition-transform duration-500" />
+              <img src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=700&auto=format&fit=crop&q=80" alt="TH3EE Oversized Streetwear Graphic Drop 01" className="w-full h-full object-cover object-center mix-blend-multiply opacity-95 hover:scale-105 transition-transform duration-500" />
             </div>
             <div className="bg-[#2EB872] rounded-2xl sm:rounded-3xl overflow-hidden aspect-[3/5] shadow-xs">
-              <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=700&auto=format&fit=crop&q=80" alt="Look 2" className="w-full h-full object-cover object-center mix-blend-multiply opacity-95 hover:scale-105 transition-transform duration-500" />
+              <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=700&auto=format&fit=crop&q=80" alt="TH3EE Heavyweight Streetwear Tee Drop 02" className="w-full h-full object-cover object-center mix-blend-multiply opacity-95 hover:scale-105 transition-transform duration-500" />
             </div>
             <div className="col-span-2 md:col-span-1 space-y-2.5 sm:space-y-3 flex flex-col items-center">
               <div className="w-full bg-[#E5B824] rounded-2xl sm:rounded-3xl overflow-hidden aspect-[3/4] shadow-xs">
-                <img src={resolveProductImageUrl("tshirts/IMg 1.jpeg")} onError={handleImageLoadError} alt="Baahubali Cult Tee" className="w-full h-full object-cover object-center mix-blend-multiply opacity-90 hover:scale-105 transition-transform duration-500" />
+                <img src={resolveProductImageUrl("tshirts/IMg 1.jpeg")} onError={handleImageLoadError} alt="TH3EE Baahubali Cult Oversized Graphic Tee" className="w-full h-full object-cover object-center mix-blend-multiply opacity-90 hover:scale-105 transition-transform duration-500" />
               </div>
               <button 
                 type="button"
@@ -2462,10 +2475,10 @@ function HomePageView({
               </button>
             </div>
             <div className="bg-[#4895EF] rounded-2xl sm:rounded-3xl overflow-hidden aspect-[3/5] hidden md:block shadow-xs">
-              <img src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=700&auto=format&fit=crop&q=80" alt="Look 4" className="w-full h-full object-cover object-center mix-blend-multiply opacity-95 hover:scale-105 transition-transform duration-500" />
+              <img src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=700&auto=format&fit=crop&q=80" alt="TH3EE Premium Unisex Graphic Streetwear Tee" className="w-full h-full object-cover object-center mix-blend-multiply opacity-95 hover:scale-105 transition-transform duration-500" />
             </div>
             <div className="bg-[#9BF6FF] rounded-2xl sm:rounded-3xl overflow-hidden aspect-[3/4.2] hidden md:block shadow-xs">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=700&auto=format&fit=crop&q=80" alt="Look 5" className="w-full h-full object-cover object-center mix-blend-multiply opacity-90 hover:scale-105 transition-transform duration-500" />
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=700&auto=format&fit=crop&q=80" alt="TH3EE Signature High-Density Graphic Streetwear Tee" className="w-full h-full object-cover object-center mix-blend-multiply opacity-90 hover:scale-105 transition-transform duration-500" />
             </div>
           </div>
         </div>

@@ -142,9 +142,18 @@ export const seoService = {
     const desc = isGeneralShop 
       ? "Explore TH3EE's luxury T-shirt collection. Elevated fits, soft-touch fabrics and understated design for those who dress with intent."
       : (description || `Explore ${collectionTitle} on TH3EE. Premium luxury T-shirts and custom drops crafted in Tirupati.`);
-    const canonicalUrl = isGeneralShop 
-      ? `https://${brandDomain}/shop`
-      : `https://${brandDomain}/shop?category=${encodeURIComponent(collectionTitle)}`;
+    let canonicalUrl = `https://${brandDomain}/shop`;
+    if (!isGeneralShop) {
+      if (collectionTitle === 'T-Shirts') {
+        canonicalUrl = `https://${brandDomain}/shop/t-shirts`;
+      } else if (collectionTitle === 'Hoodies & Sweats') {
+        canonicalUrl = `https://${brandDomain}/shop/hoodies-sweats`;
+      } else if (collectionTitle === 'Baahubali Universe' || collectionTitle === 'Baahubali') {
+        canonicalUrl = `https://${brandDomain}/shop/baahubali`;
+      } else {
+        canonicalUrl = `https://${brandDomain}/shop?category=${encodeURIComponent(collectionTitle)}`;
+      }
+    }
 
     document.title = title;
 

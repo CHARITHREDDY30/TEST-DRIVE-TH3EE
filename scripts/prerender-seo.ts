@@ -168,7 +168,6 @@ function generateSitemapXml(): string {
   xml += `  <url>\n    <loc>${domain}/shop/baahubali</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
   xml += `  <url>\n    <loc>${domain}/custom-dtf</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
   xml += `  <url>\n    <loc>${domain}/about</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
-  xml += `  <url>\n    <loc>${domain}/track-order</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.5</priority>\n  </url>\n`;
 
   // All master products
   for (const product of INITIAL_MASTER_PRODUCTS) {
@@ -296,7 +295,7 @@ async function prerenderAll() {
   ];
 
   for (const col of collections) {
-    const canonicalUrl = `https://${INITIAL_OFFICIAL_DOMAIN}/shop?${col.type}=${encodeURIComponent(col.name)}`;
+    const canonicalUrl = `https://${INITIAL_OFFICIAL_DOMAIN}/shop/${col.slug}`;
     const title = `${col.name} | TH3EE Premium Archive`;
     const description = `Explore the ${col.name} collection on TH3EE. Refined fabrics, sharp fits, and luxury custom DTF prints made in Tirupati.`;
     const imageUrl = `https://${INITIAL_OFFICIAL_DOMAIN}/og-image.png`;

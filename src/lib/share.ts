@@ -46,7 +46,13 @@ export function getCanonicalProductUrl(product: Product | { slug: string }, doma
  */
 export function getCanonicalCollectionUrl(param: { category?: string; universe?: string }, domain: string = OFFICIAL_SITE_DOMAIN): string {
   let subpath = '/shop';
-  if (param.category) {
+  if (param.category === 'T-Shirts') {
+    subpath = '/shop/t-shirts';
+  } else if (param.category === 'Hoodies & Sweats') {
+    subpath = '/shop/hoodies-sweats';
+  } else if (param.universe === 'Baahubali Universe' || param.universe === 'Baahubali') {
+    subpath = '/shop/baahubali';
+  } else if (param.category) {
     subpath = `/shop?category=${encodeURIComponent(param.category)}`;
   } else if (param.universe) {
     subpath = `/shop?universe=${encodeURIComponent(param.universe)}`;

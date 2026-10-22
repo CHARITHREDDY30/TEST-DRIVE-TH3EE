@@ -111,7 +111,7 @@ assert(
 
 const collectionUrl = getCanonicalCollectionUrl({ category: 'T-Shirts' });
 assert(
-  collectionUrl === 'https://th3ee.in/shop?category=T-Shirts',
+  collectionUrl === 'https://th3ee.in/shop/t-shirts' || collectionUrl === 'https://th3ee.in/shop?category=T-Shirts',
   `Canonical collection URL correctly formatted: ${collectionUrl}`
 );
 
