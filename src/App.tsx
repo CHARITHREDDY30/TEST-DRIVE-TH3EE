@@ -3167,7 +3167,7 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {},
   const isOutOfStock = product.inStock === false;
 
   return (
-    <div className="group flex flex-col justify-between bg-white border border-neutral-200 hover:border-neutral-400 transition-all font-mono shadow-2xs h-full w-full overflow-hidden">
+    <div className="group flex flex-col justify-between bg-white border border-neutral-200 hover:border-neutral-400 transition-all font-mono shadow-2xs h-full w-full overflow-hidden rounded-2xl">
       <div>
         <div 
           onClick={function() { navigate("/products/" + product.slug + "?color=" + encodeURIComponent(selectedColor)); }}
@@ -3181,13 +3181,13 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {},
             className={"w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 block " + (isOutOfStock ? "opacity-80 grayscale-[25%]" : "")} 
           />
           {product.badge && (
-            <span className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 bg-[#E51E2B] text-white text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-wider">
+            <span className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 bg-[#E51E2B] text-white text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-wider rounded-md">
               {product.badge}
             </span>
           )}
 
           {isOutOfStock && (
-            <span className="absolute top-2 sm:top-2.5 right-2 sm:right-2.5 bg-neutral-900/90 text-white text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-wider backdrop-blur-xs z-10">
+            <span className="absolute top-2 sm:top-2.5 right-2 sm:right-2.5 bg-neutral-900/90 text-white text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-wider backdrop-blur-xs z-10 rounded-md">
               OUT OF STOCK
             </span>
           )}
@@ -3198,7 +3198,7 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {},
               <button 
                 type="button"
                 onClick={function(e) { e.stopPropagation(); onShare(product); }}
-                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer"
+                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer rounded-lg"
                 title="Share Drop"
                 aria-label="Share Drop"
               >
@@ -3209,7 +3209,7 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {},
               <button 
                 type="button"
                 onClick={function(e) { e.stopPropagation(); onQuickView(product); }}
-                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer"
+                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer rounded-lg"
                 title="Quick View"
                 aria-label="Quick View"
               >
@@ -3406,7 +3406,7 @@ function ProductDetailInner({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
         <div className="space-y-3 sm:space-y-4 w-full">
           <div 
-            className="aspect-[4/5] bg-neutral-50/90 border border-neutral-200 overflow-hidden relative group flex items-center justify-center p-2 select-none w-full"
+            className="aspect-[4/5] bg-neutral-50/90 border border-neutral-200 overflow-hidden relative group flex items-center justify-center p-2 select-none w-full rounded-2xl"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -3418,18 +3418,18 @@ function ProductDetailInner({
             />
 
             {product.badge && (
-              <span className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 bg-[#E51E2B] text-white text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 uppercase tracking-wider">
+              <span className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 bg-[#E51E2B] text-white text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 uppercase tracking-wider rounded-md">
                 {product.badge}
               </span>
             )}
-            <span className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 bg-black/85 text-white text-[9px] sm:text-[10px] px-2 py-0.5 uppercase font-bold">
+            <span className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 bg-black/85 text-white text-[9px] sm:text-[10px] px-2 py-0.5 uppercase font-bold rounded-xs">
               ANGLE {selectedImgIdx + 1} / {activeImages.length || 1}
             </span>
 
             {activeImages.length > 1 && (
               <div>
                 <button 
-                  type="button"
+                  type="button" 
                   onClick={function() { setSelectedImgIdx(function(prev) { return prev > 0 ? prev - 1 : activeImages.length - 1; }); }}
                   className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 p-1.5 sm:p-2 hover:bg-white text-black shadow-md opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
                   aria-label="Previous image"
@@ -3437,7 +3437,7 @@ function ProductDetailInner({
                   <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <button 
-                  type="button"
+                  type="button" 
                   onClick={function() { setSelectedImgIdx(function(prev) { return prev < activeImages.length - 1 ? prev + 1 : 0; }); }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 p-1.5 sm:p-2 hover:bg-white text-black shadow-md opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
                   aria-label="Next image"
@@ -3456,7 +3456,7 @@ function ProductDetailInner({
                     key={i} 
                     type="button"
                     onClick={function() { setSelectedImgIdx(i); }}
-                    className={"w-14 sm:w-16 h-18 sm:h-20 border-2 shrink-0 overflow-hidden bg-neutral-100 " + (selectedImgIdx === i ? "border-[#E51E2B]" : "border-neutral-200")}
+                    className={"w-14 sm:w-16 h-18 sm:h-20 border-2 shrink-0 overflow-hidden bg-neutral-100 rounded-xl " + (selectedImgIdx === i ? "border-[#E51E2B]" : "border-neutral-200")}
                   >
                     <img 
                       src={resolveProductImageUrl(imgRef)} 
@@ -3839,7 +3839,7 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag, onShare = fu
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white max-w-lg w-full p-4 sm:p-6 relative shadow-2xl font-mono space-y-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white max-w-lg w-full p-4 sm:p-6 relative shadow-2xl font-mono space-y-4 max-h-[90vh] overflow-y-auto rounded-2xl">
         <div className="flex justify-between items-start pb-2 border-b">
           <h3 className="text-xs sm:text-sm font-black uppercase text-neutral-900 truncate pr-3">{product.name}</h3>
           <div className="flex items-center gap-1.5 shrink-0">
@@ -3847,20 +3847,20 @@ function QuickViewModal({ product, onClose, onNavigate, onAddToBag, onShare = fu
               <button 
                 type="button" 
                 onClick={function() { onShare(product); }} 
-                className="p-1 hover:text-[#E51E2B] text-neutral-700 transition-colors cursor-pointer"
+                className="p-1 hover:text-[#E51E2B] text-neutral-700 transition-colors cursor-pointer rounded-md"
                 title="Share Drop"
                 aria-label="Share Drop"
               >
                 <Share2 className="w-4 h-4" />
               </button>
             )}
-            <button type="button" onClick={onClose} className="p-1 hover:text-red-600 transition-colors cursor-pointer" aria-label="Close">
+            <button type="button" onClick={onClose} className="p-1 hover:text-red-600 transition-colors cursor-pointer rounded-md" aria-label="Close">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
         <div className="flex flex-col sm:row gap-4">
-          <div className="w-full sm:w-32 h-44 sm:h-40 bg-neutral-100 shrink-0 overflow-hidden">
+          <div className="w-full sm:w-32 h-44 sm:h-40 bg-neutral-100 shrink-0 overflow-hidden rounded-xl">
             <img 
               src={resolveProductImageUrl(img)} 
               onError={handleImageLoadError}

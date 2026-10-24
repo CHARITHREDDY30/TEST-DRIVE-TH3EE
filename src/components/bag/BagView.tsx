@@ -223,10 +223,10 @@ export const BagView: React.FC<BagViewProps> = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white border-2 border-neutral-200 hover:border-neutral-900 transition-colors p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-6 shadow-xs"
+                  className="bg-white border-2 border-neutral-200 hover:border-neutral-900 transition-colors p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-6 shadow-xs rounded-2xl"
                 >
                   {/* Thumbnail */}
-                  <div className="w-24 h-32 sm:w-28 sm:h-36 bg-neutral-100 border border-neutral-200 shrink-0 overflow-hidden relative">
+                  <div className="w-24 h-32 sm:w-28 sm:h-36 bg-neutral-100 border border-neutral-200 shrink-0 overflow-hidden relative rounded-xl">
                     <img
                       src={imgUrl}
                       alt={item.name}

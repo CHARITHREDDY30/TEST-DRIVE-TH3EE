@@ -757,7 +757,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                       src={imgUrl}
                       alt={item.name}
                       onError={handleImageLoadError}
-                      className="w-12 h-16 object-cover bg-neutral-100 border border-neutral-200 shrink-0"
+                      className="w-12 h-16 object-cover bg-neutral-100 border border-neutral-200 shrink-0 rounded-lg"
                     />
                     <div className="flex-1 min-w-0">
                       <h4 className="text-xs font-bold uppercase text-neutral-900 truncate">{item.name}</h4>

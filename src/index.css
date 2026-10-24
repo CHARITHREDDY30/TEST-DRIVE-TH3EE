@@ -12,26 +12,20 @@ input, select, textarea {
   font-size: 16px;
 }
 
-/* Myntra-Inspired Subtle Curvature (4px on all rectangular borders) */
-button:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve),
-input:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve),
-select:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve),
-textarea:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve),
-.myntra-curve,
-.border-2:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve),
-.border:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve),
-[class*="border-neutral-"]:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve),
-[class*="border-black"]:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve),
-[class*="border-gray-"]:not(.rounded-full):not([class*="rounded-none"]):not(.no-curve) {
+/* Myntra-Inspired Subtle Curvature (4px for inputs, selects, textareas, and standard buttons without explicit rounding) */
+button:not([class*="rounded-"]):not(.no-curve),
+input:not([class*="rounded-"]):not(.no-curve),
+select:not([class*="rounded-"]):not(.no-curve),
+textarea:not([class*="rounded-"]):not(.no-curve),
+.myntra-curve {
   border-radius: 4px;
 }
 
-/* Larger cards, dialogs, modals, and product containers have smooth 6px curve */
-.shadow-2xl:not(.rounded-full),
-.shadow-xl:not(.rounded-full),
-.shadow-lg:not(.rounded-full) {
-  border-radius: 6px;
+/* Prominent Product Card and Product Showcase Curvature (16px / rounded-2xl) */
+.product-card-curve {
+  border-radius: 1rem;
 }
+
 
 /* Ambient Brand Blobs in TH3EE Signature Red */
 .blob-top-left {
