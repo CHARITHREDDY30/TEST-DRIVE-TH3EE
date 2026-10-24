@@ -173,7 +173,7 @@ export interface DeliverySettings {
 }
 
 export interface RouteState {
-  view: "home" | "shop" | "product" | "admin" | "account" | "login" | "register" | "verify-email" | "forgot-password" | "reset-password" | "bag" | "checkout" | "order-track" | "delivery-partner" | "verify-pass" | "custom-dtf" | "about";
+  view: "home" | "shop" | "product" | "admin" | "account" | "login" | "register" | "verify-email" | "forgot-password" | "reset-password" | "bag" | "checkout" | "order-track" | "delivery-partner" | "verify-pass" | "custom-dtf" | "about" | "not-found";
   slug: string | null;
   query: Record<string, string>;
 }

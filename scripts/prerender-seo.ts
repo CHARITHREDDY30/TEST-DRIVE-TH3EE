@@ -244,7 +244,7 @@ async function prerenderAll() {
 
   console.log(`✔ Prerendered ${productCount} product pages with rich Open Graph, Twitter & Schema.org cards`);
 
-  // Dedicated core pages: Shop, Custom DTF, About
+  // Dedicated core pages: Shop, Custom DTF, About, Bag, Profile, Checkout, Orders, Tracking, Loyalty, Auth
   const dedicatedPages = [
     {
       dirName: 'shop',
@@ -263,6 +263,108 @@ async function prerenderAll() {
       title: 'About TH3EE | Luxury Clothing from Tirupati',
       description: "TH3EE is built on precision, restraint and craft. Discover the story behind Tirupati's luxury T-shirt label and the philosophy behind every piece.",
       canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/about`
+    },
+    {
+      dirName: 'bag',
+      title: 'Shopping Bag | TH3EE Oversized Streetwear',
+      description: 'Review your selected TH3EE streetwear silhouettes, apply member coupons, and proceed with encrypted express checkout.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/bag`
+    },
+    {
+      dirName: 'cart',
+      title: 'Shopping Bag | TH3EE Oversized Streetwear',
+      description: 'Review your selected TH3EE streetwear silhouettes, apply member coupons, and proceed with encrypted express checkout.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/cart`
+    },
+    {
+      dirName: 'profile',
+      title: 'Patron Profile & Orders | TH3EE',
+      description: 'Access your TH3EE patron profile, live order tracking, delivery addresses, and Loyalty Club rewards.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/profile`
+    },
+    {
+      dirName: 'account',
+      title: 'Patron Account & Orders | TH3EE',
+      description: 'Manage your TH3EE account, past drop purchases, and delivery details.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/account`
+    },
+    {
+      dirName: 'checkout',
+      title: 'Secure Checkout | TH3EE',
+      description: 'Complete your TH3EE order with secure encrypted Razorpay checkout and tracked express delivery across India.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/checkout`
+    },
+    {
+      dirName: 'login',
+      title: 'Patron Sign In | TH3EE',
+      description: 'Sign in to your TH3EE account to access your orders, saved addresses, and loyalty privileges.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/login`
+    },
+    {
+      dirName: 'register',
+      title: 'Join the TH3EE Collective | Create Account',
+      description: 'Create your TH3EE patron account for drop early access, exclusive rewards, and swift checkout.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/register`
+    },
+    {
+      dirName: 'signup',
+      title: 'Join the TH3EE Collective | Create Account',
+      description: 'Create your TH3EE patron account for drop early access, exclusive rewards, and swift checkout.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/signup`
+    },
+    {
+      dirName: 'orders',
+      title: 'Order History & Tracking | TH3EE',
+      description: 'View and track your previous TH3EE orders and delivery status.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/orders`
+    },
+    {
+      dirName: 'track',
+      title: 'Track Your Drop | TH3EE Order Tracking',
+      description: 'Real-time parcel tracking and dispatch status for your TH3EE streetwear order.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/track`
+    },
+    {
+      dirName: 'order-tracking',
+      title: 'Track Your Drop | TH3EE Order Tracking',
+      description: 'Real-time parcel tracking and dispatch status for your TH3EE streetwear order.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/order-tracking`
+    },
+    {
+      dirName: 'loyalty',
+      title: 'TH3EE Loyalty Club | Exclusive Patron Privileges',
+      description: 'Earn stamps on every drop, unlock tiered rewards, and access VIP releases with the TH3EE Loyalty Club.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/loyalty`
+    },
+    {
+      dirName: 'delivery-partner',
+      title: 'Delivery Partner Portal | TH3EE',
+      description: 'TH3EE Atelier authorized delivery dispatch and logistics management portal.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/delivery-partner`
+    },
+    {
+      dirName: 'verify-pass',
+      title: 'Verify Pass | TH3EE',
+      description: 'Verify TH3EE Authenticity Pass and verification tokens.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/verify-pass`
+    },
+    {
+      dirName: 'verify-email',
+      title: 'Verify Email | TH3EE',
+      description: 'Confirm your TH3EE patron account email address.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/verify-email`
+    },
+    {
+      dirName: 'forgot-password',
+      title: 'Reset Password | TH3EE',
+      description: 'Recover access to your TH3EE patron account.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/forgot-password`
+    },
+    {
+      dirName: 'reset-password',
+      title: 'Set New Password | TH3EE',
+      description: 'Choose a new password for your TH3EE patron account.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/reset-password`
     }
   ];
 
@@ -285,7 +387,7 @@ async function prerenderAll() {
     }
   }
 
-  console.log('✔ Prerendered Shop, Custom DTF, and About dedicated SEO pages');
+  console.log(`✔ Prerendered ${dedicatedPages.length} dedicated SEO and application entry pages`);
 
   // Prerender categories & universes
   const collections = [
@@ -362,6 +464,155 @@ async function prerenderAll() {
       fs.copyFileSync(path.resolve(wellKnownPublic, f), path.resolve(wellKnownDist, f));
     }
   }
+
+  // Generate standalone, branded TH3EE 404.html for Vercel edge error handling
+  const custom404Html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#FF3131" />
+    <title>404 - Drop Not Found | TH3EE Oversized Streetwear</title>
+    <meta name="description" content="This page couldn't be found. Explore the latest TH3EE drops." />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Poppins:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #FAFAFA;
+        color: #171717;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .card {
+        background: #FFFFFF;
+        border: 2px solid #171717;
+        max-width: 520px;
+        width: 100%;
+        padding: 48px 36px;
+        text-align: center;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+      }
+      .badge {
+        display: inline-block;
+        background: #E51E2B;
+        color: #FFFFFF;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        margin-bottom: 24px;
+        font-family: monospace;
+      }
+      .code {
+        font-size: 72px;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.05em;
+        font-family: 'Montserrat', sans-serif;
+        color: #171717;
+        margin-bottom: 8px;
+      }
+      .divider {
+        width: 48px;
+        height: 4px;
+        background: #E51E2B;
+        margin: 0 auto 24px auto;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        margin-bottom: 12px;
+      }
+      p {
+        font-size: 14px;
+        color: #525252;
+        line-height: 1.6;
+        margin-bottom: 32px;
+      }
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .btn-primary {
+        background: #171717;
+        color: #FFFFFF;
+        padding: 14px 24px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        text-decoration: none;
+        transition: background 0.2s;
+        font-family: monospace;
+        display: block;
+      }
+      .btn-primary:hover {
+        background: #E51E2B;
+      }
+      .btn-secondary {
+        background: #FFFFFF;
+        color: #171717;
+        border: 1px solid #D4D4D4;
+        padding: 12px 24px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        text-decoration: none;
+        transition: border-color 0.2s;
+        font-family: monospace;
+        display: block;
+      }
+      .btn-secondary:hover {
+        border-color: #171717;
+      }
+      .btn-row {
+        display: flex;
+        gap: 12px;
+      }
+      .btn-row > * { flex: 1; }
+      @media (max-width: 480px) {
+        .card { padding: 32px 20px; }
+        .code { font-size: 56px; }
+        h1 { font-size: 20px; }
+        .btn-row { flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="badge">TH3EE Atelier // Error 404</div>
+      <div class="code">404</div>
+      <div class="divider"></div>
+      <h1>This page couldn't be found.</h1>
+      <p>Explore the latest TH3EE drops. The silhouette or page you requested may have moved or been updated.</p>
+      <div class="actions">
+        <a href="/shop" class="btn-primary">Explore Drops</a>
+        <div class="btn-row">
+          <a href="/" class="btn-secondary">Return Home</a>
+          <a href="/bag" class="btn-secondary">View Bag</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+  fs.writeFileSync(path.resolve(publicDir, '404.html'), custom404Html, 'utf-8');
+  if (fs.existsSync(distDir)) {
+    fs.writeFileSync(path.resolve(distDir, '404.html'), custom404Html, 'utf-8');
+  }
+  console.log('✔ Generated branded 404.html page for Vercel edge deployment');
 
   console.log('✔ Synced SEO, manifest, and security assets to dist');
   console.log('--- TH3EE Social Preview & Sitemap Prerender Complete ---');

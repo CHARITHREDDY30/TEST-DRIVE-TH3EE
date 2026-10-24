@@ -343,6 +343,16 @@ export const razorpayService = {
           };
         }
 
+        // If the server explicitly evaluated the signature and verification failed,
+        // strictly reject the payment. Customers must never be marked paid if signature check fails.
+        if (data && (data.verified === false || data.success === false)) {
+          return {
+            success: false,
+            verified: false,
+            error: data.error || 'Payment verification failed'
+          };
+        }
+
         if (error) {
           console.warn('Edge function payment verification note:', error);
         }

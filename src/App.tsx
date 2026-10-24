@@ -71,6 +71,7 @@ import { VerifyPassView } from './components/loyalty/VerifyPassView';
 import { ShareProductModal } from './components/common/ShareProductModal';
 import { CustomDtfView } from './components/pages/CustomDtfView';
 import { AboutView } from './components/pages/AboutView';
+import { NotFoundView } from './components/common/NotFoundView';
 import type { AuthUser } from './types/auth';
 
 // Self-contained zero-dependency inline SVG icons
@@ -606,7 +607,9 @@ function parseCurrentRoute(): RouteState {
   let view: RouteState["view"] = "home";
   let slug: string | null = null;
 
-  if (path.indexOf("/products/") === 0) {
+  if (path === "/" || path === "") {
+    view = "home";
+  } else if (path.indexOf("/products/") === 0) {
     view = "product";
     const rawSlug = path.slice("/products/".length);
     slug = decodeURIComponent(rawSlug).trim();
@@ -634,9 +637,15 @@ function parseCurrentRoute(): RouteState {
   } else if (path.indexOf("/track/") === 0) {
     view = "order-track";
     slug = decodeURIComponent(path.replace("/track/", ""));
-  } else if (path === "/track" || path.indexOf("/track") === 0) {
+  } else if (path === "/track" || path.indexOf("/track") === 0 || path === "/order-tracking" || path.indexOf("/order-tracking") === 0) {
     view = "order-track";
     slug = query["order"] || query["id"] || null;
+  } else if (path === "/orders" || path.indexOf("/orders") === 0) {
+    view = "account";
+    query["tab"] = "orders";
+  } else if (path === "/loyalty" || path.indexOf("/loyalty") === 0) {
+    view = "account";
+    query["tab"] = "loyalty";
   } else if (path.indexOf("/delivery-partner") === 0 || path.indexOf("/delivery") === 0) {
     view = "delivery-partner";
   } else if (path.indexOf("/verify-pass") === 0 || path.indexOf("/pass") === 0) {
@@ -655,6 +664,8 @@ function parseCurrentRoute(): RouteState {
     view = "reset-password";
   } else if (path.indexOf("/atelier-admin") === 0 || path.indexOf("/owner") === 0 || path.indexOf("/admin") === 0 || path.indexOf("/secret-atelier") === 0) {
     view = "admin";
+  } else {
+    view = "not-found";
   }
 
   return { view: view, slug: slug, query: query };
@@ -799,7 +810,9 @@ export default function App() {
     }
     let view: RouteState["view"] = "home";
     let slug = null;
-    if (pathPart.indexOf("/products/") === 0) {
+    if (pathPart === "/" || pathPart === "") {
+      view = "home";
+    } else if (pathPart.indexOf("/products/") === 0) {
       view = "product";
       const rawSlug = pathPart.slice("/products/".length);
       slug = decodeURIComponent(rawSlug).trim();
@@ -812,6 +825,10 @@ export default function App() {
       } else if (pathPart === "/shop/baahubali") {
         query["universe"] = "Baahubali Universe";
       }
+    } else if (pathPart.indexOf("/custom-dtf") === 0 || pathPart.indexOf("/dtf") === 0) {
+      view = "custom-dtf";
+    } else if (pathPart.indexOf("/about") === 0) {
+      view = "about";
     } else if (pathPart === "/bag" || pathPart.indexOf("/bag") === 0 || pathPart === "/cart" || pathPart.indexOf("/cart") === 0) {
       view = "bag";
     } else if (pathPart === "/checkout" || pathPart.indexOf("/checkout") === 0) {
@@ -823,9 +840,15 @@ export default function App() {
     } else if (pathPart.indexOf("/track/") === 0) {
       view = "order-track";
       slug = decodeURIComponent(pathPart.replace("/track/", ""));
-    } else if (pathPart === "/track" || pathPart.indexOf("/track") === 0) {
+    } else if (pathPart === "/track" || pathPart.indexOf("/track") === 0 || pathPart === "/order-tracking" || pathPart.indexOf("/order-tracking") === 0) {
       view = "order-track";
       slug = query["order"] || query["id"] || null;
+    } else if (pathPart === "/orders" || pathPart.indexOf("/orders") === 0) {
+      view = "account";
+      query["tab"] = "orders";
+    } else if (pathPart === "/loyalty" || pathPart.indexOf("/loyalty") === 0) {
+      view = "account";
+      query["tab"] = "loyalty";
     } else if (pathPart.indexOf("/delivery-partner") === 0 || pathPart.indexOf("/delivery") === 0) {
       view = "delivery-partner";
     } else if (pathPart.indexOf("/verify-pass") === 0 || pathPart.indexOf("/pass") === 0) {
@@ -844,6 +867,8 @@ export default function App() {
       view = "reset-password";
     } else if (pathPart.indexOf("/atelier-admin") === 0 || pathPart.indexOf("/owner") === 0 || pathPart.indexOf("/admin") === 0 || pathPart.indexOf("/secret-atelier") === 0) {
       view = "admin";
+    } else {
+      view = "not-found";
     }
 
     setRouteState({ view: view, slug: slug, query: query });
@@ -908,6 +933,7 @@ export default function App() {
   // Customer authentication and isolated cart state
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalInitialMode, setAuthModalInitialMode] = useState<AuthMode>('login');
   const [cart, setCart] = useState<CartItem[]>(function() {
@@ -920,16 +946,22 @@ export default function App() {
   useEffect(function() {
     let isMounted = true;
     authService.getCurrentUser().then(function(user) {
-      if (isMounted && user && user.id) {
-        setCurrentUser(user);
-        setCurrentUserId(user.id);
-        const userCart = cartService.mergeGuestCartIntoUserCart(user.id);
-        setCart(userCart);
+      if (isMounted) {
+        if (user && user.id) {
+          setCurrentUser(user);
+          setCurrentUserId(user.id);
+          const userCart = cartService.mergeGuestCartIntoUserCart(user.id);
+          setCart(userCart);
+        }
+        setIsAuthLoading(false);
       }
-    }).catch(function() {});
+    }).catch(function() {
+      if (isMounted) setIsAuthLoading(false);
+    });
 
     const unsubscribe = authService.onAuthStateChange(function(event, user) {
       if (!isMounted) return;
+      setIsAuthLoading(false);
       if (user && user.id) {
         setCurrentUser(user);
         setCurrentUserId(user.id);
@@ -1854,6 +1886,8 @@ export default function App() {
         {routeState.view === "account" && (
           <CustomerAccountView 
             currentUser={currentUser}
+            isAuthLoading={isAuthLoading}
+            initialTab={(routeState.query?.tab as any) || 'orders'}
             onSignOut={handleSignOut}
             onOpenAuth={function(mode) {
               setAuthModalInitialMode(mode || 'login');
@@ -1951,6 +1985,12 @@ export default function App() {
 
         {routeState.view === "about" && (
           <AboutView 
+            navigate={navigate}
+          />
+        )}
+
+        {routeState.view === "not-found" && (
+          <NotFoundView 
             navigate={navigate}
           />
         )}

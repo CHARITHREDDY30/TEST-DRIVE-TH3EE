@@ -8,10 +8,11 @@
     "build": "vite build && npx tsx scripts/prerender-seo.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "test": "npx tsx scripts/verify-all-requirements.ts && npx tsx scripts/verify-auth.ts && npx tsx scripts/verify-checkout-account-fixes.ts && npx tsx scripts/verify-coupon-loyalty-launch.ts && npx tsx scripts/verify-share-system.ts",
+    "test": "npx tsx scripts/verify-all-requirements.ts && npx tsx scripts/verify-auth.ts && npx tsx scripts/verify-checkout-account-fixes.ts && npx tsx scripts/verify-coupon-loyalty-launch.ts && npx tsx scripts/verify-share-system.ts && npx tsx scripts/verify-routing-and-error-handling.ts",
     "test:auth": "npx tsx scripts/verify-auth.ts",
     "test:launch": "npx tsx scripts/verify-coupon-loyalty-launch.ts",
-    "test:share": "npx tsx scripts/verify-share-system.ts"
+    "test:share": "npx tsx scripts/verify-share-system.ts",
+    "test:routing": "npx tsx scripts/verify-routing-and-error-handling.ts"
   },
   "dependencies": {
     "@insforge/sdk": "^1.5.2",

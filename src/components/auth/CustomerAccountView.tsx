@@ -49,8 +49,12 @@ const TrashIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) 
   </svg>
 );
 
+import { sanitizeCustomerErrorMessage } from '../../lib/errorHandler';
+
 interface CustomerAccountViewProps {
   currentUser: AuthUser | null;
+  isAuthLoading?: boolean;
+  initialTab?: 'orders' | 'loyalty' | 'addresses' | 'profile';
   onSignOut: () => void;
   onOpenAuth: (mode?: 'login' | 'register') => void;
   navigate: (path: string) => void;
@@ -60,13 +64,21 @@ interface CustomerAccountViewProps {
 
 export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
   currentUser,
+  isAuthLoading = false,
+  initialTab = 'orders',
   onSignOut,
   onOpenAuth,
   navigate,
   showNotification,
   onUserUpdated
 }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'loyalty' | 'addresses' | 'profile'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'loyalty' | 'addresses' | 'profile'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab && (initialTab === 'orders' || initialTab === 'loyalty' || initialTab === 'addresses' || initialTab === 'profile')) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Customer data states
   const [orders, setOrders] = useState<Order[]>([]);
@@ -651,6 +663,60 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
     }
     return <span className="px-2 py-0.5 text-[10px] bg-neutral-100 text-neutral-800 font-bold uppercase rounded-xs">Received</span>;
   };
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-16 font-mono text-center space-y-4">
+        <div className="w-10 h-10 border-2 border-neutral-300 border-t-[#E51E2B] rounded-full animate-spin" />
+        <h2 className="text-xs uppercase font-bold text-neutral-600 tracking-wider">
+          Loading Patron Profile...
+        </h2>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="w-full bg-[#FAFAFA] min-h-[70vh] py-12 sm:py-20 font-mono">
+        <div className="max-w-md mx-auto px-4 text-center space-y-6 bg-white border-2 border-neutral-900 p-8 sm:p-12 shadow-2xl">
+          <div className="w-16 h-16 mx-auto bg-neutral-100 border border-neutral-300 flex items-center justify-center rounded-full text-neutral-900">
+            <UserIcon className="w-8 h-8 text-neutral-800" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl sm:text-2xl font-black uppercase text-neutral-900 font-poppins">
+              Patron Profile
+            </h1>
+            <p className="text-xs text-neutral-600 font-sans leading-relaxed">
+              Sign in to access your order history, tracked parcels, saved delivery addresses, and TH3EE Loyalty Club rewards.
+            </p>
+          </div>
+          <div className="pt-2 space-y-2.5">
+            <button
+              type="button"
+              onClick={() => onOpenAuth('login')}
+              className="w-full py-3.5 bg-neutral-900 hover:bg-[#E51E2B] text-white text-xs font-bold uppercase tracking-widest transition-colors shadow-md cursor-pointer"
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenAuth('register')}
+              className="w-full py-3 bg-white border border-neutral-300 hover:border-black text-neutral-900 text-xs font-bold uppercase tracking-widest transition-colors shadow-2xs cursor-pointer"
+            >
+              Create Account
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="w-full py-2 text-[11px] text-neutral-500 hover:text-black uppercase tracking-wider font-mono cursor-pointer transition-colors"
+            >
+              ← Back to Store
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 font-mono">
