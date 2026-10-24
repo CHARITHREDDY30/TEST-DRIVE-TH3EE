@@ -1618,17 +1618,18 @@ export default function App() {
             <motion.button
               type="button"
               onClick={function() { navigate("/bag"); }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              className="flex items-center space-x-1.5 sm:space-x-2 bg-neutral-900 text-white hover:bg-[#E51E2B] px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-mono uppercase tracking-wider transition-colors shadow-xs shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1 whitespace-nowrap"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center space-x-1.5 bg-neutral-900 text-white hover:bg-[#E51E2B] px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs font-mono uppercase tracking-wider transition-colors shadow-xs shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-[#E51E2B] focus:ring-offset-1 whitespace-nowrap cursor-pointer"
+              aria-label="Shopping Bag"
+              title="Shopping Bag"
             >
-              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline font-bold">BAG</span>
+              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <motion.span
                 key={cart.reduce(function(count, item) { return count + item.quantity; }, 0)}
                 animate={isBagBumping ? { scale: [1, 1.45, 0.9, 1.1, 1] } : { scale: 1 }}
                 transition={{ duration: 0.35, ease: "easeOut" }}
-                className="bg-white text-black font-extrabold text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full inline-block"
+                className="bg-white text-black font-extrabold text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full inline-block min-w-4 text-center"
               >
                 {cart.reduce(function(count, item) { return count + item.quantity; }, 0)}
               </motion.span>

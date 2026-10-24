@@ -4,6 +4,7 @@ import type { CartItem } from '../../types/store';
 import type { AuthUser } from '../../types/auth';
 import { resolveProductImageUrl, handleImageLoadError } from '../../lib/r2';
 import { couponsService } from '../../services/coupons.service';
+import { CouponSelectorModal } from '../coupons/CouponSelectorModal';
 
 interface BagViewProps {
   cart: CartItem[];
@@ -41,38 +42,48 @@ export const BagView: React.FC<BagViewProps> = ({
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
 
   const totalItemsCount = cart.reduce((acc, it) => acc + (it.quantity || 1), 0);
   const finalTotal = Math.max(0, cartSubtotal - couponDiscount + (hasFreeShipping ? 0 : deliveryCharge));
 
-  const handleApplyCoupon = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!couponCode.trim()) return;
+  const applyCouponByCode = async (code: string): Promise<boolean> => {
+    const clean = code.trim().toUpperCase();
+    if (!clean) return false;
     setCouponLoading(true);
     setCouponMessage('');
     try {
       const result = await couponsService.validateCoupon(
-        couponCode, 
-        cartSubtotal, 
-        currentUser?.id || null, 
+        clean,
+        cartSubtotal,
+        currentUser?.id || null,
         currentUser?.email || null
       );
       if (result.valid) {
-        setAppliedCoupon(result.coupon || { code: couponCode.trim().toUpperCase() });
+        setAppliedCoupon(result.coupon || { code: clean });
         setCouponDiscount(result.discount);
-        setCouponMessage(result.message || `Code ${couponCode.toUpperCase()} applied!`);
-        showNotification({ type: 'success', message: `Coupon ${couponCode.toUpperCase()} applied!` });
+        setCouponCode(clean);
+        setCouponMessage(result.message || `Code ${clean} applied!`);
+        showNotification({ type: 'success', message: `Coupon ${clean} applied!` });
+        return true;
       } else {
         setAppliedCoupon(null);
         setCouponDiscount(0);
         setCouponMessage(result.message || 'Invalid coupon code.');
         showNotification({ type: 'error', message: result.message || 'Invalid coupon code.' });
+        return false;
       }
     } catch {
       setCouponMessage('Error applying coupon. Please try again.');
+      return false;
     } finally {
       setCouponLoading(false);
     }
+  };
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await applyCouponByCode(couponCode);
   };
 
   const handleRemoveCoupon = () => {
@@ -357,41 +368,80 @@ export const BagView: React.FC<BagViewProps> = ({
             </h2>
 
             {/* Coupon Application Box */}
-            <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-neutral-700 block mb-2">
-                PROMOTIONAL / ATELIER VOUCHER
-              </label>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-neutral-700 block">
+                  PROMOTIONAL / ATELIER VOUCHER
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsCouponModalOpen(true)}
+                  className="text-[10px] font-bold text-[#E51E2B] hover:underline uppercase tracking-wider cursor-pointer"
+                >
+                  View Coupons →
+                </button>
+              </div>
+
               {appliedCoupon ? (
                 <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-300 text-xs">
                   <div>
                     <span className="font-bold text-emerald-800 uppercase tracking-wider">{appliedCoupon.code}</span>
                     <p className="text-[11px] text-emerald-600 mt-0.5">-₹{couponDiscount.toFixed(2)} applied</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleRemoveCoupon}
-                    className="text-xs text-red-600 hover:underline font-bold uppercase cursor-pointer"
-                  >
-                    Remove
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCouponModalOpen(true)}
+                      className="text-xs text-neutral-700 hover:text-black font-bold uppercase cursor-pointer"
+                    >
+                      Change
+                    </button>
+                    <span className="text-neutral-300">|</span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-xs text-red-600 hover:underline font-bold uppercase cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="ENTER CODE"
-                    className="flex-1 px-3 py-2 border border-neutral-300 text-xs uppercase font-mono tracking-wider focus:outline-none focus:border-neutral-900"
-                  />
+                <div className="space-y-2">
                   <button
-                    type="submit"
-                    disabled={couponLoading || !couponCode.trim()}
-                    className="px-4 py-2 bg-neutral-900 text-white text-xs font-bold uppercase hover:bg-[#E51E2B] transition-colors disabled:opacity-40 cursor-pointer"
+                    type="button"
+                    onClick={() => setIsCouponModalOpen(true)}
+                    className="w-full flex items-center justify-between p-2.5 bg-neutral-50 hover:bg-neutral-100 border border-dashed border-neutral-400 text-xs text-neutral-900 transition-colors cursor-pointer group"
                   >
-                    {couponLoading ? '...' : 'Apply'}
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-[#E51E2B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                      </svg>
+                      <span className="font-bold uppercase tracking-wider text-[11px]">Check Available Coupons</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#E51E2B] uppercase group-hover:underline">
+                      Apply →
+                    </span>
                   </button>
-                </form>
+
+                  <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="ENTER CODE"
+                      className="flex-1 px-3 py-2 border border-neutral-300 text-xs uppercase font-mono tracking-wider focus:outline-none focus:border-neutral-900"
+                    />
+                    <button
+                      type="submit"
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="px-4 py-2 bg-neutral-900 text-white text-xs font-bold uppercase hover:bg-[#E51E2B] transition-colors disabled:opacity-40 cursor-pointer"
+                    >
+                      {couponLoading ? '...' : 'Apply'}
+                    </button>
+                  </form>
+                </div>
               )}
               {couponMessage && !appliedCoupon && (
                 <p className="text-[11px] text-red-600 mt-1.5">{couponMessage}</p>
@@ -481,6 +531,18 @@ export const BagView: React.FC<BagViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Myntra-style Coupon Selector Modal */}
+      <CouponSelectorModal
+        isOpen={isCouponModalOpen}
+        onClose={() => setIsCouponModalOpen(false)}
+        cartSubtotal={cartSubtotal}
+        appliedCoupon={appliedCoupon}
+        onApplyCoupon={applyCouponByCode}
+        onRemoveCoupon={handleRemoveCoupon}
+        customerId={currentUser?.id}
+        customerEmail={currentUser?.email}
+      />
     </div>
   );
 };
