@@ -14,8 +14,9 @@ const sql = fs.readFileSync(filePath, 'utf8');
 
 console.log(`Applying migration: ${migrationFile}...`);
 
-// Use InsForge CLI to execute migration
-const cleanSql = sql.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+// Strip comments and format SQL
+const strippedSql = sql.replace(/--.*$/gm, '');
+const cleanSql = strippedSql.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 const res = spawnSync('cmd.exe', ['/c', 'insforge', 'db', 'query', cleanSql], {
   encoding: 'utf8',
   stdio: 'inherit'

@@ -685,5 +685,31 @@ export const ordersService = {
       }
     }
     return [];
+  },
+
+  /**
+   * Deletes an order and its associated records (items, tracking, payments, redemptions).
+   */
+  async deleteOrder(orderId: string): Promise<boolean> {
+    if (isInsForgeConfigured()) {
+      try {
+        const { data, error } = await (insforge.database as any).rpc('delete_order_admin', {
+          p_order_id: orderId
+        });
+
+        if (error) {
+          console.error('Delete order RPC error:', error);
+          throw new Error(error.message || 'Failed to delete order');
+        }
+
+        broadcastCatalogChange({ type: 'ORDER_DELETED' as any, orderId });
+        return Boolean(data);
+      } catch (err) {
+        console.error('Failed to delete order:', err);
+        throw err;
+      }
+    }
+    return true;
   }
 };
+

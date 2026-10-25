@@ -315,70 +315,96 @@ class AnalyticsService {
     return this.generateFallbackSummary(timeframe);
   }
 
+  public async deleteEvent(eventId: string): Promise<boolean> {
+    try {
+      const raw = localStorage.getItem(LOCAL_EVENTS_BUFFER_KEY);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          const updated = list.filter((e: any) => e.id !== eventId);
+          localStorage.setItem(LOCAL_EVENTS_BUFFER_KEY, JSON.stringify(updated));
+        }
+      }
+    } catch {}
+
+    if (isInsForgeConfigured()) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId);
+        if (isUuid) {
+          const { error } = await (insforge.database as any).rpc('delete_analytics_event', {
+            p_event_id: eventId
+          });
+          return !error;
+        }
+      } catch (err) {
+        console.warn('[Analytics] Failed to delete event:', err);
+      }
+    }
+    return true;
+  }
+
+  public async clearAllEvents(): Promise<boolean> {
+    try {
+      localStorage.removeItem(LOCAL_EVENTS_BUFFER_KEY);
+    } catch {}
+
+    if (isInsForgeConfigured()) {
+      try {
+        const { error } = await (insforge.database as any).rpc('clear_all_analytics_events');
+        return !error;
+      } catch (err) {
+        console.warn('[Analytics] Failed to clear all events:', err);
+      }
+    }
+    return true;
+  }
+
+  public async resetAllDemoData(): Promise<boolean> {
+    try {
+      localStorage.removeItem(LOCAL_EVENTS_BUFFER_KEY);
+    } catch {}
+
+    if (isInsForgeConfigured()) {
+      try {
+        const { error } = await (insforge.database as any).rpc('reset_all_demo_data');
+        return !error;
+      } catch (err) {
+        console.warn('[Analytics] Failed to reset demo data:', err);
+      }
+    }
+    return true;
+  }
+
   private async generateFallbackSummary(timeframe: string): Promise<AdminAnalyticsDashboardSummary> {
     const localEvents = this.getLocalLiveEvents();
     return {
       timeframe: timeframe as any,
-      totalVisitors: 28,
-      totalSessions: 34,
-      totalPageviews: 112,
-      mobileVisitors: 20,
-      desktopVisitors: 8,
-      totalCustomers: 7,
-      todayLoginsCount: 3,
-      totalOrders: 4,
-      todayOrders: 2,
-      totalRevenue: 6340,
-      todayRevenue: 2495,
-      avgOrderValue: 1585,
+      totalVisitors: localEvents.length,
+      totalSessions: localEvents.length > 0 ? 1 : 0,
+      totalPageviews: localEvents.length,
+      mobileVisitors: 0,
+      desktopVisitors: 0,
+      totalCustomers: 0,
+      todayLoginsCount: 0,
+      totalOrders: 0,
+      todayOrders: 0,
+      totalRevenue: 0,
+      todayRevenue: 0,
+      avgOrderValue: 0,
       completedOrders: 0,
-      pendingOrders: 4,
-      conversionRate: 14.2,
-      cartAbandonmentRate: 33.3,
-      topProducts: [
-        {
-          id: 'p1',
-          name: 'BATMAN - Dark Knight',
-          slug: 'batman-dark-knight',
-          category: 'T-Shirts',
-          price: 799,
-          views: 42,
-          cartAdds: 14,
-          ordersCount: 3,
-          conversionRate: 7.1
-        },
-        {
-          id: 'p2',
-          name: 'Baahubali - Emblem Edition',
-          slug: 'baahubali-emblem-edition',
-          category: 'T-Shirts',
-          price: 449,
-          views: 38,
-          cartAdds: 9,
-          ordersCount: 1,
-          conversionRate: 2.6
-        },
-        {
-          id: 'p3',
-          name: 'SALAAR',
-          slug: 'salaar',
-          category: 'T-Shirts',
-          price: 599,
-          views: 29,
-          cartAdds: 8,
-          ordersCount: 1,
-          conversionRate: 3.4
-        }
-      ],
+      pendingOrders: 0,
+      conversionRate: 0,
+      cartAbandonmentRate: 0,
+      topProducts: [],
       recentLogins: [],
       recentOrders: [],
       liveEvents: localEvents,
       funnel: {
-        visitors: 28,
-        productViews: 42,
-        addToCarts: 14,
-        checkouts: 6,
-        orders: 4
+        visitors: localEvents.length,
+        productViews: 0,
+        addToCarts: 0,
+        checkouts: 0,
+        orders: 0
       },
       generatedAt: new Date().toISOString()
     };

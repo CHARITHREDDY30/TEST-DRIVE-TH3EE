@@ -25,7 +25,9 @@ import {
   CheckSquare,
   Square,
   X,
-  Send
+  Send,
+  Trash2,
+  RotateCcw
 } from 'lucide-react';
 import { analyticsService } from '../../services/analytics.service';
 import { ordersService } from '../../services/orders.service';
@@ -74,6 +76,13 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
   const [courierProvider, setCourierProvider] = useState('Delhivery');
   const [trackingNumberInput, setTrackingNumberInput] = useState('');
   const [isUpdatingFulfillment, setIsUpdatingFulfillment] = useState(false);
+
+  // Demo Reset & Log Deletion state
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [isResettingAll, setIsResettingAll] = useState(false);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [isClearingLogs, setIsClearingLogs] = useState(false);
 
   // Load analytics summary data
   const loadData = useCallback(async (isSilent = false) => {
@@ -341,6 +350,96 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
     }
   };
 
+  // Delete individual demo activity log
+  const handleDeleteEvent = async (eventId: string, eventTitle?: string) => {
+    setDeletingEventId(eventId);
+    try {
+      const ok = await analyticsService.deleteEvent(eventId);
+      if (ok) {
+        setSummary(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            liveEvents: prev.liveEvents.filter(e => e.id !== eventId)
+          };
+        });
+        showNotification({ type: 'success', message: 'Demo activity log deleted.' });
+      }
+    } catch (err: any) {
+      showNotification({ type: 'error', message: err?.message || 'Failed to delete activity log.' });
+    } finally {
+      setDeletingEventId(null);
+    }
+  };
+
+  // Clear all demo activity logs
+  const handleClearAllEvents = async () => {
+    if (!window.confirm('Clear all demo activity logs from the live action stream?')) return;
+    setIsClearingLogs(true);
+    try {
+      const ok = await analyticsService.clearAllEvents();
+      if (ok) {
+        setSummary(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            liveEvents: []
+          };
+        });
+        showNotification({ type: 'success', message: 'All demo activity logs cleared.' });
+      }
+    } catch (err: any) {
+      showNotification({ type: 'error', message: err?.message || 'Failed to clear activity logs.' });
+    } finally {
+      setIsClearingLogs(false);
+    }
+  };
+
+  // Delete individual demo order
+  const handleDeleteOrder = async (orderId: string, orderNumber: string) => {
+    if (!window.confirm(`Delete demo order #${orderNumber} and all its tracking records?`)) return;
+    setDeletingOrderId(orderId);
+    try {
+      const ok = await ordersService.deleteOrder(orderId);
+      if (ok) {
+        setSummary(prev => {
+          if (!prev) return prev;
+          const remainingOrders = prev.recentOrders.filter(o => o.id !== orderId);
+          const removedOrder = prev.recentOrders.find(o => o.id === orderId);
+          const removedRevenue = removedOrder && removedOrder.paymentStatus.toLowerCase() === 'paid' ? Number(removedOrder.totalAmount || 0) : 0;
+          return {
+            ...prev,
+            recentOrders: remainingOrders,
+            totalOrders: Math.max(0, prev.totalOrders - 1),
+            totalRevenue: Math.max(0, prev.totalRevenue - removedRevenue)
+          };
+        });
+        showNotification({ type: 'success', message: `Demo order #${orderNumber} deleted.` });
+      }
+    } catch (err: any) {
+      showNotification({ type: 'error', message: err?.message || 'Failed to delete order.' });
+    } finally {
+      setDeletingOrderId(null);
+    }
+  };
+
+  // Reset all calculations to 0
+  const handleConfirmResetAll = async () => {
+    setIsResettingAll(true);
+    try {
+      const ok = await analyticsService.resetAllDemoData();
+      if (ok) {
+        setShowResetModal(false);
+        showNotification({ type: 'success', message: 'All calculations reset to 0! Counting fresh from now.' });
+        await loadData(false);
+      }
+    } catch (err: any) {
+      showNotification({ type: 'error', message: err?.message || 'Failed to reset demo data.' });
+    } finally {
+      setIsResettingAll(false);
+    }
+  };
+
   // Stage-Aware WhatsApp Links (Keep customer happy & informed at every step)
   const getStageWhatsAppUrl = (order: RecentOrderItem) => {
     if (!order.customerPhone) return '';
@@ -482,6 +581,17 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
           >
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Export CSV</span>
+          </button>
+
+          {/* Reset All Data to 0 */}
+          <button
+            type="button"
+            onClick={() => setShowResetModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-[#E51E2B] text-red-600 hover:text-white border border-red-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-2xs"
+            title="Reset all demo calculations to 0"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Reset to 0</span>
           </button>
         </div>
       </div>
@@ -1011,6 +1121,17 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                             >
                               Details
                             </button>
+
+                            {/* Delete Demo Order Button */}
+                            <button
+                              type="button"
+                              disabled={deletingOrderId === order.id}
+                              onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                              className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors disabled:opacity-40"
+                              title="Delete test/demo order"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
 
                         </div>
@@ -1217,8 +1338,8 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                   </p>
                 </div>
 
-                {/* Filter buttons */}
-                <div className="flex items-center gap-1.5 self-end sm:self-auto text-xs font-bold">
+                {/* Filter buttons & Clear action */}
+                <div className="flex flex-wrap items-center gap-1.5 self-end sm:self-auto text-xs font-bold">
                   {[
                     { id: 'all', label: 'All' },
                     { id: 'views', label: 'Price Checks' },
@@ -1239,6 +1360,20 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                       {f.label}
                     </button>
                   ))}
+
+                  {/* Clear all logs button */}
+                  {summary?.liveEvents && summary.liveEvents.length > 0 && (
+                    <button
+                      type="button"
+                      disabled={isClearingLogs}
+                      onClick={handleClearAllEvents}
+                      className="px-2.5 py-1 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 rounded-lg text-xs font-black uppercase tracking-wider transition-all disabled:opacity-40 flex items-center gap-1"
+                      title="Clear all demo activity logs"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span className="hidden sm:inline">Clear Logs</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1279,9 +1414,20 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                         </div>
                       </div>
 
-                      <span className="text-[10px] font-mono font-bold text-neutral-400 shrink-0">
-                        {formatRelativeTime(evt.createdAt)}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-mono font-bold text-neutral-400">
+                          {formatRelativeTime(evt.createdAt)}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={deletingEventId === evt.id}
+                          onClick={() => handleDeleteEvent(evt.id, evt.itemName || evt.eventType)}
+                          className="p-1.5 text-neutral-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
+                          title="Delete this demo log"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1379,6 +1525,82 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Confirm & Mark Dispatched</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          5. RESET ALL CALCULATIONS TO 0 CONFIRMATION MODAL
+      ========================================================================= */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-neutral-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div className="flex items-center gap-2 text-red-600">
+                <RotateCcw className="w-5 h-5" />
+                <h3 className="text-sm font-black uppercase tracking-wider text-neutral-950">
+                  Reset All Calculations to 0?
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowResetModal(false)}
+                className="p-1 text-neutral-400 hover:text-neutral-800 rounded-lg hover:bg-neutral-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-neutral-600 leading-relaxed">
+              <p className="font-bold text-neutral-900">
+                This starts your store's numbers completely fresh from right now:
+              </p>
+              
+              <ul className="space-y-1.5 bg-red-50/60 border border-red-100 p-3.5 rounded-2xl text-[11px] text-neutral-800">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                  <span><strong>Total Revenue & Orders:</strong> Reset to ₹0 and 0 orders.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                  <span><strong>Visitors & Customer Logins:</strong> Reset to 0.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                  <span><strong>Product Views & Bag telemetry:</strong> Reset to 0.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                  <span><strong>Demo logs & test orders:</strong> Cleaned from database.</span>
+                </li>
+              </ul>
+
+              <p className="text-[11px] text-neutral-500">
+                Once confirmed, all new telemetry will count solely from genuine visitors and customer purchases.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-100">
+              <button
+                type="button"
+                disabled={isResettingAll}
+                onClick={() => setShowResetModal(false)}
+                className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isResettingAll}
+                onClick={handleConfirmResetAll}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors shadow-md disabled:opacity-50 flex items-center gap-2"
+              >
+                <RotateCcw className={`w-3.5 h-3.5 ${isResettingAll ? 'animate-spin' : ''}`} />
+                <span>{isResettingAll ? 'Resetting...' : 'Confirm & Reset to 0'}</span>
               </button>
             </div>
 
