@@ -173,14 +173,14 @@ export const seoService = {
   },
 
   /**
-   * Sets SEO for Custom DTF page.
+   * Sets SEO for Customise apparel page.
    */
-  setCustomDtfSEO(brandDomain: string = OFFICIAL_SITE_DOMAIN) {
+  setCustomiseSEO(brandDomain: string = OFFICIAL_SITE_DOMAIN) {
     if (typeof document === 'undefined') return;
 
-    const title = 'Custom DTF Printed T-Shirts | TH3EE Tirupati';
-    const desc = 'Design your own premium T-shirt with TH3EE. High-definition DTF printing, rich colour and a lasting finish on quality fabric, made in Tirupati.';
-    const canonicalUrl = `https://${brandDomain}/custom-dtf`;
+    const title = 'Customise Premium T-Shirts & Apparel | TH3EE Tirupati';
+    const desc = 'Design your own premium custom apparel with TH3EE. High-definition DTF printing, rich colour saturation, visual size & fit guides, and luxury 240+ GSM cotton crafted in Tirupati.';
+    const canonicalUrl = `https://${brandDomain}/customise`;
 
     document.title = title;
     setMetaTag('name', 'description', desc);
@@ -196,6 +196,13 @@ export const seoService = {
     setMetaTag('name', 'twitter:image', `https://${brandDomain}/og-image.png`);
 
     setCanonicalLink(canonicalUrl);
+  },
+
+  /**
+   * Sets SEO for Custom DTF page (backwards-compatibility).
+   */
+  setCustomDtfSEO(brandDomain: string = OFFICIAL_SITE_DOMAIN) {
+    this.setCustomiseSEO(brandDomain);
   },
 
   /**

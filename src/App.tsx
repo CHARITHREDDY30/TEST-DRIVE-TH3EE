@@ -72,6 +72,9 @@ import { AdminAnalyticsDashboard } from './components/admin/AdminAnalyticsDashbo
 import { VerifyPassView } from './components/loyalty/VerifyPassView';
 import { ShareProductModal } from './components/common/ShareProductModal';
 import { CustomDtfView } from './components/pages/CustomDtfView';
+import { CustomiseWizard } from './components/customise/CustomiseWizard';
+import { CustomOrderTrackingView } from './components/customise/CustomOrderTrackingView';
+import { AdminCustomOrdersManager } from './components/admin/AdminCustomOrdersManager';
 import { AboutView } from './components/pages/AboutView';
 import { NotFoundView } from './components/common/NotFoundView';
 import type { AuthUser } from './types/auth';
@@ -635,8 +638,18 @@ function parseCurrentRoute(): RouteState {
     } else if (path === "/shop/baahubali") {
       query["universe"] = "Baahubali Universe";
     }
+  } else if (path.indexOf("/customise/track/") === 0) {
+    view = "customise";
+    slug = decodeURIComponent(path.replace("/customise/track/", ""));
+  } else if (path.indexOf("/customize/track/") === 0) {
+    view = "customise";
+    slug = decodeURIComponent(path.replace("/customize/track/", ""));
+  } else if (path === "/customise" || path.indexOf("/customise") === 0 || path === "/customize" || path.indexOf("/customize") === 0) {
+    view = "customise";
+    slug = query["token"] || query["id"] || query["request"] || null;
   } else if (path.indexOf("/custom-dtf") === 0 || path.indexOf("/dtf") === 0) {
-    view = "custom-dtf";
+    view = "customise";
+    slug = query["token"] || query["id"] || query["request"] || null;
   } else if (path.indexOf("/about") === 0) {
     view = "about";
   } else if (path === "/bag" || path.indexOf("/bag") === 0 || path === "/cart" || path.indexOf("/cart") === 0) {
@@ -838,8 +851,18 @@ export default function App() {
       } else if (pathPart === "/shop/baahubali") {
         query["universe"] = "Baahubali Universe";
       }
+    } else if (pathPart.indexOf("/customise/track/") === 0) {
+      view = "customise";
+      slug = decodeURIComponent(pathPart.replace("/customise/track/", ""));
+    } else if (pathPart.indexOf("/customize/track/") === 0) {
+      view = "customise";
+      slug = decodeURIComponent(pathPart.replace("/customize/track/", ""));
+    } else if (pathPart === "/customise" || pathPart.indexOf("/customise") === 0 || pathPart === "/customize" || pathPart.indexOf("/customize") === 0) {
+      view = "customise";
+      slug = query["token"] || query["id"] || query["request"] || null;
     } else if (pathPart.indexOf("/custom-dtf") === 0 || pathPart.indexOf("/dtf") === 0) {
-      view = "custom-dtf";
+      view = "customise";
+      slug = query["token"] || query["id"] || query["request"] || null;
     } else if (pathPart.indexOf("/about") === 0) {
       view = "about";
     } else if (pathPart === "/bag" || pathPart.indexOf("/bag") === 0 || pathPart === "/cart" || pathPart.indexOf("/cart") === 0) {
@@ -1338,8 +1361,8 @@ export default function App() {
     } else if (routeState.view === 'shop') {
       const categoryName = routeState.query.category || routeState.query.universe;
       seoService.setCollectionSEO(categoryName, undefined, storeBrand?.domain);
-    } else if (routeState.view === 'custom-dtf') {
-      seoService.setCustomDtfSEO(storeBrand?.domain);
+    } else if (routeState.view === 'customise' || routeState.view === 'custom-dtf') {
+      seoService.setCustomiseSEO(storeBrand?.domain);
     } else if (routeState.view === 'about') {
       seoService.setAboutSEO(storeBrand?.domain);
     } else if (routeState.view === 'home') {
@@ -1515,6 +1538,18 @@ export default function App() {
             >
               Hoodies & Sweats
               {routeState.query.category === "Hoodies & Sweats" && (
+                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#E51E2B]" />
+              )}
+            </button>
+
+            <button 
+              type="button"
+              onClick={function() { navigate("/customise"); }} 
+              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap flex items-center gap-1.5 ${routeState.view === "customise" ? "text-[#E51E2B] font-bold" : "text-neutral-700 hover:text-black"}`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#E51E2B]" />
+              <span>Customise</span>
+              {routeState.view === "customise" && (
                 <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#E51E2B]" />
               )}
             </button>
@@ -1779,20 +1814,18 @@ export default function App() {
                   {routeState.query.category === "Hoodies & Sweats" && <span className="w-1.5 h-1.5 rounded-full bg-[#E51E2B]" />}
                 </button>
 
-                {/* 5. CUSTOM DTF */}
+                {/* 5. CUSTOMISE */}
                 <button 
                   type="button" 
                   onClick={function() { 
                     setIsMobileNavOpen(false); 
-                    const text = encodeURIComponent("Hi TH3EE! I want to order custom DTF printed T-shirts. Here are my requirements:");
-                    const phone = storeBrand.whatsappPhone || '919121798653';
-                    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+                    navigate("/customise");
                   }} 
-                  className="flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors text-neutral-900"
+                  className={`flex items-center justify-between w-full text-left py-2.5 hover:text-[#E51E2B] border-b border-neutral-100 transition-colors ${routeState.view === "customise" ? "text-[#E51E2B] font-bold" : "text-neutral-900"}`}
                 >
                   <span className="flex items-center gap-2.5">
                     <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
-                    <span>CUSTOM DTF PRINTING</span>
+                    <span>CUSTOMISE</span>
                   </span>
                   <ArrowRight className="w-4 h-4 text-neutral-400" />
                 </button>
@@ -2028,10 +2061,20 @@ export default function App() {
           />
         )}
 
-        {routeState.view === "custom-dtf" && (
-          <CustomDtfView 
+        {(routeState.view === "customise" || routeState.view === "custom-dtf") && routeState.slug && (
+          <CustomOrderTrackingView 
+            token={routeState.slug}
             navigate={navigate}
-            storeBrand={storeBrand}
+            showNotification={showNotification}
+            currentUser={currentUser}
+          />
+        )}
+
+        {(routeState.view === "customise" || routeState.view === "custom-dtf") && !routeState.slug && (
+          <CustomiseWizard 
+            navigate={navigate}
+            currentUser={currentUser}
+            showNotification={showNotification}
           />
         )}
 
@@ -4306,7 +4349,7 @@ function StoreFooter({
           <div className="space-y-2">
             <span className="font-bold uppercase tracking-wider text-neutral-900 block mb-2 text-[11px]">Collections & Studio</span>
             <div className="flex flex-col space-y-2 text-neutral-600 font-medium">
-              <button type="button" onClick={function() { navigate("/custom-dtf"); }} className="text-left text-[#E51E2B] font-bold hover:underline transition-colors">Custom DTF Studio (Tirupati)</button>
+              <button type="button" onClick={function() { navigate("/customise"); }} className="text-left text-[#E51E2B] font-bold hover:underline transition-colors">Customise Apparel Studio</button>
               <button type="button" onClick={function() { navigate("/about"); }} className="text-left hover:text-[#E51E2B] transition-colors">About TH3EE Label</button>
               <button type="button" onClick={function() { navigate("/shop?universe=tfi&subcategory=Baahubali"); }} className="text-left hover:text-[#E51E2B] transition-colors">Baahubali & TFI Cult Cinema</button>
               <button type="button" onClick={function() { navigate("/shop?universe=anime"); }} className="text-left hover:text-[#E51E2B] transition-colors">Anime Shonen Saga Drops</button>
@@ -6034,6 +6077,7 @@ function SecretAtelierAdminView({
           { id: "universes", label: "Universes (" + universeCategoriesList.length + ")", icon: Globe },
           { id: "delivery", label: "Delivery & Distance Fees", icon: Truck },
           { id: "orders", label: "Orders & Tracking (" + ordersList.length + ")", icon: Truck },
+          { id: "custom_orders", label: "Custom Orders", icon: Sparkles },
           { id: "coupons", label: "Coupons (" + couponsList.length + ")", icon: Tag },
           { id: "loyalty", label: "Reward Club", icon: Award },
           { id: "reports", label: "Sales & Performance", icon: BarChart3 },
@@ -6998,6 +7042,15 @@ function SecretAtelierAdminView({
         <AdminOrdersManager 
           ordersList={ordersList}
           setOrdersList={setOrdersList}
+          currentUser={adminUser}
+          navigate={navigate}
+          showNotification={showNotification}
+        />
+      )}
+
+      {/* TAB: CUSTOM ORDERS */}
+      {activeTab === "custom_orders" && (
+        <AdminCustomOrdersManager 
           currentUser={adminUser}
           navigate={navigate}
           showNotification={showNotification}

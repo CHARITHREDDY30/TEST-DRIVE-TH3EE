@@ -166,7 +166,8 @@ function generateSitemapXml(): string {
   xml += `  <url>\n    <loc>${domain}/shop/t-shirts</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
   xml += `  <url>\n    <loc>${domain}/shop/hoodies-sweats</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
   xml += `  <url>\n    <loc>${domain}/shop/baahubali</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
-  xml += `  <url>\n    <loc>${domain}/custom-dtf</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+  xml += `  <url>\n    <loc>${domain}/customise</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+  xml += `  <url>\n    <loc>${domain}/custom-dtf</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
   xml += `  <url>\n    <loc>${domain}/about</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
 
   // All master products
@@ -253,8 +254,20 @@ async function prerenderAll() {
       canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/shop`
     },
     {
+      dirName: 'customise',
+      title: 'Customise Apparel Studio | TH3EE Bespoke Streetwear',
+      description: 'Personalise premium heavyweight T-shirts and hoodies with DTF printing. Visual fit selector, measurement size guide, multi-variant orders and instant quotations.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/customise`
+    },
+    {
+      dirName: 'customize',
+      title: 'Customise Apparel Studio | TH3EE Bespoke Streetwear',
+      description: 'Personalise premium heavyweight T-shirts and hoodies with DTF printing. Visual fit selector, measurement size guide, multi-variant orders and instant quotations.',
+      canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/customise`
+    },
+    {
       dirName: 'custom-dtf',
-      title: 'Custom DTF Printed T-Shirts | TH3EE Tirupati',
+      title: 'Customise Apparel Studio | TH3EE Tirupati',
       description: 'Design your own premium T-shirt with TH3EE. High-definition DTF printing, rich colour and a lasting finish on quality fabric, made in Tirupati.',
       canonicalUrl: `https://${INITIAL_OFFICIAL_DOMAIN}/custom-dtf`
     },

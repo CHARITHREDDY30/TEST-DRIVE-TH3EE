@@ -69,10 +69,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ navigate }) => {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/custom-dtf')}
+              onClick={() => navigate('/customise')}
               className="bg-black hover:bg-[#E51E2B] text-white font-mono font-bold text-xs uppercase px-6 py-3 tracking-wider transition-colors shadow-xs"
             >
-              Custom DTF Studio
+              Customise
             </button>
           </div>
         </div>

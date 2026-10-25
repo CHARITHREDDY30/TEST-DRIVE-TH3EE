@@ -32,19 +32,21 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const isAvatarUpload = folder === 'avatars' || folder === 'profile';
+    const isCustomArtworkUpload = folder === 'custom-artwork' || folder === 'custom-requests' || folder === 'custom-proofs';
 
-    // Verify user authentication
+    // Verify user authentication if required
     const { data: userData } = await client.auth.getCurrentUser();
     const userId = userData?.user?.id || (userData as any)?.id;
-    if (!userId) {
-      return new Response(JSON.stringify({ error: 'Unauthorized: Authentication required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
 
-    // If uploading product catalog assets, verify admin role in admin_users
-    if (!isAvatarUpload) {
+    // For catalog asset uploads (non-avatar, non-custom artwork), verify admin role
+    if (!isAvatarUpload && !isCustomArtworkUpload) {
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Authentication required' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       const { data: adminRecord } = await client.database
         .from('admin_users')
         .select('role, is_active')
