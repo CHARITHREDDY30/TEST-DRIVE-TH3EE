@@ -49,7 +49,8 @@ import {
   broadcastCatalogChange,
   onCatalogSync,
   shareAnalytics,
-  seoService
+  seoService,
+  analyticsService
 } from './services';
 import {
   getCanonicalProductUrl,
@@ -67,6 +68,7 @@ import { OrderTrackingView } from './components/tracking/OrderTrackingView';
 import { DeliveryPartnerView } from './components/delivery/DeliveryPartnerView';
 import { AdminOrdersManager } from './components/admin/AdminOrdersManager';
 import { AdminLoyaltyManager } from './components/admin/AdminLoyaltyManager';
+import { AdminAnalyticsDashboard } from './components/admin/AdminAnalyticsDashboard';
 import { VerifyPassView } from './components/loyalty/VerifyPassView';
 import { ShareProductModal } from './components/common/ShareProductModal';
 import { CustomDtfView } from './components/pages/CustomDtfView';
@@ -75,6 +77,17 @@ import { NotFoundView } from './components/common/NotFoundView';
 import type { AuthUser } from './types/auth';
 
 // Self-contained zero-dependency inline SVG icons
+function LayoutDashboard({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="7" height="9" x="3" y="3" rx="1"/>
+      <rect width="7" height="5" x="14" y="3" rx="1"/>
+      <rect width="7" height="9" x="14" y="12" rx="1"/>
+      <rect width="7" height="5" x="3" y="16" rx="1"/>
+    </svg>
+  );
+}
+
 function Home({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -880,6 +893,9 @@ export default function App() {
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {}
+    try {
+      analyticsService.trackPageView(path);
+    } catch {}
   };
 
   const [toastNotification, setToastNotification] = useState<any>(null);
@@ -950,6 +966,13 @@ export default function App() {
         if (user && user.id) {
           setCurrentUser(user);
           setCurrentUserId(user.id);
+          try {
+            analyticsService.setUserContext({
+              id: user.id,
+              email: user.email,
+              name: user.name || (user.profile && user.profile.name)
+            });
+          } catch {}
           const userCart = cartService.mergeGuestCartIntoUserCart(user.id);
           setCart(userCart);
         }
@@ -965,11 +988,21 @@ export default function App() {
       if (user && user.id) {
         setCurrentUser(user);
         setCurrentUserId(user.id);
+        try {
+          analyticsService.setUserContext({
+            id: user.id,
+            email: user.email,
+            name: user.name || (user.profile && user.profile.name)
+          });
+        } catch {}
         const userCart = cartService.mergeGuestCartIntoUserCart(user.id);
         setCart(userCart);
       } else {
         setCurrentUser(null);
         setCurrentUserId(null);
+        try {
+          analyticsService.setUserContext(null);
+        } catch {}
         setCart(cartService.loadCustomerCart(null));
       }
     });
@@ -1090,6 +1123,18 @@ export default function App() {
         thumbnail: result.item.thumbnail
       });
 
+      // Track add to bag analytics
+      try {
+        analyticsService.trackAddToCart({
+          id: product.id,
+          name: product.name,
+          price: Number(product.price) || 0,
+          size: result.item.selectedSize,
+          color: result.item.selectedColor,
+          category: product.category
+        });
+      } catch {}
+
       // Maintain customer on current product page without opening drawer
       return true;
     } catch (err: any) {
@@ -1105,10 +1150,16 @@ export default function App() {
   }, []);
 
   const removeBagItem = useCallback(function(productId: string, size: string, color: string) {
+    try {
+      const it = cart.find(function(c) { return c.id === productId && c.selectedSize === size && c.selectedColor === color; });
+      if (it) {
+        analyticsService.trackRemoveFromCart({ id: it.id, name: it.name, price: Number(it.price) || 0 });
+      }
+    } catch {}
     setCart(function(prev) {
       return cartService.removeVariantFromCart(prev, productId, size, color);
     });
-  }, []);
+  }, [cart]);
 
   const [selectedUniverseModal, setSelectedUniverseModal] = useState(null);
   const [quickViewItem, setQuickViewItem] = useState(null);
@@ -3385,6 +3436,20 @@ function ProductDetailInner({
   const hasDiscount = originalPrice !== null && originalPrice > sellingPrice;
   const discountPercent = hasDiscount ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0;
 
+  useEffect(function() {
+    if (product && (product.id || product.slug)) {
+      try {
+        analyticsService.trackProductView({
+          id: product.id,
+          slug: product.slug,
+          name: product.name,
+          price: Number(product.price) || 0,
+          category: product.category
+        });
+      } catch {}
+    }
+  }, [product?.id, product?.slug]);
+
   const relatedProducts = useMemo(function() {
     return allProducts
       .filter(function(p) {
@@ -5384,7 +5449,7 @@ function SecretAtelierAdminView({
   const [adminPassword, setAdminPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
-  const [activeTab, setActiveTab] = useState("products"); // "products" | "inventory" | "banners" | "universes" | "delivery" | "orders" | "coupons" | "reports" | "settings"
+  const [activeTab, setActiveTab] = useState("dashboard"); // "dashboard" | "products" | "inventory" | "banners" | "universes" | "delivery" | "orders" | "coupons" | "reports" | "settings"
 
   const [heroSaving, setHeroSaving] = useState(false);
   const [heroUploading, setHeroUploading] = useState<string | null>(null);
@@ -5962,6 +6027,7 @@ function SecretAtelierAdminView({
       {/* Admin Tab Navigation */}
       <div className="flex border-b border-neutral-200 overflow-x-auto gap-2 pb-0.5">
         {[
+          { id: "dashboard", label: "Live Intelligence & Visitors", icon: LayoutDashboard },
           { id: "products", label: "Products Catalog (" + productsList.length + ")", icon: Package },
           { id: "inventory", label: "Inventory Matrix", icon: Layers },
           { id: "banners", label: "Hero Banners (" + heroSlides.length + ")", icon: Image },
@@ -5992,6 +6058,17 @@ function SecretAtelierAdminView({
           );
         })}
       </div>
+
+      {/* TAB 0: LIVE INTELLIGENCE & VISITOR DASHBOARD */}
+      {activeTab === "dashboard" && (
+        <AdminAnalyticsDashboard
+          navigate={navigate}
+          showNotification={showNotification}
+          onOpenOrder={function() {
+            setActiveTab("orders");
+          }}
+        />
+      )}
 
       {/* TAB 1: PRODUCTS CATALOG & STUDIO */}
       {activeTab === "products" && (

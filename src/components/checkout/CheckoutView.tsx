@@ -9,6 +9,7 @@ import { razorpayService } from '../../services/razorpay.service';
 import { broadcastCatalogChange } from '../../services/catalogSync';
 import { PaymentConfirmationReceipt, type ConfirmedOrderReceiptData } from './PaymentConfirmationReceipt';
 import { CouponSelectorModal } from '../coupons/CouponSelectorModal';
+import { analyticsService } from '../../services/analytics.service';
 
 interface CheckoutViewProps {
   cart: CartItem[];
@@ -74,6 +75,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
 
   // Success Confirmation State
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrderReceiptData | null>(null);
+
+  // Track Checkout Started
+  useEffect(() => {
+    analyticsService.trackCheckoutStarted({
+      totalAmount: cartSubtotal,
+      itemCount: cart.reduce((acc, it) => acc + (it.quantity || 1), 0)
+    });
+  }, []);
 
   // Pre-fill delivery details from authenticated patron profile
   useEffect(() => {
@@ -357,6 +366,13 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                 onClearBag();
                 setConfirmedOrder(orderReceipt);
                 try {
+                  analyticsService.trackOrderPlaced({
+                    id: paymentOrder.orderId,
+                    orderNumber: paymentOrder.orderNumber,
+                    totalAmount: finalPayable,
+                    customerEmail: contactEmail || currentUser?.email,
+                    customerName: deliveryInfo.fullName || currentUser?.name
+                  });
                   broadcastCatalogChange({ type: 'ORDER_PLACED', orderId: paymentOrder.orderId });
                 } catch {}
                 showNotification({

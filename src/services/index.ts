@@ -16,3 +16,4 @@ export * from './razorpay.service';
 export * from './loyalty.service';
 export * from './shareAnalytics.service';
 export * from './seo.service';
+export * from './analytics.service';
