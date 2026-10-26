@@ -12,6 +12,7 @@ interface GarmentSvgProps {
   onSelectPlacement?: (placementId: string) => void;
   className?: string;
   showHotspots?: boolean;
+  artworkPreviewUrl?: string | null;
 }
 
 export const GarmentSvg: React.FC<GarmentSvgProps> = ({
@@ -24,7 +25,8 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
   activePlacement = null,
   onSelectPlacement,
   className = 'w-full h-auto',
-  showHotspots = true
+  showHotspots = true,
+  artworkPreviewUrl = null
 }) => {
   // Determine silhouette geometry parameters based on fit
   // Oversized: dropped shoulders, wide torso, longer half-sleeve
@@ -369,16 +371,29 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   rx="8"
                   className={`transition-all duration-200 ${getHotspotClasses('large_front')}`}
                 />
-                <text
-                  x="250"
-                  y={isPolo ? "330" : "285"}
-                  textAnchor="middle"
-                  className={`text-[11px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
-                    isActive('large_front') || isSelected('large_front') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
-                  }`}
-                >
-                  LARGE FRONT PRINT
-                </text>
+                {artworkPreviewUrl && (
+                  <image
+                    href={artworkPreviewUrl}
+                    x="175"
+                    y={isPolo ? "220" : "175"}
+                    width="150"
+                    height="185"
+                    preserveAspectRatio="xMidYMid meet"
+                    className="filter drop-shadow-md pointer-events-none"
+                  />
+                )}
+                {!artworkPreviewUrl && (
+                  <text
+                    x="250"
+                    y={isPolo ? "330" : "285"}
+                    textAnchor="middle"
+                    className={`text-[11px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
+                      isActive('large_front') || isSelected('large_front') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
+                    }`}
+                  >
+                    LARGE FRONT PRINT
+                  </text>
+                )}
               </g>
 
               {/* 4. Left Sleeve (Viewer's Right) */}
@@ -476,16 +491,29 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   rx="8"
                   className={`transition-all duration-200 ${getHotspotClasses('full_back')}`}
                 />
-                <text
-                  x="250"
-                  y="275"
-                  textAnchor="middle"
-                  className={`text-[12px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
-                    isActive('full_back') || isSelected('full_back') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
-                  }`}
-                >
-                  FULL BACK CANVAS
-                </text>
+                {artworkPreviewUrl && (
+                  <image
+                    href={artworkPreviewUrl}
+                    x="165"
+                    y="145"
+                    width="170"
+                    height="240"
+                    preserveAspectRatio="xMidYMid meet"
+                    className="filter drop-shadow-md pointer-events-none"
+                  />
+                )}
+                {!artworkPreviewUrl && (
+                  <text
+                    x="250"
+                    y="275"
+                    textAnchor="middle"
+                    className={`text-[12px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
+                      isActive('full_back') || isSelected('full_back') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
+                    }`}
+                  >
+                    FULL BACK CANVAS
+                  </text>
+                )}
               </g>
 
               {/* Both Sleeves Indicator */}
