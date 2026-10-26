@@ -443,6 +443,56 @@ export const CustomOrderTrackingView: React.FC<CustomOrderTrackingViewProps> = (
         {/* ==================================================================== */}
         {/* SECTION A: ITEMISED QUOTATION & CHECKOUT ACTIONS */}
         {/* ==================================================================== */}
+        {!quote && (
+          <div className="bg-white border-2 border-neutral-900 rounded-sm p-5 sm:p-8 shadow-sm mb-6 sm:mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+                Print Size & Price Evaluation In Progress
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black uppercase text-neutral-900 tracking-tight">
+              Studio Quotation & Print Size Review
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-600 mt-2 max-w-2xl leading-relaxed">
+              Our studio team is currently inspecting your artwork in the admin portal to calculate exact print dimensions, ink density, and blank specifications.
+            </p>
+
+            <div className="mt-4 p-4 bg-neutral-50 border border-neutral-200 rounded-xs space-y-2 text-xs">
+              <div className="flex items-start gap-2.5">
+                <Clock className="w-4 h-4 text-[#E51E2B] shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-neutral-900">
+                    What happens once print size evaluation is complete?
+                  </p>
+                  <p className="text-neutral-600 text-[11px] leading-relaxed">
+                    1. Our team updates the itemised quote in the admin panel and transmits it directly to this live tracking page and your WhatsApp.
+                    <br />
+                    2. We will negotiate and finalize any adjustments to size, quantity, or placement with you.
+                    <br />
+                    3. Once agreed, an instant <strong>Pay Online</strong> button will activate right here so you can pay securely through the website.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-neutral-150 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-[11px] text-neutral-500">
+                Need urgent assistance or have questions about print sizing?
+              </span>
+              <a
+                href={waSupportUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold uppercase px-5 py-2.5 tracking-wider transition-colors shadow-xs"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Discuss / Negotiate on WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        )}
+
         {quote && (
           <div className="bg-white border-2 border-neutral-900 rounded-sm p-5 sm:p-8 shadow-sm mb-6 sm:mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-neutral-200 mb-5">

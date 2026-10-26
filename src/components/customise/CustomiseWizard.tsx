@@ -506,7 +506,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
   // =========================================================================
   if (submissionResult) {
     const waUrl = `https://wa.me/919121798653?text=${encodeURIComponent(
-      `Hi TH3EE Studio! I just submitted custom order #${submissionResult.requestNumber} for ${totalQuantity}x ${fit} ${garmentCategory} (${primaryColor}, Size ${singleSize}). Please send my digital 3D mockup and quote!`
+      `Hi TH3EE Studio! I just submitted custom order #${submissionResult.requestNumber} for ${totalQuantity}x ${fit} ${garmentCategory} (${primaryColor}, Size ${singleSize}). Please evaluate print dimensions and pass my quote and digital proof!`
     )}`;
 
     return (
@@ -527,7 +527,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
             </h1>
 
             <p className="mt-2 text-xs sm:text-sm text-neutral-600 max-w-lg mx-auto leading-relaxed">
-              Your custom piece is in queue. Our print master will inspect your design, set up the high-definition DTF digital proof, and send you the preview.
+              Your custom piece is in queue. Our studio team will evaluate your artwork dimensions in the admin portal, calculate exact print sizing, and pass your itemised quote.
             </p>
 
             {/* Reference Number Card */}
@@ -554,16 +554,16 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-[11px] text-neutral-300">
                 <div className="border-l-2 border-[#E51E2B] pl-2.5">
-                  <strong className="text-white block">1. Digital Mockup Sent</strong>
-                  <span>We send a digital preview of your design on WhatsApp/Email in ~2 hours.</span>
+                  <strong className="text-white block">1. Studio Evaluates Print Size</strong>
+                  <span>Our team calculates exact quotation based on your print size & artwork in the admin panel.</span>
                 </div>
                 <div className="border-l-2 border-[#E51E2B] pl-2.5">
-                  <strong className="text-white block">2. Review & Approve</strong>
-                  <span>You approve the placement, sizing, and transparent quotation.</span>
+                  <strong className="text-white block">2. Negotiate & Pass Quotes</strong>
+                  <span>Review digital mockup proof and itemised quote via WhatsApp & your tracking ledger.</span>
                 </div>
                 <div className="border-l-2 border-[#E51E2B] pl-2.5">
-                  <strong className="text-white block">3. 48-Hour Delivery</strong>
-                  <span>Handcrafted at our Tirupati lab & dispatched with live courier tracking.</span>
+                  <strong className="text-white block">3. Pay Online on Site</strong>
+                  <span>Approve quote and pay securely online directly through the site for fast 48-hour delivery.</span>
                 </div>
               </div>
             </div>
@@ -638,47 +638,12 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
           </p>
         </div>
 
-        {/* Live Order Spec Summary Strip */}
-        <div className="bg-white border border-neutral-200 rounded-sm p-3.5 mb-6 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-2.5 text-[11px]">
-            <span className="text-neutral-400 uppercase font-bold">Configured:</span>
-            <span className="font-bold text-neutral-900 uppercase">
-              {fit} {garmentCategory}
-            </span>
-            <span className="text-neutral-300">•</span>
-            <span className="inline-flex items-center gap-1.5 font-bold uppercase text-neutral-900">
-              <span className="w-3 h-3 rounded-full border border-neutral-300 shrink-0" style={{ backgroundColor: selectedColorHex }} />
-              <span>{primaryColor}</span>
-            </span>
-            <span className="text-neutral-300">•</span>
-            <span className="font-bold text-[#E51E2B] uppercase">
-              {quickPlacementType === 'front' ? 'Front Graphic' : quickPlacementType === 'back' ? 'Back Statement' : quickPlacementType === 'both' ? 'Front + Back' : 'Left Chest'}
-            </span>
-            <span className="text-neutral-300">•</span>
-            <span className="font-bold text-neutral-800">
-              Size {isAdvancedSizesOpen ? 'Multi-Run' : singleSize} (x{totalQuantity})
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="font-black text-neutral-900 text-sm">₹699 - ₹849</span>
-            <button
-              type="button"
-              onClick={() => setIsSizeGuideOpen(true)}
-              className="text-[10px] text-neutral-500 hover:text-[#E51E2B] font-bold uppercase underline flex items-center gap-1"
-            >
-              <Ruler className="w-3 h-3" />
-              <span>Size Chart</span>
-            </button>
-          </div>
-        </div>
-
         {/* Rapid 3-Step Navigation Tabs */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
           {[
             { step: 1, title: '1. Blank & Color', subtitle: 'Choose cut & shade' },
             { step: 2, title: '2. Artwork & Placement', subtitle: 'Upload design or idea' },
-            { step: 3, title: '3. Size & WhatsApp', subtitle: 'Instant quote & proof' }
+            { step: 3, title: '3. Size & Details', subtitle: 'Quote based on print size' }
           ].map(s => {
             const isActive = activeStep === s.step;
             const isCompleted = activeStep > s.step;
@@ -1175,13 +1140,13 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
             <div className="space-y-6">
               <div>
                 <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block mb-1">
-                  STEP 03 OF 03 • SIZE & INSTANT QUOTE
+                  STEP 03 OF 03 • SIZE, QUANTITY & CONTACT
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase text-neutral-900 tracking-tight">
-                  Select Size & Get Free Proof
+                  Select Size & WhatsApp Details
                 </h2>
                 <p className="text-xs text-neutral-600 mt-1">
-                  Zero upfront payment. Enter your WhatsApp number so we can deliver your digital mockup and quote directly.
+                  Zero upfront payment. Pricing is evaluated in our admin portal based on your exact print size, ink coverage, and blank selection.
                 </p>
               </div>
 
@@ -1436,7 +1401,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   <span>TH3EE Atelier Patron Assurance</span>
                 </div>
                 <p className="text-neutral-300 text-[11px] leading-relaxed">
-                  <strong>Zero upfront payment.</strong> We will create your digital mockup and send an itemised quotation with accurate pricing and shipping. You only pay after you approve the digital proof!
+                  <strong>Zero upfront payment required.</strong> Pricing is calculated and updated by our studio team in the admin panel based on your exact print size, artwork dimensions, and blank cut. We will send an itemised quote and digital proof to your WhatsApp & live tracking ledger. We can negotiate and adjust specs as needed, and you can pay securely online right through the site once you approve!
                 </p>
               </div>
 
@@ -1466,7 +1431,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Get Instant Quote & Free Mockup</span>
+                      <span>Submit for Studio Quote & Free Mockup</span>
                     </>
                   )}
                 </button>
@@ -1475,6 +1440,171 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
             </div>
           )}
 
+        </div>
+
+        {/* ========================================================================= */}
+        {/* LIVE ATELIER CONFIGURATION SUMMARY (DISPLAYED BELOW, NOT ABOVE AT OPENING) */}
+        {/* ========================================================================= */}
+        <div className="mt-6 bg-white border-2 border-neutral-900 rounded-sm p-5 sm:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-neutral-200">
+            <div>
+              <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block">
+                CURRENT SPECIFICATION SUMMARY
+              </span>
+              <h3 className="text-sm sm:text-base font-black uppercase text-neutral-900 tracking-tight">
+                Live Atelier Configuration
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-neutral-100 text-neutral-700 border border-neutral-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Dynamic Sync
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsSizeGuideOpen(true)}
+                className="text-[10px] font-bold uppercase text-neutral-600 hover:text-[#E51E2B] underline flex items-center gap-1 cursor-pointer"
+              >
+                <Ruler className="w-3 h-3" />
+                <span>Size Guide</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Configuration Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs mb-4">
+            
+            {/* 1. Blank & Fit */}
+            <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] uppercase font-bold text-neutral-400">Garment Cut</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveStep(1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-[9px] font-bold uppercase text-[#E51E2B] hover:underline cursor-pointer"
+                >
+                  Edit
+                </button>
+              </div>
+              <p className="font-black uppercase text-neutral-900 truncate">
+                {fit} {garmentCategory}
+              </p>
+              <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                {gsm} • {sleeve}
+              </p>
+            </div>
+
+            {/* 2. Colorway */}
+            <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] uppercase font-bold text-neutral-400">Colorway</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveStep(1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-[9px] font-bold uppercase text-[#E51E2B] hover:underline cursor-pointer"
+                >
+                  Edit
+                </button>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span
+                  className="w-3.5 h-3.5 rounded-full border border-neutral-400 shrink-0 shadow-2xs"
+                  style={{ backgroundColor: selectedColorHex }}
+                />
+                <p className="font-black uppercase text-neutral-900 truncate">
+                  {primaryColor}
+                </p>
+              </div>
+              <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                {neckType}
+              </p>
+            </div>
+
+            {/* 3. Artwork & Placement */}
+            <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] uppercase font-bold text-neutral-400">Print & Placement</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveStep(2);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-[9px] font-bold uppercase text-[#E51E2B] hover:underline cursor-pointer"
+                >
+                  Edit
+                </button>
+              </div>
+              <p className="font-black uppercase text-neutral-900 truncate">
+                {quickPlacementType === 'large_front'
+                  ? 'A3 Front Print'
+                  : quickPlacementType === 'full_back'
+                  ? 'A3 Back Print'
+                  : quickPlacementType === 'front_chest'
+                  ? 'Left Chest Logo'
+                  : 'Double-Sided Print'}
+              </p>
+              <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                {uploadedFiles.length > 0
+                  ? `Uploaded (${uploadedFiles[0].fileName})`
+                  : conceptPrompt
+                  ? 'Custom Idea / Prompt'
+                  : 'Pending in Step 2'}
+              </p>
+            </div>
+
+            {/* 4. Sizing & Total Pieces */}
+            <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] uppercase font-bold text-neutral-400">Size & Run</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveStep(3);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-[9px] font-bold uppercase text-[#E51E2B] hover:underline cursor-pointer"
+                >
+                  Edit
+                </button>
+              </div>
+              <p className="font-black uppercase text-neutral-900 truncate">
+                {isAdvancedSizesOpen ? 'Multi-Size Run' : `Size ${singleSize}`}
+              </p>
+              <p className="text-[10px] text-[#E51E2B] font-bold truncate mt-0.5">
+                {totalQuantity} {totalQuantity === 1 ? 'Piece' : 'Pieces'}
+              </p>
+            </div>
+
+          </div>
+
+          {/* Pricing & Negotiation Assurance Banner */}
+          <div className="p-3.5 bg-neutral-900 text-white rounded-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-2xs bg-[#E51E2B] text-white">
+                  Pricing Policy
+                </span>
+                <span className="text-xs font-bold text-neutral-200">
+                  Calculated by Studio in Admin Panel
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-300 leading-relaxed max-w-xl">
+                Prices are <strong>never fixed upfront</strong>. Our studio evaluates your exact print dimensions, artwork resolution, and blank cut in the admin portal. Once quotes are passed, we will negotiate together and you can pay securely online right through the site.
+              </p>
+            </div>
+
+            <div className="shrink-0 text-left sm:text-right border-t sm:border-t-0 sm:border-l border-neutral-700 pt-2 sm:pt-0 sm:pl-4">
+              <span className="text-[10px] text-neutral-400 uppercase block">Upfront Payment</span>
+              <span className="text-sm font-black text-emerald-400 uppercase tracking-tight">₹0 Required Now</span>
+            </div>
+          </div>
         </div>
 
       </div>
