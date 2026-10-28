@@ -13,6 +13,8 @@ interface GarmentSvgProps {
   className?: string;
   showHotspots?: boolean;
   artworkPreviewUrl?: string | null;
+  frontArtworkUrl?: string | null;
+  backArtworkUrl?: string | null;
   category?: GarmentCategoryType;
 }
 
@@ -28,6 +30,8 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
   className = 'w-full h-auto',
   showHotspots = true,
   artworkPreviewUrl = null,
+  frontArtworkUrl = null,
+  backArtworkUrl = null,
   category = 'T-Shirt'
 }) => {
   // Determine silhouette geometry parameters based on fit
@@ -96,11 +100,18 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
   const seamColor = isDarkGarment ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
   const innerCollarColor = isDarkGarment ? '#080808' : '#D0D0D0';
 
+  // Resolved Front and Back Artworks with fallbacks
+  const hasBackPlacement = selectedPlacements.some(p => p.includes('back'));
+  const activeFrontArt = frontArtworkUrl || (view === 'front' && !hasBackPlacement ? artworkPreviewUrl : null);
+  const activeBackArt = backArtworkUrl || (view === 'back' && hasBackPlacement ? artworkPreviewUrl : null);
+  const currentViewArt = view === 'front' ? activeFrontArt : activeBackArt;
+
   return (
     <svg
       viewBox="0 0 500 520"
       className={className}
       xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"
       role="img"
       aria-label={`${fit} ${sleeve} ${neckType} Technical Illustration (${view === 'front' ? 'Front' : 'Back'} View)`}
     >
@@ -369,19 +380,32 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   y={isPolo ? "185" : "175"}
                   width="55"
                   height="55"
-                  rx="6"
+                  rx="10"
                   className={`transition-all duration-200 ${getHotspotClasses('front_chest')}`}
                 />
-                <text
-                  x="332"
-                  y={isPolo ? "216" : "206"}
-                  textAnchor="middle"
-                  className={`text-[9px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
-                    isActive('front_chest') || isSelected('front_chest') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
-                  }`}
-                >
-                  LEFT CHEST
-                </text>
+                {currentViewArt && (isActive('front_chest') || isSelected('front_chest')) ? (
+                  <image
+                    href={currentViewArt}
+                    xlinkHref={currentViewArt}
+                    x="308"
+                    y={isPolo ? "188" : "178"}
+                    width="49"
+                    height="49"
+                    preserveAspectRatio="xMidYMid meet"
+                    className="filter drop-shadow-md pointer-events-none"
+                  />
+                ) : (
+                  <text
+                    x="332"
+                    y={isPolo ? "216" : "206"}
+                    textAnchor="middle"
+                    className={`text-[9px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
+                      isActive('front_chest') || isSelected('front_chest') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
+                    }`}
+                  >
+                    LEFT CHEST
+                  </text>
+                )}
               </g>
 
               {/* 2. Center Chest */}
@@ -395,19 +419,32 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   y={isPolo ? "225" : "180"}
                   width="110"
                   height="75"
-                  rx="6"
+                  rx="12"
                   className={`transition-all duration-200 ${getHotspotClasses('center_chest')}`}
                 />
-                <text
-                  x="250"
-                  y={isPolo ? "266" : "222"}
-                  textAnchor="middle"
-                  className={`text-[10px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
-                    isActive('center_chest') || isSelected('center_chest') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
-                  }`}
-                >
-                  CENTER CHEST
-                </text>
+                {currentViewArt && (isActive('center_chest') || isSelected('center_chest')) ? (
+                  <image
+                    href={currentViewArt}
+                    xlinkHref={currentViewArt}
+                    x="198"
+                    y={isPolo ? "228" : "183"}
+                    width="104"
+                    height="69"
+                    preserveAspectRatio="xMidYMid meet"
+                    className="filter drop-shadow-md pointer-events-none"
+                  />
+                ) : (
+                  <text
+                    x="250"
+                    y={isPolo ? "266" : "222"}
+                    textAnchor="middle"
+                    className={`text-[10px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
+                      isActive('center_chest') || isSelected('center_chest') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
+                    }`}
+                  >
+                    CENTER CHEST
+                  </text>
+                )}
               </g>
 
               {/* 3. Large Front Print */}
@@ -421,12 +458,13 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   y={isPolo ? "215" : "170"}
                   width="160"
                   height="195"
-                  rx="8"
+                  rx="16"
                   className={`transition-all duration-200 ${getHotspotClasses('large_front')}`}
                 />
-                {artworkPreviewUrl && (
+                {currentViewArt && (isActive('large_front') || isSelected('large_front') || (!isSelected('front_chest') && !isSelected('center_chest'))) ? (
                   <image
-                    href={artworkPreviewUrl}
+                    href={currentViewArt}
+                    xlinkHref={currentViewArt}
                     x="175"
                     y={isPolo ? "220" : "175"}
                     width="150"
@@ -434,8 +472,7 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                     preserveAspectRatio="xMidYMid meet"
                     className="filter drop-shadow-md pointer-events-none"
                   />
-                )}
-                {!artworkPreviewUrl && (
+                ) : (
                   <text
                     x="250"
                     y={isPolo ? "330" : "285"}
@@ -460,7 +497,7 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   y="200"
                   width="45"
                   height="55"
-                  rx="4"
+                  rx="8"
                   className={`transition-all duration-200 ${getHotspotClasses('left_sleeve')}`}
                 />
                 <text
@@ -486,7 +523,7 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   y="200"
                   width="45"
                   height="55"
-                  rx="4"
+                  rx="8"
                   className={`transition-all duration-200 ${getHotspotClasses('right_sleeve')}`}
                 />
                 <text
@@ -515,19 +552,32 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   y="125"
                   width="140"
                   height="55"
-                  rx="6"
+                  rx="10"
                   className={`transition-all duration-200 ${getHotspotClasses('upper_back')}`}
                 />
-                <text
-                  x="250"
-                  y="157"
-                  textAnchor="middle"
-                  className={`text-[10px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
-                    isActive('upper_back') || isSelected('upper_back') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
-                  }`}
-                >
-                  UPPER BACK / NAPE
-                </text>
+                {currentViewArt && (isActive('upper_back') || isSelected('upper_back')) ? (
+                  <image
+                    href={currentViewArt}
+                    xlinkHref={currentViewArt}
+                    x="184"
+                    y="129"
+                    width="132"
+                    height="47"
+                    preserveAspectRatio="xMidYMid meet"
+                    className="filter drop-shadow-md pointer-events-none"
+                  />
+                ) : (
+                  <text
+                    x="250"
+                    y="157"
+                    textAnchor="middle"
+                    className={`text-[10px] font-mono font-bold uppercase transition-colors pointer-events-none select-none ${
+                      isActive('upper_back') || isSelected('upper_back') ? 'fill-red-600 font-extrabold' : 'fill-neutral-500'
+                    }`}
+                  >
+                    UPPER BACK / NAPE
+                  </text>
+                )}
               </g>
 
               {/* 7. Full Back Masterpiece */}
@@ -541,12 +591,13 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                   y="140"
                   width="180"
                   height="250"
-                  rx="8"
+                  rx="16"
                   className={`transition-all duration-200 ${getHotspotClasses('full_back')}`}
                 />
-                {artworkPreviewUrl && (
+                {currentViewArt && (isActive('full_back') || isSelected('full_back') || !isSelected('upper_back')) ? (
                   <image
-                    href={artworkPreviewUrl}
+                    href={currentViewArt}
+                    xlinkHref={currentViewArt}
                     x="165"
                     y="145"
                     width="170"
@@ -554,8 +605,7 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                     preserveAspectRatio="xMidYMid meet"
                     className="filter drop-shadow-md pointer-events-none"
                   />
-                )}
-                {!artworkPreviewUrl && (
+                ) : (
                   <text
                     x="250"
                     y="275"

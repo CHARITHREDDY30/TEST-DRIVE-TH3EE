@@ -139,9 +139,21 @@ export const customiseService = {
     }
 
     try {
-      const { data, error } = await (insforge.database as any).rpc('submit_customisation_request', {
-        p_data: payload
+      let rpcPayload = { ...payload };
+      let { data, error } = await (insforge.database as any).rpc('submit_customisation_request', {
+        p_data: rpcPayload
       });
+
+      // If error occurs due to customer_id foreign key constraint, gracefully retry without customer_id
+      if (error && (error.message?.includes('customer_id') || error.message?.includes('foreign key'))) {
+        console.warn('Retrying customisation submission without customer_id fallback:', error.message);
+        rpcPayload = { ...rpcPayload, customer_id: undefined };
+        const retryRes = await (insforge.database as any).rpc('submit_customisation_request', {
+          p_data: rpcPayload
+        });
+        data = retryRes.data;
+        error = retryRes.error;
+      }
 
       if (error) {
         throw new Error(error.message || 'Failed to submit customisation request');
@@ -723,14 +735,30 @@ export const customiseService = {
       console.warn('Edge upload note:', edgeErr);
     }
 
-    // 3. Resilient client-side object preview URL
-    const previewUrl = URL.createObjectURL(file);
-    return {
-      url: previewUrl,
-      key: objectKey,
-      name: file.name,
-      size: file.size,
-      type: file.type
-    };
+    // 3. Resilient client-side preview URL (self-contained data URL so images never fail to render)
+    try {
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(URL.createObjectURL(file));
+        reader.readAsDataURL(file);
+      });
+      return {
+        url: dataUrl,
+        key: objectKey,
+        name: file.name,
+        size: file.size,
+        type: file.type
+      };
+    } catch {
+      const previewUrl = URL.createObjectURL(file);
+      return {
+        url: previewUrl,
+        key: objectKey,
+        name: file.name,
+        size: file.size,
+        type: file.type
+      };
+    }
   }
 };

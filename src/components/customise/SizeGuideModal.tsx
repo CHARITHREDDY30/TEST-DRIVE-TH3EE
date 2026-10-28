@@ -176,32 +176,32 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                <div className="flex items-start gap-2 bg-white p-2 border border-neutral-200 rounded-xs">
-                  <span className="bg-[#E51E2B] text-white px-1.5 py-0.5 text-[9px] font-bold rounded-xs shrink-0">A</span>
+                <div className="flex items-start gap-2 bg-white p-2.5 border border-neutral-200 rounded-xl">
+                  <span className="bg-[#E51E2B] text-white px-2 py-0.5 text-[9px] font-bold rounded-lg shrink-0">A</span>
                   <div>
                     <span className="font-bold text-neutral-900 block">Chest Circumference</span>
                     <span className="text-neutral-500 text-[10px]">Total circumference (measured armpit to armpit × 2).</span>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2 bg-white p-2 border border-neutral-200 rounded-xs">
-                  <span className="bg-[#0070F3] text-white px-1.5 py-0.5 text-[9px] font-bold rounded-xs shrink-0">B</span>
+                <div className="flex items-start gap-2 bg-white p-2.5 border border-neutral-200 rounded-xl">
+                  <span className="bg-[#0070F3] text-white px-2 py-0.5 text-[9px] font-bold rounded-lg shrink-0">B</span>
                   <div>
                     <span className="font-bold text-neutral-900 block">Body Length</span>
                     <span className="text-neutral-500 text-[10px]">Highest point of shoulder to the bottom hem.</span>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2 bg-white p-2 border border-neutral-200 rounded-xs">
-                  <span className="bg-[#10B981] text-white px-1.5 py-0.5 text-[9px] font-bold rounded-xs shrink-0">C</span>
+                <div className="flex items-start gap-2 bg-white p-2.5 border border-neutral-200 rounded-xl">
+                  <span className="bg-[#10B981] text-white px-2 py-0.5 text-[9px] font-bold rounded-lg shrink-0">C</span>
                   <div>
                     <span className="font-bold text-neutral-900 block">Shoulder Width</span>
                     <span className="text-neutral-500 text-[10px]">Distance between the left and right shoulder seams.</span>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2 bg-white p-2 border border-neutral-200 rounded-xs">
-                  <span className="bg-[#F59E0B] text-white px-1.5 py-0.5 text-[9px] font-bold rounded-xs shrink-0">D</span>
+                <div className="flex items-start gap-2 bg-white p-2.5 border border-neutral-200 rounded-xl">
+                  <span className="bg-[#F59E0B] text-white px-2 py-0.5 text-[9px] font-bold rounded-lg shrink-0">D</span>
                   <div>
                     <span className="font-bold text-neutral-900 block">Sleeve Length</span>
                     <span className="text-neutral-500 text-[10px]">Shoulder seam down to the outer sleeve cuff.</span>
@@ -212,7 +212,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
           </div>
 
           {/* Sizing Table */}
-          <div className="overflow-x-auto border border-neutral-200 mb-6">
+          <div className="overflow-x-auto border border-neutral-200 rounded-2xl mb-6 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-neutral-900 text-white font-bold uppercase text-[11px] tracking-wider">
@@ -264,7 +264,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
           </div>
 
           {/* Measuring Guidance Tips */}
-          <div className="bg-red-50/40 border border-red-200 p-3 sm:p-4 rounded-xs text-[11px] text-neutral-700 flex items-start gap-2.5">
+          <div className="bg-red-50/40 border border-red-200 p-4 rounded-2xl text-[11px] text-neutral-700 flex items-start gap-2.5 shadow-2xs">
             <HelpCircle className="w-4 h-4 text-[#E51E2B] shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="font-bold uppercase text-neutral-900 block">How to find your best fit:</span>

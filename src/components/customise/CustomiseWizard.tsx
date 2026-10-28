@@ -46,6 +46,7 @@ import type {
   ColorSwatch
 } from '../../types/customise';
 import { customiseService, type SubmitCustomRequestPayload } from '../../services/customise.service';
+import { customerService } from '../../services/customer.service';
 import { INITIAL_CUSTOMISATION_CATALOG } from '../../data/customiseCatalog';
 import { SizeGuideModal } from './SizeGuideModal';
 import { VariantQuantityMatrix } from './VariantQuantityMatrix';
@@ -187,6 +188,34 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
     }
   ]);
 
+  // Resolved Front and Back artwork helpers
+  const frontArtworkFile = uploadedFiles.find(f =>
+    f.targetPlacement?.includes('front') ||
+    f.targetPlacement?.includes('chest') ||
+    f.targetPlacement === 'front'
+  ) || (quickPlacementType !== 'back' ? uploadedFiles[0] : undefined);
+
+  const backArtworkFile = uploadedFiles.find(f =>
+    f.targetPlacement?.includes('back') ||
+    f.targetPlacement === 'back'
+  ) || (quickPlacementType === 'back' ? uploadedFiles[0] : (uploadedFiles.length > 1 && quickPlacementType === 'both' ? uploadedFiles[1] : undefined));
+
+  // Automatically keep placements' artwork synced when files or placement mode change
+  useEffect(() => {
+    if (placements.length === 0) return;
+    setPlacements(prev => prev.map(p => {
+      const isFront = p.placementLocation.includes('front') || p.placementLocation.includes('chest');
+      const isBack = p.placementLocation.includes('back');
+      if (isFront && frontArtworkFile) {
+        return { ...p, artworkUrl: frontArtworkFile.fileUrl, artworkKey: frontArtworkFile.fileKey };
+      }
+      if (isBack && backArtworkFile) {
+        return { ...p, artworkUrl: backArtworkFile.fileUrl, artworkKey: backArtworkFile.fileKey };
+      }
+      return p;
+    }));
+  }, [uploadedFiles, quickPlacementType]);
+
   // Step 3: Size, Quantity & Customer Details
   const [singleSize, setSingleSize] = useState<string>('L');
   const [singleQuantity, setSingleQuantity] = useState<number>(1);
@@ -271,8 +300,10 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
   // Quick Placement selector logic
   const handleSelectQuickPlacement = (type: 'front' | 'back' | 'both' | 'chest' | 'sleeve' | 'custom') => {
     setQuickPlacementType(type);
-    const existingArtUrl = uploadedFiles[0]?.fileUrl;
-    const existingArtKey = uploadedFiles[0]?.fileKey;
+    const frontArtUrl = frontArtworkFile?.fileUrl || (type !== 'back' ? uploadedFiles[0]?.fileUrl : undefined);
+    const frontArtKey = frontArtworkFile?.fileKey || (type !== 'back' ? uploadedFiles[0]?.fileKey : undefined);
+    const backArtUrl = backArtworkFile?.fileUrl || (type === 'back' ? uploadedFiles[0]?.fileUrl : (uploadedFiles.length > 1 ? uploadedFiles[1]?.fileUrl : undefined));
+    const backArtKey = backArtworkFile?.fileKey || (type === 'back' ? uploadedFiles[0]?.fileKey : (uploadedFiles.length > 1 ? uploadedFiles[1]?.fileKey : undefined));
 
     if (type === 'front') {
       setActivePreviewView('front');
@@ -280,8 +311,8 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         {
           placementLocation: 'large_front',
           printSize: 'large',
-          artworkUrl: existingArtUrl,
-          artworkKey: existingArtKey
+          artworkUrl: frontArtUrl,
+          artworkKey: frontArtKey
         }
       ]);
     } else if (type === 'back') {
@@ -290,8 +321,8 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         {
           placementLocation: 'full_back',
           printSize: 'large',
-          artworkUrl: existingArtUrl,
-          artworkKey: existingArtKey
+          artworkUrl: backArtUrl,
+          artworkKey: backArtKey
         }
       ]);
     } else if (type === 'both') {
@@ -300,15 +331,15 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         {
           placementLocation: 'front_chest',
           printSize: 'small',
-          artworkUrl: existingArtUrl,
-          artworkKey: existingArtKey,
+          artworkUrl: frontArtUrl,
+          artworkKey: frontArtKey,
           notes: 'Front Chest Logo'
         },
         {
           placementLocation: 'full_back',
           printSize: 'large',
-          artworkUrl: existingArtUrl,
-          artworkKey: existingArtKey,
+          artworkUrl: backArtUrl,
+          artworkKey: backArtKey,
           notes: 'Full Back Statement'
         }
       ]);
@@ -318,8 +349,8 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         {
           placementLocation: 'front_chest',
           printSize: 'small',
-          artworkUrl: existingArtUrl,
-          artworkKey: existingArtKey
+          artworkUrl: frontArtUrl,
+          artworkKey: frontArtKey
         }
       ]);
     } else if (type === 'sleeve') {
@@ -328,8 +359,8 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         {
           placementLocation: 'left_sleeve',
           printSize: 'small',
-          artworkUrl: existingArtUrl,
-          artworkKey: existingArtKey,
+          artworkUrl: frontArtUrl,
+          artworkKey: frontArtKey,
           notes: 'Left Sleeve Bicep'
         }
       ]);
@@ -339,8 +370,8 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         {
           placementLocation: 'custom',
           printSize: 'custom',
-          artworkUrl: existingArtUrl,
-          artworkKey: existingArtKey,
+          artworkUrl: frontArtUrl,
+          artworkKey: frontArtKey,
           notes: 'Custom placement coordinated with studio'
         }
       ]);
@@ -353,8 +384,8 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
     setSelectedColorHex(swatch.hex);
   };
 
-  // Upload file handler
-  const handleFileUpload = async (filesToUpload: FileList | null) => {
+  // Upload file handler with target slot awareness
+  const handleFileUpload = async (filesToUpload: FileList | null, targetSlot: 'front' | 'back' | 'auto' = 'auto') => {
     if (!filesToUpload || filesToUpload.length === 0) return;
 
     setIsUploadingFile(true);
@@ -380,27 +411,49 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
 
       try {
         const result = await customiseService.uploadFile(file, 'custom-artwork');
-        newFiles.push({
+
+        let resolvedTarget: string;
+        if (targetSlot === 'front') {
+          resolvedTarget = quickPlacementType === 'chest' ? 'front_chest' : 'large_front';
+          setActivePreviewView('front');
+        } else if (targetSlot === 'back') {
+          resolvedTarget = 'full_back';
+          setActivePreviewView('back');
+        } else {
+          resolvedTarget = quickPlacementType === 'back' ? 'full_back' : 'large_front';
+        }
+
+        const newFileObj: CustomRequestFile = {
           fileType: designSource === 'have_design' ? 'artwork' : 'reference',
           fileName: result.name,
           fileUrl: result.url,
           fileKey: result.key,
           fileSizeBytes: result.size,
           mimeType: result.type,
-          targetPlacement: placements[0]?.placementLocation || 'large_front'
-        });
+          targetPlacement: resolvedTarget
+        };
 
-        // Map to active placement
-        if (placements.length > 0) {
-          const updated = [...placements];
-          updated[0].artworkUrl = result.url;
-          updated[0].artworkKey = result.key;
-          setPlacements(updated);
+        if (targetSlot === 'front') {
+          const existingFrontIdx = newFiles.findIndex(f => f.targetPlacement?.includes('front') || f.targetPlacement?.includes('chest'));
+          if (existingFrontIdx !== -1) {
+            newFiles[existingFrontIdx] = newFileObj;
+          } else {
+            newFiles.unshift(newFileObj);
+          }
+        } else if (targetSlot === 'back') {
+          const existingBackIdx = newFiles.findIndex(f => f.targetPlacement?.includes('back'));
+          if (existingBackIdx !== -1) {
+            newFiles[existingBackIdx] = newFileObj;
+          } else {
+            newFiles.push(newFileObj);
+          }
+        } else {
+          newFiles.push(newFileObj);
         }
 
         showNotification({
           type: 'success',
-          message: `Artwork "${file.name}" uploaded successfully!`
+          message: `${targetSlot === 'back' ? 'Back' : targetSlot === 'front' ? 'Front' : ''} Artwork "${file.name}" ready for printing!`
         });
       } catch (uploadErr: any) {
         showNotification({
@@ -417,12 +470,15 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
   const handleRemoveFile = (index: number) => {
     const next = uploadedFiles.filter((_, i) => i !== index);
     setUploadedFiles(next);
-    if (next.length === 0 && placements.length > 0) {
-      const updated = [...placements];
-      delete updated[0].artworkUrl;
-      delete updated[0].artworkKey;
-      setPlacements(updated);
-    }
+  };
+
+  const handleRemoveSlot = (slot: 'front' | 'back') => {
+    const next = uploadedFiles.filter(f =>
+      slot === 'front'
+        ? (!f.targetPlacement?.includes('front') && !f.targetPlacement?.includes('chest') && f.targetPlacement !== 'front')
+        : (!f.targetPlacement?.includes('back') && f.targetPlacement !== 'back')
+    );
+    setUploadedFiles(next);
   };
 
   // Apply Quick Preset Concept
@@ -516,12 +572,24 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
             }
           ];
 
+      let resolvedCustomerId: string | undefined = undefined;
+      if (currentUser) {
+        try {
+          resolvedCustomerId = (await customerService.ensureCustomerRecord(currentUser, {
+            name: customerName.trim(),
+            phone: cleanPhone
+          })) || undefined;
+        } catch {
+          resolvedCustomerId = undefined;
+        }
+      }
+
       const payload: SubmitCustomRequestPayload = {
         customer_name: customerName.trim(),
         customer_email: customerEmail.trim().toLowerCase() || `${cleanPhone}@th3ee.store`,
         customer_phone: cleanPhone,
         preferred_contact: preferredContact,
-        customer_id: currentUser?.id || undefined,
+        customer_id: resolvedCustomerId || undefined,
         design_type: designSource,
         design_description: designDescription.trim() || undefined,
         printing_instructions: printingInstructions.trim() || undefined,
@@ -546,14 +614,19 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         },
         internal_notes: additionalNotes.trim() || undefined,
         variants: finalVariants,
-        placements: placements.map(p => ({
-          placement_location: p.placementLocation,
-          print_size: p.printSize,
-          custom_dimensions: p.customDimensions,
-          artwork_url: p.artworkUrl || uploadedFiles[0]?.fileUrl,
-          artwork_key: p.artworkKey || uploadedFiles[0]?.fileKey,
-          notes: p.notes
-        })),
+        placements: placements.map(p => {
+          const isFront = p.placementLocation.includes('front') || p.placementLocation.includes('chest');
+          const isBack = p.placementLocation.includes('back');
+          const matchedArt = isFront ? (frontArtworkFile || uploadedFiles[0]) : (isBack ? (backArtworkFile || uploadedFiles[0]) : uploadedFiles[0]);
+          return {
+            placement_location: p.placementLocation,
+            print_size: p.printSize,
+            custom_dimensions: p.customDimensions,
+            artwork_url: p.artworkUrl || matchedArt?.fileUrl,
+            artwork_key: p.artworkKey || matchedArt?.fileKey,
+            notes: p.notes
+          };
+        }),
         files: uploadedFiles.map(f => ({
           file_type: f.fileType,
           file_name: f.fileName,
@@ -774,24 +847,55 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               </span>
             </div>
 
-            {/* Stage Actions */}
-            <div className="flex items-center gap-1.5">
-              {/* Front / Back Flip Pill Button */}
+            {/* Stage Actions: Segmented Front/Back Switcher + Flip + Mobile Toggle */}
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              {/* Segmented Front / Back Switcher with upload status indicator */}
+              <div className="flex items-center bg-neutral-100 p-0.5 rounded-full border border-neutral-200 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setActivePreviewView('front')}
+                  className={`px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activePreviewView === 'front'
+                      ? 'bg-neutral-900 text-white shadow-xs'
+                      : 'text-neutral-600 hover:text-black'
+                  }`}
+                >
+                  <span>Front</span>
+                  {frontArtworkFile && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Front Artwork Active" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePreviewView('back')}
+                  className={`px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activePreviewView === 'back'
+                      ? 'bg-neutral-900 text-white shadow-xs'
+                      : 'text-neutral-600 hover:text-black'
+                  }`}
+                >
+                  <span>Back</span>
+                  {backArtworkFile && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Back Artwork Active" />
+                  )}
+                </button>
+              </div>
+
+              {/* Quick Flip Button */}
               <button
                 type="button"
                 onClick={() => setActivePreviewView(activePreviewView === 'front' ? 'back' : 'front')}
-                className="px-3.5 py-1.5 bg-neutral-900 hover:bg-[#FF2E2E] active:scale-95 text-white rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                className="p-1.5 bg-neutral-900 hover:bg-[#FF2E2E] active:scale-95 text-white rounded-full text-[11px] font-bold uppercase shadow-xs transition-all cursor-pointer"
                 title="Flip Garment View"
               >
-                <RotateCw className="w-3.5 h-3.5 transition-transform duration-300" />
-                <span>{activePreviewView === 'front' ? 'View Back' : 'View Front'}</span>
+                <RotateCw className="w-3.5 h-3.5" />
               </button>
 
               {/* Mobile Collapse/Expand Preview */}
               <button
                 type="button"
                 onClick={() => setIsMockupExpandedOnMobile(!isMockupExpandedOnMobile)}
-                className="sm:hidden p-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-full transition-colors active:scale-90"
+                className="sm:hidden p-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-full transition-colors active:scale-90 cursor-pointer"
                 title={isMockupExpandedOnMobile ? 'Compact Preview' : 'Expand Preview'}
               >
                 {isMockupExpandedOnMobile ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -819,15 +923,29 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     neckType={neckType}
                     colorHex={selectedColorHex}
                     selectedPlacements={placements.map(p => p.placementLocation)}
-                    activePlacement={placements[0]?.placementLocation}
+                    activePlacement={activePreviewView === 'front'
+                      ? (placements.find(p => p.placementLocation.includes('front') || p.placementLocation.includes('chest'))?.placementLocation || 'large_front')
+                      : (placements.find(p => p.placementLocation.includes('back'))?.placementLocation || 'full_back')
+                    }
                     artworkPreviewUrl={uploadedFiles[0]?.fileUrl || null}
+                    frontArtworkUrl={frontArtworkFile?.fileUrl || null}
+                    backArtworkUrl={backArtworkFile?.fileUrl || null}
                     showHotspots={true}
                     className="w-full h-full drop-shadow-md transition-all duration-300"
                   />
 
                   {/* Active View Floating Pill */}
-                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-neutral-200/90 px-3 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest text-neutral-600 shadow-xs pointer-events-none whitespace-nowrap">
-                    {activePreviewView === 'front' ? '— Front Center —' : '— Full Back Canvas —'}
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-neutral-200/90 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-neutral-700 shadow-xs pointer-events-none whitespace-nowrap flex items-center gap-1.5">
+                    <span>{activePreviewView === 'front' ? '👕 Front View' : '🦅 Back View'}</span>
+                    {(activePreviewView === 'front' ? frontArtworkFile : backArtworkFile) ? (
+                      <span className="text-emerald-600 font-extrabold flex items-center gap-0.5 text-[9px]">
+                        • Graphic Ready ✓
+                      </span>
+                    ) : (
+                      <span className="text-neutral-400 font-normal text-[9px]">
+                        • Empty Canvas
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -1262,89 +1380,315 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </button>
               </div>
 
-              {/* PATHWAY A: UPLOAD FILE DROPZONE */}
+              {/* PATHWAY A: UPLOAD FILE DROPZONE (Differentiated Front & Back Slots) */}
               {designSource === 'have_design' && (
-                <div className="space-y-3">
-                  <div className="border-2 border-dashed border-neutral-300 hover:border-neutral-800 rounded-3xl p-5 sm:p-7 text-center bg-neutral-50/60 transition-colors">
-                    <input
-                      type="file"
-                      id="customise-file-upload-input"
-                      multiple
-                      accept=".png,.jpg,.jpeg,.webp,.svg,.pdf,image/*"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      className="hidden"
-                      disabled={isUploadingFile}
-                    />
-                    <label
-                      htmlFor="customise-file-upload-input"
-                      className="cursor-pointer inline-flex flex-col items-center justify-center w-full"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white border border-neutral-300 flex items-center justify-center text-neutral-700 mb-2 shadow-2xs">
-                        {isUploadingFile ? (
-                          <Loader2 className="w-5 h-5 animate-spin text-[#FF2E2E]" />
-                        ) : (
-                          <Upload className="w-5 h-5" />
-                        )}
+                <div className="space-y-4">
+                  {/* Notice banner when Front + Back is active */}
+                  {quickPlacementType === 'both' && (
+                    <div className="p-3 bg-gradient-to-r from-emerald-50 via-white to-red-50 border border-neutral-200 rounded-2xl text-[11px] text-neutral-800 flex items-center justify-between shadow-2xs">
+                      <span className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-neutral-900">
+                        <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
+                        <span>Double-Sided Custom Order: Upload Front & Back Graphics Below</span>
+                      </span>
+                      <span className="text-[10px] text-neutral-500 hidden sm:inline">2 Distinct Placements</span>
+                    </div>
+                  )}
+
+                  {/* SLOT 1: FRONT GRAPHIC (Shown for 'both', 'front', 'chest', 'sleeve', 'custom') */}
+                  {quickPlacementType !== 'back' && (
+                    <div className="bg-white border-2 border-emerald-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold">
+                            👕
+                          </span>
+                          <div>
+                            <span className="text-xs font-black uppercase text-neutral-900 block">
+                              Front Print Graphic
+                            </span>
+                            <span className="text-[10px] text-neutral-500">
+                              {quickPlacementType === 'chest' ? 'Left Chest Crest' : 'Chest or Center Front'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
+                          Front Print
+                        </span>
                       </div>
-                      <span className="text-xs font-bold uppercase text-neutral-900 tracking-wider">
-                        {isUploadingFile ? 'Uploading Artwork to Studio...' : 'Tap to Choose Photo or Graphic from Phone'}
-                      </span>
-                      <span className="text-[11px] text-neutral-500 mt-1">
-                        Camera, Photo Gallery, PNG transparent, JPG, PDF (Up to 25MB)
-                      </span>
-                    </label>
-                  </div>
+
+                      {!frontArtworkFile ? (
+                        <div className="border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-2xl p-4 sm:p-6 text-center bg-emerald-50/20 transition-all">
+                          <input
+                            type="file"
+                            id="customise-file-upload-front"
+                            accept=".png,.jpg,.jpeg,.webp,.svg,.pdf,image/*"
+                            onChange={(e) => handleFileUpload(e.target.files, 'front')}
+                            className="hidden"
+                            disabled={isUploadingFile}
+                          />
+                          <label
+                            htmlFor="customise-file-upload-front"
+                            className="cursor-pointer inline-flex flex-col items-center justify-center w-full"
+                          >
+                            <div className="w-11 h-11 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-700 mb-1.5 shadow-2xs">
+                              {isUploadingFile ? (
+                                <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                              ) : (
+                                <Upload className="w-5 h-5" />
+                              )}
+                            </div>
+                            <span className="text-xs font-bold uppercase text-neutral-900 tracking-wider">
+                              {isUploadingFile ? 'Uploading Front Graphic...' : 'Tap to Choose Front Graphic from Phone'}
+                            </span>
+                            <span className="text-[10px] text-neutral-500 mt-0.5">
+                              Camera, Gallery, PNG transparent, JPG, PDF (Up to 25MB)
+                            </span>
+                          </label>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between p-3 bg-emerald-50/50 border border-emerald-200 rounded-2xl">
+                          <div className="flex items-center gap-3 truncate">
+                            {frontArtworkFile.mimeType?.startsWith('image/') ? (
+                              <img
+                                src={frontArtworkFile.fileUrl}
+                                alt="Front Artwork"
+                                className="w-12 h-12 object-contain rounded-xl border border-emerald-200 bg-white shrink-0 p-1 shadow-2xs"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-white border border-emerald-200 flex items-center justify-center text-emerald-600 rounded-xl shrink-0 shadow-2xs">
+                                <FileText className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div className="truncate">
+                              <span className="text-xs font-bold text-neutral-900 block truncate">
+                                {frontArtworkFile.fileName}
+                              </span>
+                              <span className="text-[10px] text-emerald-700 font-bold uppercase flex items-center gap-1 mt-0.5">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>Ready for Front HD DTF Print</span>
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setActivePreviewView('front')}
+                              className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-full transition-colors cursor-pointer"
+                              title="Show on Front Canvas"
+                            >
+                              View Front
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSlot('front')}
+                              className="text-neutral-400 hover:text-red-600 p-1.5 rounded-full hover:bg-white transition-colors cursor-pointer"
+                              title="Remove front artwork"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Front Print Size Preference */}
+                      <div className="pt-1 flex items-center justify-between gap-1 flex-wrap text-[10px]">
+                        <span className="font-bold uppercase text-neutral-500">Front Print Scale:</span>
+                        <div className="flex items-center gap-1">
+                          {[
+                            { id: 'small', label: 'Chest Crest (3.5")' },
+                            { id: 'medium', label: 'Standard (8")' },
+                            { id: 'large', label: 'Large Front (12")' }
+                          ].map(sz => {
+                            const isChosen = placements[0]?.printSize === sz.id;
+                            return (
+                              <button
+                                key={sz.id}
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...placements];
+                                  if (updated[0]) updated[0].printSize = sz.id as any;
+                                  setPlacements(updated);
+                                }}
+                                className={`px-2.5 py-1 rounded-full uppercase font-bold transition-all cursor-pointer ${
+                                  isChosen
+                                    ? 'bg-neutral-900 text-white shadow-2xs'
+                                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                                }`}
+                              >
+                                {sz.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SLOT 2: BACK GRAPHIC (Shown for 'both' and 'back') */}
+                  {(quickPlacementType === 'both' || quickPlacementType === 'back') && (
+                    <div className="bg-white border-2 border-red-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 h-7 rounded-full bg-red-100 text-[#FF2E2E] flex items-center justify-center text-xs font-bold">
+                            🦅
+                          </span>
+                          <div>
+                            <span className="text-xs font-black uppercase text-neutral-900 block">
+                              Back Print Graphic
+                            </span>
+                            <span className="text-[10px] text-neutral-500">
+                              Full Back Masterpiece Canvas or Upper Nape
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="bg-red-100 text-[#FF2E2E] border border-red-300 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
+                          Back Print
+                        </span>
+                      </div>
+
+                      {!backArtworkFile ? (
+                        <div className="border-2 border-dashed border-red-300 hover:border-red-500 rounded-2xl p-4 sm:p-6 text-center bg-red-50/20 transition-all">
+                          <input
+                            type="file"
+                            id="customise-file-upload-back"
+                            accept=".png,.jpg,.jpeg,.webp,.svg,.pdf,image/*"
+                            onChange={(e) => handleFileUpload(e.target.files, 'back')}
+                            className="hidden"
+                            disabled={isUploadingFile}
+                          />
+                          <label
+                            htmlFor="customise-file-upload-back"
+                            className="cursor-pointer inline-flex flex-col items-center justify-center w-full"
+                          >
+                            <div className="w-11 h-11 rounded-full bg-white border border-red-200 flex items-center justify-center text-[#FF2E2E] mb-1.5 shadow-2xs">
+                              {isUploadingFile ? (
+                                <Loader2 className="w-5 h-5 animate-spin text-[#FF2E2E]" />
+                              ) : (
+                                <Upload className="w-5 h-5" />
+                              )}
+                            </div>
+                            <span className="text-xs font-bold uppercase text-neutral-900 tracking-wider">
+                              {isUploadingFile ? 'Uploading Back Graphic...' : 'Tap to Choose Back Graphic from Phone'}
+                            </span>
+                            <span className="text-[10px] text-neutral-500 mt-0.5">
+                              Camera, Gallery, PNG transparent, JPG, PDF (Up to 25MB)
+                            </span>
+                          </label>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between p-3 bg-red-50/50 border border-red-200 rounded-2xl">
+                          <div className="flex items-center gap-3 truncate">
+                            {backArtworkFile.mimeType?.startsWith('image/') ? (
+                              <img
+                                src={backArtworkFile.fileUrl}
+                                alt="Back Artwork"
+                                className="w-12 h-12 object-contain rounded-xl border border-red-200 bg-white shrink-0 p-1 shadow-2xs"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-white border border-red-200 flex items-center justify-center text-red-600 rounded-xl shrink-0 shadow-2xs">
+                                <FileText className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div className="truncate">
+                              <span className="text-xs font-bold text-neutral-900 block truncate">
+                                {backArtworkFile.fileName}
+                              </span>
+                              <span className="text-[10px] text-red-700 font-bold uppercase flex items-center gap-1 mt-0.5">
+                                <CheckCircle2 className="w-3 h-3 text-[#FF2E2E]" />
+                                <span>Ready for Back HD DTF Print</span>
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setActivePreviewView('back')}
+                              className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#FF2E2E] bg-red-100 hover:bg-red-200 rounded-full transition-colors cursor-pointer"
+                              title="Show on Back Canvas"
+                            >
+                              View Back
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSlot('back')}
+                              className="text-neutral-400 hover:text-red-600 p-1.5 rounded-full hover:bg-white transition-colors cursor-pointer"
+                              title="Remove back artwork"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Back Print Size Preference */}
+                      <div className="pt-1 flex items-center justify-between gap-1 flex-wrap text-[10px]">
+                        <span className="font-bold uppercase text-neutral-500">Back Print Scale:</span>
+                        <div className="flex items-center gap-1">
+                          {[
+                            { id: 'medium', label: 'Standard (A4)' },
+                            { id: 'large', label: 'Streetwear (A3)' },
+                            { id: 'extra_large', label: 'Massive Poster (A3+)' }
+                          ].map(sz => {
+                            const backPlacement = placements.find(p => p.placementLocation.includes('back'));
+                            const isChosen = (backPlacement?.printSize || 'large') === sz.id;
+                            return (
+                              <button
+                                key={sz.id}
+                                type="button"
+                                onClick={() => {
+                                  const updated = placements.map(p =>
+                                    p.placementLocation.includes('back') ? { ...p, printSize: sz.id as any } : p
+                                  );
+                                  setPlacements(updated);
+                                }}
+                                className={`px-2.5 py-1 rounded-full uppercase font-bold transition-all cursor-pointer ${
+                                  isChosen
+                                    ? 'bg-neutral-900 text-white shadow-2xs'
+                                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                                }`}
+                              >
+                                {sz.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Resolution Warning */}
                   {fileResolutionWarning && (
-                    <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl text-[11px] text-amber-900 flex items-start gap-2">
+                    <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl text-[11px] text-amber-900 flex items-start gap-2 shadow-2xs">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                       <span>{fileResolutionWarning}</span>
                     </div>
                   )}
 
-                  {/* Uploaded File List */}
-                  {uploadedFiles.length > 0 && (
-                    <div className="space-y-2">
-                      <span className="text-[11px] font-bold uppercase text-neutral-700 block">
-                        Uploaded Artwork ({uploadedFiles.length})
+                  {/* Additional Reference / General Files */}
+                  {uploadedFiles.length > 2 && (
+                    <div className="space-y-2 pt-1">
+                      <span className="text-[11px] font-bold uppercase text-neutral-600 block">
+                        Additional Reference Assets ({uploadedFiles.length})
                       </span>
-                      <div className="space-y-2">
-                        {uploadedFiles.map((f, idx) => (
+                      <div className="space-y-1.5">
+                        {uploadedFiles.slice(2).map((f, idx) => (
                           <div
-                            key={idx}
-                            className="flex items-center justify-between p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-2xl"
+                            key={idx + 2}
+                            className="flex items-center justify-between p-2.5 bg-neutral-50 border border-neutral-200 rounded-2xl"
                           >
-                            <div className="flex items-center gap-2.5 sm:gap-3 truncate">
-                              {f.mimeType?.startsWith('image/') ? (
-                                <img
-                                  src={f.fileUrl}
-                                  alt=""
-                                  className="w-12 h-12 object-contain rounded-xl border border-neutral-200 bg-white shrink-0 p-1 shadow-2xs"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 bg-white border border-neutral-200 flex items-center justify-center text-neutral-600 rounded-xl shrink-0 shadow-2xs">
-                                  <FileText className="w-5 h-5" />
-                                </div>
-                              )}
-                              <div className="truncate">
-                                <span className="text-xs font-bold text-neutral-900 block truncate">
-                                  {f.fileName}
-                                </span>
-                                <span className="text-[10px] text-emerald-600 font-bold uppercase flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>Ready for HD DTF Printing</span>
-                                </span>
-                              </div>
-                            </div>
-
+                            <span className="text-xs font-medium text-neutral-800 truncate">
+                              {f.fileName}
+                            </span>
                             <button
                               type="button"
-                              onClick={() => handleRemoveFile(idx)}
-                              className="text-neutral-400 hover:text-red-600 p-2 rounded-full hover:bg-neutral-100 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
-                              title="Remove file"
+                              onClick={() => handleRemoveFile(idx + 2)}
+                              className="text-neutral-400 hover:text-red-600 p-1 rounded-full cursor-pointer"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         ))}
@@ -1362,7 +1706,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       value={printingInstructions}
                       onChange={(e) => setPrintingInstructions(e.target.value)}
                       placeholder="e.g. Keep background transparent, center alignment, vintage matte finish..."
-                      className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
+                      className="w-full p-3.5 border border-neutral-300 rounded-2xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10 outline-none"
                     />
                   </div>
                 </div>
