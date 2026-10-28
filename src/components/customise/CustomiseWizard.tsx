@@ -98,46 +98,41 @@ const GARMENT_SILHOUETTES = [
     category: 'T-Shirt' as GarmentCategoryType,
     fit: 'Oversized' as GarmentFitType,
     title: 'Oversized Tee',
-    badge: '★ Best Seller',
-    gsmText: '240 GSM French Terry',
-    fabric: '240 GSM Luxury French Terry Cotton',
-    desc: 'Dropped shoulders, relaxed streetwear boxy drape. Our signature cut.'
+    badge: 'Best Seller',
+    gsmText: '240 GSM',
+    fabric: '240 GSM Luxury French Terry Cotton'
   },
   {
     category: 'T-Shirt' as GarmentCategoryType,
     fit: 'Boxy Fit' as GarmentFitType,
     title: 'Boxy Cropped Tee',
-    badge: 'Modern Trend',
-    gsmText: '240 GSM French Terry',
-    fabric: '240 GSM Luxury French Terry Cotton',
-    desc: 'Extra-wide torso with clean cropped hem for modern streetwear layering.'
+    badge: 'Streetwear',
+    gsmText: '240 GSM',
+    fabric: '240 GSM Luxury French Terry Cotton'
   },
   {
     category: 'T-Shirt' as GarmentCategoryType,
     fit: 'Regular Fit' as GarmentFitType,
     title: 'Regular Classic Tee',
-    badge: 'Everyday Fit',
-    gsmText: '180 GSM Bio-Wash',
-    fabric: '180 GSM Pure Combed Cotton',
-    desc: 'Tailored everyday fit with natural shoulder line and breathable feel.'
+    badge: 'Classic',
+    gsmText: '180 GSM',
+    fabric: '180 GSM Pure Combed Cotton'
   },
   {
     category: 'Hoodie' as GarmentCategoryType,
     fit: 'Oversized' as GarmentFitType,
     title: 'Streetwear Hoodie',
     badge: 'Heavyweight',
-    gsmText: '380 GSM Brushed Fleece',
-    fabric: '380 GSM Heavyweight Brushed Fleece',
-    desc: 'Double-layered hood, kangaroo pouch, thick winter fleece warmth.'
+    gsmText: '380 GSM',
+    fabric: '380 GSM Heavyweight Brushed Fleece'
   },
   {
     category: 'T-Shirt' as GarmentCategoryType,
     fit: 'Regular Fit' as GarmentFitType,
     title: 'Polo Street Tee',
-    badge: 'Smart Collar',
-    gsmText: '220 GSM Pique Cotton',
-    fabric: '220 GSM Combed Pique Cotton',
-    desc: 'Ribbed collar with structured placket for refined casual streetwear.'
+    badge: 'Collar',
+    gsmText: '220 GSM',
+    fabric: '220 GSM Combed Pique Cotton'
   }
 ];
 
@@ -800,34 +795,29 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
     <div className="w-full bg-[#F8F9FA] min-h-[90vh] py-3 sm:py-8 pb-32 sm:pb-16 font-sans text-neutral-900 selection:bg-red-500 selection:text-white">
       <div className="max-w-3xl mx-auto px-3 sm:px-6">
 
-        {/* Minimal Breadcrumb & Fast Order Soft Pill */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-wider text-neutral-500 flex items-center space-x-1.5 font-mono">
+        {/* Minimal Breadcrumb */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-wider text-neutral-400 flex items-center space-x-1 font-mono">
             <button type="button" onClick={() => navigate('/')} className="hover:text-[#FF2E2E] transition-colors cursor-pointer">Home</button>
             <span>/</span>
-            <span className="text-neutral-900 font-bold">Custom Studio</span>
+            <span className="text-neutral-800 font-bold">Custom Studio</span>
           </nav>
-
-          <span className="bg-gradient-to-r from-red-50 to-rose-50 text-[#FF2E2E] border border-red-200/80 px-3 py-1 text-[10px] font-bold uppercase rounded-full flex items-center gap-1.5 shadow-2xs">
-            <Zap className="w-3.5 h-3.5 fill-current shrink-0 text-[#FF2E2E]" />
-            <span>30-Sec Fast Order • Zero Advance</span>
-          </span>
         </div>
 
-        {/* Studio Hero Title (Modern, Soft & Compact) */}
-        <div className="mb-3 sm:mb-5">
-          <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-neutral-900 leading-tight">
-            TH3EE Custom Apparel Studio
+        {/* Studio Hero Title (Clean & Compact) */}
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-neutral-900">
+            Custom Studio
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-600 mt-1 max-w-2xl leading-relaxed">
-            Ultra-HD Direct-to-Film (DTF) prints on premium heavyweight cotton. Zero upfront cost • Digital proof sent directly to your WhatsApp.
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Direct-to-Film prints on heavyweight cotton • Free digital proof on WhatsApp
           </p>
         </div>
 
         {/* ============================================================= */}
-        {/* INTERACTIVE LIVE GARMENT MOCKUP STAGE (Interactive & Adaptive) */}
+        {/* INTERACTIVE LIVE GARMENT MOCKUP STAGE */}
         {/* ============================================================= */}
-        <div className="mb-4 sm:mb-6 bg-gradient-to-b from-white via-neutral-50/70 to-white border border-neutral-200/90 rounded-3xl p-3.5 sm:p-5 shadow-sm relative overflow-hidden transition-all duration-300">
+        <div className="mb-4 bg-gradient-to-b from-white via-neutral-50/70 to-white border border-neutral-200/90 rounded-3xl p-3 sm:p-4 shadow-sm relative overflow-hidden transition-all duration-300">
           {/* Top Bar of Stage: Active Spec Chip + Flip Button + Collapse */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -839,11 +829,6 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 <span>{fit} {garmentCategory}</span>
                 <span className="text-neutral-400">•</span>
                 <span className="text-[#FF2E2E]">{primaryColor}</span>
-              </span>
-
-              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live 360° Studio
               </span>
             </div>
 
@@ -886,7 +871,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 type="button"
                 onClick={() => setActivePreviewView(activePreviewView === 'front' ? 'back' : 'front')}
                 className="p-1.5 bg-neutral-900 hover:bg-[#FF2E2E] active:scale-95 text-white rounded-full text-[11px] font-bold uppercase shadow-xs transition-all cursor-pointer"
-                title="Flip Garment View"
+                title="Flip View"
               >
                 <RotateCw className="w-3.5 h-3.5" />
               </button>
@@ -935,48 +920,36 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   />
 
                   {/* Active View Floating Pill */}
-                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-neutral-200/90 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-neutral-700 shadow-xs pointer-events-none whitespace-nowrap flex items-center gap-1.5">
-                    <span>{activePreviewView === 'front' ? '👕 Front View' : '🦅 Back View'}</span>
-                    {(activePreviewView === 'front' ? frontArtworkFile : backArtworkFile) ? (
-                      <span className="text-emerald-600 font-extrabold flex items-center gap-0.5 text-[9px]">
-                        • Graphic Ready ✓
-                      </span>
-                    ) : (
-                      <span className="text-neutral-400 font-normal text-[9px]">
-                        • Empty Canvas
-                      </span>
-                    )}
+                  <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-neutral-200/90 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-neutral-700 shadow-xs pointer-events-none whitespace-nowrap">
+                    {activePreviewView === 'front' ? 'Front' : 'Back'}
                   </div>
                 </div>
 
-                {/* Instant 1-Tap Color Swatch Tray on Mockup Stage */}
-                <div className="w-full mt-2 pt-2.5 border-t border-neutral-200/70 flex items-center justify-between gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+                {/* Instant 1-Tap Color Swatch Tray on Mockup Stage (All Colors) */}
+                <div className="w-full mt-2 pt-2 border-t border-neutral-200/70 flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
                   <span className="text-[10px] font-bold uppercase text-neutral-400 shrink-0 pl-1">
-                    Tap Shade:
+                    Color:
                   </span>
-                  <div className="flex items-center gap-2 shrink-0 px-1">
-                    {catalog.colors.slice(0, 8).map(swatch => {
+                  <div className="flex items-center gap-1.5 shrink-0 px-1 overflow-x-auto">
+                    {catalog.colors.map(swatch => {
                       const isSelected = primaryColor === swatch.name;
+                      const isDark = ['#111111', '#27272A', '#58111A', '#3E2723', '#152238', '#1B4332', '#4B5320', '#1E40AF'].includes(swatch.hex.toUpperCase());
                       return (
                         <button
                           key={swatch.name}
                           type="button"
                           onClick={() => handleSelectColor(swatch)}
                           title={swatch.name}
-                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-all flex items-center justify-center relative cursor-pointer ${
+                          className={`w-7 h-7 rounded-full transition-all flex items-center justify-center relative cursor-pointer shrink-0 ${
                             isSelected
-                              ? 'ring-2 ring-[#FF2E2E] ring-offset-2 scale-110 shadow-sm'
-                              : 'hover:scale-105 opacity-90 hover:opacity-100 border border-neutral-300'
+                              ? 'ring-2 ring-[#FF2E2E] ring-offset-2 scale-110 shadow-xs'
+                              : 'hover:scale-105 border border-neutral-300'
                           }`}
                           style={{ backgroundColor: swatch.hex }}
                         >
                           {isSelected && (
                             <Check
-                              className={`w-3.5 h-3.5 ${
-                                ['#111111', '#58111A', '#3E2723', '#152238'].includes(swatch.hex.toUpperCase())
-                                  ? 'text-white'
-                                  : 'text-neutral-900'
-                              }`}
+                              className={`w-3.5 h-3.5 ${isDark ? 'text-white' : 'text-neutral-900'}`}
                               strokeWidth={3}
                             />
                           )}
@@ -984,7 +957,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       );
                     })}
                   </div>
-                  <span className="text-[10px] font-bold uppercase text-[#FF2E2E] truncate pr-1">
+                  <span className="text-[10px] font-bold uppercase text-[#FF2E2E] truncate pr-1 shrink-0">
                     {primaryColor}
                   </span>
                 </div>
@@ -1006,11 +979,11 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
           </div>
 
           {/* Stepper Soft Tabs */}
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {[
-              { step: 1, title: 'Blank & Shade', sub: 'Cut, GSM & Shade' },
-              { step: 2, title: 'Artwork', sub: 'Upload or Prompt' },
-              { step: 3, title: 'Size & Info', sub: 'Run & WhatsApp' }
+              { step: 1, title: 'Garment' },
+              { step: 2, title: 'Artwork' },
+              { step: 3, title: 'Details' }
             ].map(s => {
               const isActive = activeStep === s.step;
               const isCompleted = activeStep > s.step;
@@ -1024,26 +997,23 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                   }}
-                  className={`p-2 sm:p-3 rounded-2xl text-left transition-all relative cursor-pointer border ${
+                  className={`py-2 px-3 rounded-2xl text-center transition-all relative cursor-pointer border ${
                     isActive
-                      ? 'border-[#FF2E2E] bg-white shadow-sm ring-2 ring-[#FF2E2E]/15'
+                      ? 'border-[#FF2E2E] bg-white shadow-xs ring-2 ring-[#FF2E2E]/15'
                       : isCompleted
                       ? 'border-neutral-900 bg-neutral-900 text-white'
-                      : 'border-neutral-200 bg-white/80 hover:border-neutral-300 text-neutral-500'
+                      : 'border-neutral-200 bg-white/80 hover:border-neutral-300 text-neutral-600'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block opacity-75 font-mono">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="text-[10px] font-bold opacity-75 font-mono">
                       0{s.step}
                     </span>
-                    {isCompleted && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                    <span className={`text-xs font-black uppercase tracking-tight truncate ${isActive ? 'text-[#FF2E2E]' : ''}`}>
+                      {s.title}
+                    </span>
+                    {isCompleted && <Check className="w-3 h-3 text-emerald-400 shrink-0" />}
                   </div>
-                  <span className={`text-[11px] sm:text-xs font-black uppercase tracking-tight block truncate mt-0.5 ${isActive ? 'text-[#FF2E2E]' : ''}`}>
-                    {s.title}
-                  </span>
-                  <span className={`text-[9px] hidden sm:block truncate ${isActive ? 'text-neutral-600' : isCompleted ? 'text-neutral-400' : 'text-neutral-400'}`}>
-                    {s.sub}
-                  </span>
                 </button>
               );
             })}
@@ -1059,36 +1029,27 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
           {/* STEP 1: BLANK, SILHOUETTE, SLEEVE, COLLAR, FABRIC & COLORWAY */}
           {/* ============================================================= */}
           {activeStep === 1 && (
-            <div className="space-y-5 sm:space-y-6">
-              <div>
-                <span className="text-[10px] font-bold text-[#FF2E2E] uppercase tracking-widest block mb-1">
-                  STEP 01 OF 03 • BLANK & SHADE
-                </span>
-                <h2 className="text-lg sm:text-2xl font-black uppercase text-neutral-900 tracking-tight leading-snug">
-                  Choose Garment Cut & Colorway
+            <div className="space-y-4 sm:space-y-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base sm:text-lg font-black uppercase text-neutral-900 tracking-tight">
+                  Garment & Color
                 </h2>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Select your signature streetwear blank. Pre-shrunk, heavyweight luxury cotton with structured drape.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsSizeGuideOpen(true)}
+                  className="text-xs text-[#FF2E2E] font-bold uppercase underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Ruler className="w-3.5 h-3.5" />
+                  <span>Size Guide</span>
+                </button>
               </div>
 
-              {/* Garment Silhouette Selector (Clean 2x2 Grid with Soft Cards) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                    Garment Cut & Silhouette *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsSizeGuideOpen(true)}
-                    className="text-[10px] text-[#FF2E2E] font-bold uppercase underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Ruler className="w-3 h-3" />
-                    <span>Size Chart</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {/* Garment Silhouette Selector (Clean Grid with Soft Cards) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 block">
+                  Garment Cut *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {GARMENT_SILHOUETTES.map(item => {
                     const isSelected = garmentCategory === item.category && fit === item.fit;
                     return (
@@ -1105,28 +1066,25 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                             setSleeve('Full Sleeve');
                           }
                         }}
-                        className={`p-3 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all text-left relative flex flex-col justify-between ${
+                        className={`p-3 rounded-2xl border-2 cursor-pointer transition-all text-left relative flex flex-col justify-between min-h-[72px] ${
                           isSelected
-                            ? 'border-[#FF2E2E] bg-red-50/25 shadow-xs ring-2 ring-[#FF2E2E]/20'
+                            ? 'border-[#FF2E2E] bg-red-50/25 ring-2 ring-[#FF2E2E]/20 shadow-2xs'
                             : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700">
+                            {item.badge}
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#FF2E2E]" />}
+                        </div>
                         <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800">
-                              {item.badge}
-                            </span>
-                            {isSelected && <Check className="w-4 h-4 text-[#FF2E2E]" />}
-                          </div>
-                          <h3 className="text-xs sm:text-sm font-black uppercase text-neutral-900 leading-snug">
+                          <h3 className="text-xs font-black uppercase text-neutral-900 leading-tight">
                             {item.title}
                           </h3>
-                          <span className="text-[10px] text-[#FF2E2E] font-bold block mb-1">
+                          <span className="text-[10px] text-neutral-500 font-bold block mt-0.5">
                             {item.gsmText}
                           </span>
-                          <p className="text-[11px] text-neutral-500 leading-snug line-clamp-2">
-                            {item.desc}
-                          </p>
                         </div>
                       </div>
                     );
@@ -1134,13 +1092,12 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               </div>
 
-              {/* Sleeve Style & Collar Selection (Soft Segmented Pills) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Sleeve Style & Collar Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {/* Sleeve Style */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                    <Scissors className="w-3.5 h-3.5 text-[#FF2E2E]" />
-                    <span>Sleeve Style *</span>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                    Sleeve Style
                   </label>
                   <div className="bg-neutral-100 p-1 rounded-full grid grid-cols-2 gap-1 border border-neutral-200/80">
                     {[
@@ -1153,9 +1110,9 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           key={s.id}
                           type="button"
                           onClick={() => setSleeve(s.id)}
-                          className={`py-2 px-3 rounded-full text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          className={`py-1.5 px-3 rounded-full text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                             isSleeveActive
-                              ? 'bg-white text-neutral-900 shadow-xs ring-1 ring-black/5'
+                              ? 'bg-white text-neutral-900 shadow-xs'
                               : 'text-neutral-600 hover:text-neutral-900'
                           }`}
                         >
@@ -1168,10 +1125,9 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
 
                 {/* Collar Neck Style */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-[#FF2E2E]" />
-                    <span>Collar Style *</span>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                    Collar Style
                   </label>
                   <div className="bg-neutral-100 p-1 rounded-full grid grid-cols-2 gap-1 border border-neutral-200/80">
                     {[
@@ -1184,9 +1140,9 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           key={n.id}
                           type="button"
                           onClick={() => setNeckType(n.id)}
-                          className={`py-2 px-3 rounded-full text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          className={`py-1.5 px-3 rounded-full text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                             isNeckActive
-                              ? 'bg-white text-neutral-900 shadow-xs ring-1 ring-black/5'
+                              ? 'bg-white text-neutral-900 shadow-xs'
                               : 'text-neutral-600 hover:text-neutral-900'
                           }`}
                         >
@@ -1199,22 +1155,22 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               </div>
 
-              {/* Fabric GSM Quick Options (Soft Cards) */}
-              <div className="space-y-1.5 pt-1">
+              {/* Fabric GSM Options */}
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                    Fabric Weight & Quality *
+                    Fabric Weight
                   </label>
                   <span className="text-[10px] text-neutral-500 font-bold uppercase">
                     {gsm}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {[
-                    { gsmVal: '240 GSM', label: '240 GSM French Terry', badge: 'Signature Heavy', spec: '240 GSM Luxury French Terry Cotton' },
-                    { gsmVal: '200 GSM', label: '200 GSM Combed Cotton', badge: 'All-Season', spec: '200 GSM Premium Combed Cotton' },
-                    { gsmVal: '180 GSM', label: '180 GSM Bio-Wash', badge: 'Light Everyday', spec: '180 GSM Pure Combed Cotton' }
+                    { gsmVal: '240 GSM', label: 'Heavyweight', spec: '240 GSM Luxury French Terry Cotton' },
+                    { gsmVal: '200 GSM', label: 'Medium', spec: '200 GSM Premium Combed Cotton' },
+                    { gsmVal: '180 GSM', label: 'Lightweight', spec: '180 GSM Pure Combed Cotton' }
                   ].map(fab => {
                     const isFabActive = gsm === fab.gsmVal;
                     return (
@@ -1225,16 +1181,13 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           setGsm(fab.gsmVal);
                           setFabric(fab.spec);
                         }}
-                        className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                        className={`p-2.5 rounded-2xl border-2 text-center transition-all cursor-pointer ${
                           isFabActive
                             ? 'border-[#FF2E2E] bg-red-50/20 text-neutral-900 ring-2 ring-[#FF2E2E]/20'
                             : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs font-black uppercase">{fab.gsmVal}</span>
-                          <span className="text-[9px] font-bold uppercase text-[#FF2E2E]">{fab.badge}</span>
-                        </div>
+                        <span className="text-xs font-black uppercase block">{fab.gsmVal}</span>
                         <span className="text-[10px] text-neutral-500 block truncate">{fab.label}</span>
                       </button>
                     );
@@ -1242,12 +1195,12 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               </div>
 
-              {/* Color Swatch Picker (Soft Swatch Bubbles) */}
+              {/* Color Swatch Picker (All 22 Colors in responsive grid) */}
               <div className="space-y-2 pt-1 border-t border-neutral-150">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
                     <Palette className="w-3.5 h-3.5 text-[#FF2E2E]" />
-                    <span>Garment Colorway *</span>
+                    <span>Garment Color ({catalog.colors.length} Available) *</span>
                   </label>
                   <span className="text-xs font-bold text-[#FF2E2E] uppercase">
                     {primaryColor}
@@ -1255,50 +1208,42 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {catalog.colors.slice(0, 8).map(swatch => {
+                  {catalog.colors.map(swatch => {
                     const isColorActive = primaryColor === swatch.name;
+                    const isDark = ['#111111', '#27272A', '#58111A', '#3E2723', '#152238', '#1B4332', '#4B5320', '#1E40AF'].includes(swatch.hex.toUpperCase());
                     return (
                       <button
                         key={swatch.name}
                         type="button"
                         onClick={() => handleSelectColor(swatch)}
-                        className={`p-2.5 border-2 rounded-2xl flex items-center gap-2.5 transition-all text-left cursor-pointer min-h-[46px] ${
+                        className={`p-2 border-2 rounded-2xl flex items-center gap-2 transition-all text-left cursor-pointer min-h-[44px] ${
                           isColorActive
                             ? 'border-[#FF2E2E] bg-red-50/20 ring-2 ring-[#FF2E2E]/20 shadow-2xs'
                             : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
-                        <span
-                          className="w-5 h-5 rounded-full border border-neutral-300 shrink-0 shadow-2xs"
+                        <div
+                          className="w-5 h-5 rounded-full border border-neutral-300 shrink-0 flex items-center justify-center shadow-2xs"
                           style={{ backgroundColor: swatch.hex }}
-                        />
-                        <div className="truncate flex-1">
-                          <span className="text-xs font-bold uppercase text-neutral-900 block truncate">
-                            {swatch.name}
-                          </span>
+                        >
+                          {isColorActive && (
+                            <Check
+                              className={`w-3 h-3 ${isDark ? 'text-white' : 'text-neutral-900'}`}
+                              strokeWidth={3}
+                            />
+                          )}
                         </div>
-                        {isColorActive && <Check className="w-3.5 h-3.5 text-[#FF2E2E] shrink-0" />}
+                        <span className="text-xs font-bold uppercase text-neutral-900 block truncate flex-1">
+                          {swatch.name}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Current Configuration Soft Chip */}
-              <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-neutral-400 block">Selected Configuration:</span>
-                  <span className="font-bold uppercase text-neutral-900">
-                    {fit} {garmentCategory} • {primaryColor} • {sleeve} • {gsm}
-                  </span>
-                </div>
-              </div>
-
-              {/* In-Page Next Soft Button */}
-              <div className="pt-3 border-t border-neutral-150 flex items-center justify-between">
-                <span className="text-xs text-neutral-500">
-                  Step 1 of 3: Blank chosen
-                </span>
+              {/* In-Page Next Button */}
+              <div className="pt-2 border-t border-neutral-150 flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => {
@@ -1309,7 +1254,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   }}
                   className="rounded-full bg-gradient-to-r from-neutral-900 to-black hover:from-[#FF2E2E] hover:to-[#E51E2B] text-white px-7 py-3 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md active:scale-95 cursor-pointer min-h-[44px]"
                 >
-                  <span>Next: Add Artwork</span>
+                  <span>Next: Artwork</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -1320,105 +1265,95 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
           {/* STEP 2: ARTWORK, DESIGN UPLOAD & PRINT PLACEMENT */}
           {/* ============================================================= */}
           {activeStep === 2 && (
-            <div className="space-y-5 sm:space-y-6">
-              <div>
-                <span className="text-[10px] font-bold text-[#FF2E2E] uppercase tracking-widest block mb-1">
-                  STEP 02 OF 03 • ARTWORK & PLACEMENT
-                </span>
-                <h2 className="text-lg sm:text-2xl font-black uppercase text-neutral-900 tracking-tight leading-snug">
-                  Upload Design or Describe Concept
-                </h2>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Drop your artwork file from your phone, or type an idea for our studio artists to illustrate.
-                </p>
-              </div>
+            <div className="space-y-4 sm:space-y-5">
+              <h2 className="text-base sm:text-lg font-black uppercase text-neutral-900 tracking-tight">
+                Artwork
+              </h2>
 
-              {/* Pathway Toggle (Soft Rounded Cards) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Pathway Toggle */}
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setDesignSource('have_design')}
-                  className={`p-3.5 border-2 rounded-2xl text-left transition-all flex items-center gap-3 cursor-pointer min-h-[56px] ${
+                  className={`p-3 border-2 rounded-2xl text-center transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px] ${
                     designSource === 'have_design'
-                      ? 'border-[#FF2E2E] bg-red-50/20 text-[#FF2E2E] ring-2 ring-[#FF2E2E]/20'
+                      ? 'border-[#FF2E2E] bg-red-50/20 text-[#FF2E2E] font-bold ring-2 ring-[#FF2E2E]/20 shadow-2xs'
                       : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center shrink-0">
-                    <Upload className="w-4 h-4 text-neutral-900" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-black uppercase block text-neutral-900">
-                      Upload Artwork / Photo
-                    </span>
-                    <span className="text-[10px] text-neutral-500 font-normal">
-                      PNG, JPG, SVG, WebP, PDF (from Camera / Gallery)
-                    </span>
-                  </div>
+                  <Upload className="w-4 h-4 shrink-0" />
+                  <span className="text-xs font-bold uppercase">Upload Design</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setDesignSource('have_idea')}
-                  className={`p-3.5 border-2 rounded-2xl text-left transition-all flex items-center gap-3 cursor-pointer min-h-[56px] ${
+                  className={`p-3 border-2 rounded-2xl text-center transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px] ${
                     designSource === 'have_idea'
-                      ? 'border-[#FF2E2E] bg-red-50/20 text-[#FF2E2E] ring-2 ring-[#FF2E2E]/20'
+                      ? 'border-[#FF2E2E] bg-red-50/20 text-[#FF2E2E] font-bold ring-2 ring-[#FF2E2E]/20 shadow-2xs'
                       : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center shrink-0">
-                    <Lightbulb className="w-4 h-4 text-neutral-900" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-black uppercase block text-neutral-900">
-                      I Have an Idea / Prompt
-                    </span>
-                    <span className="text-[10px] text-neutral-500 font-normal">
-                      Describe it & our studio crafts the proof
-                    </span>
-                  </div>
+                  <Lightbulb className="w-4 h-4 shrink-0" />
+                  <span className="text-xs font-bold uppercase">Describe Idea</span>
                 </button>
               </div>
 
-              {/* PATHWAY A: UPLOAD FILE DROPZONE (Differentiated Front & Back Slots) */}
+              {/* Print Placement Options (Clean Grid) */}
+              <div className="space-y-1.5 pt-1 border-t border-neutral-150">
+                <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 block">
+                  Print Location *
+                </label>
+
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {[
+                    { id: 'front' as const, label: 'Front', icon: '👕' },
+                    { id: 'back' as const, label: 'Back', icon: '🦅' },
+                    { id: 'both' as const, label: 'Both Sides', icon: '🔥' },
+                    { id: 'chest' as const, label: 'Left Chest', icon: '👑' },
+                    { id: 'sleeve' as const, label: 'Sleeve', icon: '🦾' },
+                    { id: 'custom' as const, label: 'Custom', icon: '✂️' }
+                  ].map(loc => {
+                    const isLocActive = quickPlacementType === loc.id;
+                    return (
+                      <button
+                        key={loc.id}
+                        type="button"
+                        onClick={() => handleSelectQuickPlacement(loc.id)}
+                        className={`p-2.5 border-2 rounded-2xl text-center transition-all flex flex-col items-center justify-center cursor-pointer min-h-[64px] ${
+                          isLocActive
+                            ? 'border-[#FF2E2E] bg-red-50/20 ring-2 ring-[#FF2E2E]/20 shadow-2xs text-[#FF2E2E]'
+                            : 'border-neutral-200 hover:border-neutral-300 bg-white text-neutral-800'
+                        }`}
+                      >
+                        <span className="text-lg leading-none mb-1">{loc.icon}</span>
+                        <span className="text-[11px] font-bold uppercase block truncate w-full">
+                          {loc.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* PATHWAY A: UPLOAD FILE DROPZONES */}
               {designSource === 'have_design' && (
-                <div className="space-y-4">
-                  {/* Notice banner when Front + Back is active */}
-                  {quickPlacementType === 'both' && (
-                    <div className="p-3 bg-gradient-to-r from-emerald-50 via-white to-red-50 border border-neutral-200 rounded-2xl text-[11px] text-neutral-800 flex items-center justify-between shadow-2xs">
-                      <span className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-neutral-900">
-                        <Sparkles className="w-4 h-4 text-[#FF2E2E]" />
-                        <span>Double-Sided Custom Order: Upload Front & Back Graphics Below</span>
-                      </span>
-                      <span className="text-[10px] text-neutral-500 hidden sm:inline">2 Distinct Placements</span>
-                    </div>
-                  )}
-
-                  {/* SLOT 1: FRONT GRAPHIC (Shown for 'both', 'front', 'chest', 'sleeve', 'custom') */}
+                <div className="space-y-3 pt-1">
+                  {/* SLOT 1: FRONT GRAPHIC */}
                   {quickPlacementType !== 'back' && (
-                    <div className="bg-white border-2 border-emerald-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
+                    <div className="bg-white border-2 border-emerald-200/90 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold">
-                            👕
-                          </span>
-                          <div>
-                            <span className="text-xs font-black uppercase text-neutral-900 block">
-                              Front Print Graphic
-                            </span>
-                            <span className="text-[10px] text-neutral-500">
-                              {quickPlacementType === 'chest' ? 'Left Chest Crest' : 'Chest or Center Front'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
-                          Front Print
+                        <span className="text-xs font-black uppercase text-neutral-900 flex items-center gap-1.5">
+                          <span>👕</span>
+                          <span>Front Artwork</span>
+                        </span>
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
+                          Front
                         </span>
                       </div>
 
                       {!frontArtworkFile ? (
-                        <div className="border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-2xl p-4 sm:p-6 text-center bg-emerald-50/20 transition-all">
+                        <div className="border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-xl p-4 text-center bg-emerald-50/20 transition-all">
                           <input
                             type="file"
                             id="customise-file-upload-front"
@@ -1431,60 +1366,56 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                             htmlFor="customise-file-upload-front"
                             className="cursor-pointer inline-flex flex-col items-center justify-center w-full"
                           >
-                            <div className="w-11 h-11 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-700 mb-1.5 shadow-2xs">
+                            <div className="w-9 h-9 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-700 mb-1 shadow-2xs">
                               {isUploadingFile ? (
-                                <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                                <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
                               ) : (
-                                <Upload className="w-5 h-5" />
+                                <Upload className="w-4 h-4" />
                               )}
                             </div>
-                            <span className="text-xs font-bold uppercase text-neutral-900 tracking-wider">
-                              {isUploadingFile ? 'Uploading Front Graphic...' : 'Tap to Choose Front Graphic from Phone'}
-                            </span>
-                            <span className="text-[10px] text-neutral-500 mt-0.5">
-                              Camera, Gallery, PNG transparent, JPG, PDF (Up to 25MB)
+                            <span className="text-xs font-bold uppercase text-neutral-900">
+                              {isUploadingFile ? 'Uploading...' : 'Upload Front Artwork'}
                             </span>
                           </label>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between p-3 bg-emerald-50/50 border border-emerald-200 rounded-2xl">
-                          <div className="flex items-center gap-3 truncate">
+                        <div className="flex items-center justify-between p-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl">
+                          <div className="flex items-center gap-2.5 truncate">
                             {frontArtworkFile.mimeType?.startsWith('image/') ? (
                               <img
                                 src={frontArtworkFile.fileUrl}
                                 alt="Front Artwork"
-                                className="w-12 h-12 object-contain rounded-xl border border-emerald-200 bg-white shrink-0 p-1 shadow-2xs"
+                                className="w-10 h-10 object-contain rounded-lg border border-emerald-200 bg-white shrink-0 p-1"
                               />
                             ) : (
-                              <div className="w-12 h-12 bg-white border border-emerald-200 flex items-center justify-center text-emerald-600 rounded-xl shrink-0 shadow-2xs">
-                                <FileText className="w-5 h-5" />
+                              <div className="w-10 h-10 bg-white border border-emerald-200 flex items-center justify-center text-emerald-600 rounded-lg shrink-0">
+                                <FileText className="w-4 h-4" />
                               </div>
                             )}
                             <div className="truncate">
                               <span className="text-xs font-bold text-neutral-900 block truncate">
                                 {frontArtworkFile.fileName}
                               </span>
-                              <span className="text-[10px] text-emerald-700 font-bold uppercase flex items-center gap-1 mt-0.5">
+                              <span className="text-[10px] text-emerald-700 font-bold uppercase flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                <span>Ready for Front HD DTF Print</span>
+                                <span>Uploaded</span>
                               </span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="flex items-center gap-1 shrink-0">
                             <button
                               type="button"
                               onClick={() => setActivePreviewView('front')}
-                              className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-full transition-colors cursor-pointer"
-                              title="Show on Front Canvas"
+                              className="px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-full transition-colors cursor-pointer"
                             >
-                              View Front
+                              View
                             </button>
                             <button
                               type="button"
                               onClick={() => handleRemoveSlot('front')}
-                              className="text-neutral-400 hover:text-red-600 p-1.5 rounded-full hover:bg-white transition-colors cursor-pointer"
-                              title="Remove front artwork"
+                              className="text-neutral-400 hover:text-red-600 p-1 rounded-full cursor-pointer"
+                              title="Remove"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1492,14 +1423,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         </div>
                       )}
 
-                      {/* Front Print Size Preference */}
-                      <div className="pt-1 flex items-center justify-between gap-1 flex-wrap text-[10px]">
-                        <span className="font-bold uppercase text-neutral-500">Front Print Scale:</span>
+                      {/* Front Scale */}
+                      <div className="flex items-center justify-between gap-1 text-[10px]">
+                        <span className="font-bold uppercase text-neutral-500">Scale:</span>
                         <div className="flex items-center gap-1">
                           {[
-                            { id: 'small', label: 'Chest Crest (3.5")' },
-                            { id: 'medium', label: 'Standard (8")' },
-                            { id: 'large', label: 'Large Front (12")' }
+                            { id: 'small', label: 'Crest' },
+                            { id: 'medium', label: 'Medium' },
+                            { id: 'large', label: 'Large' }
                           ].map(sz => {
                             const isChosen = placements[0]?.printSize === sz.id;
                             return (
@@ -1511,7 +1442,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                                   if (updated[0]) updated[0].printSize = sz.id as any;
                                   setPlacements(updated);
                                 }}
-                                className={`px-2.5 py-1 rounded-full uppercase font-bold transition-all cursor-pointer ${
+                                className={`px-2.5 py-0.5 rounded-full uppercase font-bold transition-all cursor-pointer ${
                                   isChosen
                                     ? 'bg-neutral-900 text-white shadow-2xs'
                                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
@@ -1526,31 +1457,21 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     </div>
                   )}
 
-                  {/* SLOT 2: BACK GRAPHIC (Shown for 'both' and 'back') */}
+                  {/* SLOT 2: BACK GRAPHIC */}
                   {(quickPlacementType === 'both' || quickPlacementType === 'back') && (
-                    <div className="bg-white border-2 border-red-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
+                    <div className="bg-white border-2 border-red-200/90 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-7 h-7 rounded-full bg-red-100 text-[#FF2E2E] flex items-center justify-center text-xs font-bold">
-                            🦅
-                          </span>
-                          <div>
-                            <span className="text-xs font-black uppercase text-neutral-900 block">
-                              Back Print Graphic
-                            </span>
-                            <span className="text-[10px] text-neutral-500">
-                              Full Back Masterpiece Canvas or Upper Nape
-                            </span>
-                          </div>
-                        </div>
-
-                        <span className="bg-red-100 text-[#FF2E2E] border border-red-300 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
-                          Back Print
+                        <span className="text-xs font-black uppercase text-neutral-900 flex items-center gap-1.5">
+                          <span>🦅</span>
+                          <span>Back Artwork</span>
+                        </span>
+                        <span className="bg-red-100 text-[#FF2E2E] text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
+                          Back
                         </span>
                       </div>
 
                       {!backArtworkFile ? (
-                        <div className="border-2 border-dashed border-red-300 hover:border-red-500 rounded-2xl p-4 sm:p-6 text-center bg-red-50/20 transition-all">
+                        <div className="border-2 border-dashed border-red-300 hover:border-red-500 rounded-xl p-4 text-center bg-red-50/20 transition-all">
                           <input
                             type="file"
                             id="customise-file-upload-back"
@@ -1563,60 +1484,56 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                             htmlFor="customise-file-upload-back"
                             className="cursor-pointer inline-flex flex-col items-center justify-center w-full"
                           >
-                            <div className="w-11 h-11 rounded-full bg-white border border-red-200 flex items-center justify-center text-[#FF2E2E] mb-1.5 shadow-2xs">
+                            <div className="w-9 h-9 rounded-full bg-white border border-red-200 flex items-center justify-center text-[#FF2E2E] mb-1 shadow-2xs">
                               {isUploadingFile ? (
-                                <Loader2 className="w-5 h-5 animate-spin text-[#FF2E2E]" />
+                                <Loader2 className="w-4 h-4 animate-spin text-[#FF2E2E]" />
                               ) : (
-                                <Upload className="w-5 h-5" />
+                                <Upload className="w-4 h-4" />
                               )}
                             </div>
-                            <span className="text-xs font-bold uppercase text-neutral-900 tracking-wider">
-                              {isUploadingFile ? 'Uploading Back Graphic...' : 'Tap to Choose Back Graphic from Phone'}
-                            </span>
-                            <span className="text-[10px] text-neutral-500 mt-0.5">
-                              Camera, Gallery, PNG transparent, JPG, PDF (Up to 25MB)
+                            <span className="text-xs font-bold uppercase text-neutral-900">
+                              {isUploadingFile ? 'Uploading...' : 'Upload Back Artwork'}
                             </span>
                           </label>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between p-3 bg-red-50/50 border border-red-200 rounded-2xl">
-                          <div className="flex items-center gap-3 truncate">
+                        <div className="flex items-center justify-between p-2.5 bg-red-50/50 border border-red-200 rounded-xl">
+                          <div className="flex items-center gap-2.5 truncate">
                             {backArtworkFile.mimeType?.startsWith('image/') ? (
                               <img
                                 src={backArtworkFile.fileUrl}
                                 alt="Back Artwork"
-                                className="w-12 h-12 object-contain rounded-xl border border-red-200 bg-white shrink-0 p-1 shadow-2xs"
+                                className="w-10 h-10 object-contain rounded-lg border border-red-200 bg-white shrink-0 p-1"
                               />
                             ) : (
-                              <div className="w-12 h-12 bg-white border border-red-200 flex items-center justify-center text-red-600 rounded-xl shrink-0 shadow-2xs">
-                                <FileText className="w-5 h-5" />
+                              <div className="w-10 h-10 bg-white border border-red-200 flex items-center justify-center text-red-600 rounded-lg shrink-0">
+                                <FileText className="w-4 h-4" />
                               </div>
                             )}
                             <div className="truncate">
                               <span className="text-xs font-bold text-neutral-900 block truncate">
                                 {backArtworkFile.fileName}
                               </span>
-                              <span className="text-[10px] text-red-700 font-bold uppercase flex items-center gap-1 mt-0.5">
+                              <span className="text-[10px] text-red-700 font-bold uppercase flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3 text-[#FF2E2E]" />
-                                <span>Ready for Back HD DTF Print</span>
+                                <span>Uploaded</span>
                               </span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="flex items-center gap-1 shrink-0">
                             <button
                               type="button"
                               onClick={() => setActivePreviewView('back')}
-                              className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#FF2E2E] bg-red-100 hover:bg-red-200 rounded-full transition-colors cursor-pointer"
-                              title="Show on Back Canvas"
+                              className="px-2.5 py-1 text-[10px] font-bold uppercase text-[#FF2E2E] bg-red-100 hover:bg-red-200 rounded-full transition-colors cursor-pointer"
                             >
-                              View Back
+                              View
                             </button>
                             <button
                               type="button"
                               onClick={() => handleRemoveSlot('back')}
-                              className="text-neutral-400 hover:text-red-600 p-1.5 rounded-full hover:bg-white transition-colors cursor-pointer"
-                              title="Remove back artwork"
+                              className="text-neutral-400 hover:text-red-600 p-1 rounded-full cursor-pointer"
+                              title="Remove"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1624,14 +1541,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         </div>
                       )}
 
-                      {/* Back Print Size Preference */}
-                      <div className="pt-1 flex items-center justify-between gap-1 flex-wrap text-[10px]">
-                        <span className="font-bold uppercase text-neutral-500">Back Print Scale:</span>
+                      {/* Back Scale */}
+                      <div className="flex items-center justify-between gap-1 text-[10px]">
+                        <span className="font-bold uppercase text-neutral-500">Scale:</span>
                         <div className="flex items-center gap-1">
                           {[
-                            { id: 'medium', label: 'Standard (A4)' },
-                            { id: 'large', label: 'Streetwear (A3)' },
-                            { id: 'extra_large', label: 'Massive Poster (A3+)' }
+                            { id: 'medium', label: 'Medium' },
+                            { id: 'large', label: 'Large' },
+                            { id: 'extra_large', label: 'Full Back' }
                           ].map(sz => {
                             const backPlacement = placements.find(p => p.placementLocation.includes('back'));
                             const isChosen = (backPlacement?.printSize || 'large') === sz.id;
@@ -1645,7 +1562,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                                   );
                                   setPlacements(updated);
                                 }}
-                                className={`px-2.5 py-1 rounded-full uppercase font-bold transition-all cursor-pointer ${
+                                className={`px-2.5 py-0.5 rounded-full uppercase font-bold transition-all cursor-pointer ${
                                   isChosen
                                     ? 'bg-neutral-900 text-white shadow-2xs'
                                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
@@ -1662,161 +1579,63 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
 
                   {/* Resolution Warning */}
                   {fileResolutionWarning && (
-                    <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl text-[11px] text-amber-900 flex items-start gap-2 shadow-2xs">
+                    <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                       <span>{fileResolutionWarning}</span>
                     </div>
                   )}
 
-                  {/* Additional Reference / General Files */}
-                  {uploadedFiles.length > 2 && (
-                    <div className="space-y-2 pt-1">
-                      <span className="text-[11px] font-bold uppercase text-neutral-600 block">
-                        Additional Reference Assets ({uploadedFiles.length})
-                      </span>
-                      <div className="space-y-1.5">
-                        {uploadedFiles.slice(2).map((f, idx) => (
-                          <div
-                            key={idx + 2}
-                            className="flex items-center justify-between p-2.5 bg-neutral-50 border border-neutral-200 rounded-2xl"
-                          >
-                            <span className="text-xs font-medium text-neutral-800 truncate">
-                              {f.fileName}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFile(idx + 2)}
-                              className="text-neutral-400 hover:text-red-600 p-1 rounded-full cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Print Instructions */}
+                  {/* Print Notes */}
                   <div>
                     <label className="text-[11px] font-bold uppercase tracking-wider text-neutral-700 block mb-1">
-                      Print Instructions (Optional)
+                      Notes (Optional)
                     </label>
                     <input
                       type="text"
                       value={printingInstructions}
                       onChange={(e) => setPrintingInstructions(e.target.value)}
-                      placeholder="e.g. Keep background transparent, center alignment, vintage matte finish..."
-                      className="w-full p-3.5 border border-neutral-300 rounded-2xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10 outline-none"
+                      placeholder="e.g. Transparent background, center alignment..."
+                      className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10 outline-none"
                     />
                   </div>
                 </div>
               )}
 
-              {/* PATHWAY B: DESCRIBE IDEA & QUICK INSPIRATION PRESETS */}
+              {/* PATHWAY B: DESCRIBE IDEA */}
               {designSource === 'have_idea' && (
-                <div className="space-y-4">
+                <div className="space-y-3 pt-1">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                        Describe Your Concept *
-                      </label>
-                      <span className="text-[10px] text-neutral-400">Our studio artists illustrate it</span>
-                    </div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 block mb-1">
+                      Describe Your Concept *
+                    </label>
                     <textarea
                       rows={3}
                       value={designDescription}
                       onChange={(e) => setDesignDescription(e.target.value)}
-                      placeholder="e.g. Vintage Baahubali typography in Telugu & English with a weathered battle sword emblem on back..."
-                      className="w-full p-3.5 border border-neutral-300 rounded-2xl text-xs bg-neutral-50/50 focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
+                      placeholder="Describe your design, typography, or theme..."
+                      className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                     />
                   </div>
 
-                  {/* 1-Click Inspiration Chips */}
-                  <div>
-                    <span className="text-[11px] font-bold uppercase text-neutral-700 block mb-2 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#FF2E2E]" />
-                      <span>Or Tap a Popular Concept to Autofill:</span>
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {QUICK_INSPIRATION_PRESETS.map((p, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplyPreset(p)}
-                          className="p-3 text-left border border-neutral-200 hover:border-black rounded-2xl bg-neutral-50/50 hover:bg-white transition-all cursor-pointer min-h-[44px] active:scale-[0.98]"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-base">{p.icon}</span>
-                            <span className="text-xs font-bold uppercase text-neutral-900 truncate">
-                              {p.label}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
-                            {p.desc}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                  {/* Inspiration Chips */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {QUICK_INSPIRATION_PRESETS.slice(0, 4).map((p, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleApplyPreset(p)}
+                        className="p-2 text-left border border-neutral-200 hover:border-black rounded-xl bg-neutral-50/50 hover:bg-white transition-all cursor-pointer min-h-[40px] text-xs font-bold uppercase flex items-center gap-1.5 truncate"
+                      >
+                        <span>{p.icon}</span>
+                        <span className="truncate">{p.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Print Placement Quick Cards (6 Soft Interactive Cards) */}
-              <div className="space-y-2 pt-2 border-t border-neutral-150">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 block">
-                    Print Location on Garment *
-                  </label>
-                  <span className="text-[10px] text-neutral-500">
-                    Live updates on mockup above
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {[
-                    { id: 'front' as const, label: 'Front Graphic', subtitle: 'Large center chest', icon: '👕', tag: 'Most Popular' },
-                    { id: 'back' as const, label: 'Back Statement', subtitle: 'Full back canvas', icon: '🦅', tag: 'Streetwear' },
-                    { id: 'both' as const, label: 'Front + Back', subtitle: 'Double-sided drop', icon: '🔥', tag: '2 Locations' },
-                    { id: 'chest' as const, label: 'Left Chest', subtitle: 'Minimal crest logo', icon: '👑', tag: 'Subtle' },
-                    { id: 'sleeve' as const, label: 'Sleeve Accent', subtitle: 'Outer arm placement', icon: '🦾', tag: 'Accent' },
-                    { id: 'custom' as const, label: 'Custom Placement', subtitle: 'Specific coordinates', icon: '✂️', tag: 'Bespoke' }
-                  ].map(loc => {
-                    const isLocActive = quickPlacementType === loc.id;
-                    return (
-                      <button
-                        key={loc.id}
-                        type="button"
-                        onClick={() => handleSelectQuickPlacement(loc.id)}
-                        className={`p-3 border-2 rounded-2xl text-left transition-all flex flex-col justify-between cursor-pointer min-h-[72px] ${
-                          isLocActive
-                            ? 'border-[#FF2E2E] bg-red-50/20 ring-2 ring-[#FF2E2E]/20 shadow-2xs'
-                            : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-base mb-1">
-                          <span>{loc.icon}</span>
-                          {isLocActive ? (
-                            <Check className="w-3.5 h-3.5 text-[#FF2E2E]" />
-                          ) : (
-                            <span className="text-[8px] uppercase font-bold text-neutral-400">{loc.tag}</span>
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-xs font-bold uppercase text-neutral-900 block truncate">
-                            {loc.label}
-                          </span>
-                          <span className="text-[9px] sm:text-[10px] text-neutral-500 block truncate">
-                            {loc.subtitle}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Step 2 In-Page Navigation Controls */}
-              <div className="pt-3 border-t border-neutral-150 flex items-center justify-between">
+              <div className="pt-2 border-t border-neutral-150 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => {
@@ -1839,7 +1658,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   }}
                   className="rounded-full bg-neutral-900 hover:bg-[#FF2E2E] text-white px-7 py-3 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md active:scale-95 cursor-pointer min-h-[44px]"
                 >
-                  <span>Next: Size & WhatsApp</span>
+                  <span>Next: Details</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -1847,39 +1666,30 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
           )}
 
           {/* ============================================================= */}
-          {/* STEP 3: SIZE, QUANTITY & INSTANT WHATSAPP DETAILS */}
+          {/* STEP 3: SIZE, QUANTITY & CONTACT */}
           {/* ============================================================= */}
           {activeStep === 3 && (
-            <div className="space-y-5 sm:space-y-6">
-              <div>
-                <span className="text-[10px] font-bold text-[#FF2E2E] uppercase tracking-widest block mb-1">
-                  STEP 03 OF 03 • SIZE, QUANTITY & CONTACT
-                </span>
-                <h2 className="text-lg sm:text-2xl font-black uppercase text-neutral-900 tracking-tight leading-snug">
-                  Select Size & WhatsApp Details
+            <div className="space-y-4 sm:space-y-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base sm:text-lg font-black uppercase text-neutral-900 tracking-tight">
+                  Size & Contact
                 </h2>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Zero upfront payment. Pricing is evaluated in our admin portal based on your exact print size, ink coverage, and blank selection.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsSizeGuideOpen(true)}
+                  className="text-xs text-[#FF2E2E] font-bold uppercase underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Ruler className="w-3.5 h-3.5" />
+                  <span>Size Guide</span>
+                </button>
               </div>
 
-              {/* Size Selector Pills (Soft Touch-Friendly Large Targets) */}
+              {/* Size Selector */}
               {!isAdvancedSizesOpen && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                      Garment Size *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setIsSizeGuideOpen(true)}
-                      className="text-[10px] text-[#FF2E2E] font-bold uppercase underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <Ruler className="w-3 h-3" />
-                      <span>Size Guide Chart</span>
-                    </button>
-                  </div>
-
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 block">
+                    Garment Size *
+                  </label>
                   <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
                     {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(sz => {
                       const isSizeActive = singleSize === sz;
@@ -1888,7 +1698,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           key={sz}
                           type="button"
                           onClick={() => setSingleSize(sz)}
-                          className={`py-3 rounded-full text-xs font-bold uppercase transition-all min-h-[44px] cursor-pointer ${
+                          className={`py-2.5 rounded-2xl text-xs font-bold uppercase transition-all min-h-[44px] cursor-pointer ${
                             isSizeActive
                               ? 'bg-[#FF2E2E] text-white shadow-md shadow-red-500/25 scale-105'
                               : 'bg-white border-2 border-neutral-200 hover:border-neutral-400 text-neutral-800'
@@ -1902,44 +1712,37 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               )}
 
-              {/* Quantity Stepper & Quick Quantity Pills */}
+              {/* Quantity */}
               {!isAdvancedSizesOpen && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 sm:p-3.5 bg-neutral-50/80 border border-neutral-200/90 rounded-2xl">
-                    <div>
-                      <span className="text-xs font-bold uppercase text-neutral-900 block">
-                        Order Quantity:
-                      </span>
-                      <span className="text-[10px] text-neutral-500">
-                        {singleQuantity >= 5 ? '🎉 Bulk discount applied!' : 'Bulk discount for 5+ pieces'}
-                      </span>
-                    </div>
-
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between p-3 bg-neutral-50/80 border border-neutral-200/90 rounded-2xl">
+                    <span className="text-xs font-bold uppercase text-neutral-900">
+                      Quantity:
+                    </span>
                     <div className="flex items-center gap-2.5">
                       <button
                         type="button"
                         onClick={() => setSingleQuantity(Math.max(1, singleQuantity - 1))}
                         disabled={singleQuantity <= 1}
-                        className="w-10 h-10 rounded-full border border-neutral-300 bg-white flex items-center justify-center hover:bg-neutral-100 disabled:opacity-40 min-h-[40px] min-w-[40px] active:scale-90 transition-all cursor-pointer"
+                        className="w-9 h-9 rounded-full border border-neutral-300 bg-white flex items-center justify-center hover:bg-neutral-100 disabled:opacity-40 min-h-[36px] min-w-[36px] active:scale-90 transition-all cursor-pointer"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="text-base font-bold text-neutral-900 w-9 text-center font-mono">
+                      <span className="text-base font-bold text-neutral-900 w-8 text-center font-mono">
                         {singleQuantity}
                       </span>
                       <button
                         type="button"
                         onClick={() => setSingleQuantity(singleQuantity + 1)}
-                        className="w-10 h-10 rounded-full border border-neutral-300 bg-white flex items-center justify-center hover:bg-neutral-100 min-h-[40px] min-w-[40px] active:scale-90 transition-all cursor-pointer"
+                        className="w-9 h-9 rounded-full border border-neutral-300 bg-white flex items-center justify-center hover:bg-neutral-100 min-h-[36px] min-w-[36px] active:scale-90 transition-all cursor-pointer"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
 
-                  {/* Quick Quantity Shortcut Pills */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-bold">
-                    <span className="text-[10px] uppercase text-neutral-400 shrink-0">Quick:</span>
+                  {/* Quick Quantity Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs font-bold">
                     {[1, 2, 5, 10, 25, 50].map(qty => (
                       <button
                         key={qty}
@@ -1958,17 +1761,17 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               )}
 
-              {/* Group / Multi-Size Run Accordion Toggle */}
+              {/* Group / Multi-Size Breakdown Toggle */}
               <div className="border border-neutral-200 rounded-2xl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setIsAdvancedSizesOpen(!isAdvancedSizesOpen)}
-                  className="w-full p-3.5 bg-neutral-50/80 hover:bg-neutral-100 flex items-center justify-between text-left transition-colors min-h-[44px] cursor-pointer"
+                  className="w-full p-3 bg-neutral-50 hover:bg-neutral-100 flex items-center justify-between text-left transition-colors min-h-[44px] cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-[#FF2E2E] shrink-0" />
                     <span className="text-xs font-bold uppercase text-neutral-900">
-                      Ordering for Team, Friends, or Event? (Multi-Size Breakdown)
+                      Team / Group Order? (Multi-Size Breakdown)
                     </span>
                   </div>
                   <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${isAdvancedSizesOpen ? 'rotate-180' : ''}`} />
@@ -1991,18 +1794,13 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 )}
               </div>
 
-              {/* Contact Information (Mobile-Friendly Form) */}
-              <div className="space-y-3 pt-1 border-t border-neutral-150">
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 block">
-                    Contact & Proof Delivery Details *
-                  </label>
-                  <p className="text-[11px] text-neutral-500 mt-0.5">
-                    We will send digital mockups and quotation directly to your WhatsApp.
-                  </p>
-                </div>
+              {/* Contact Information */}
+              <div className="space-y-2.5 pt-1 border-t border-neutral-150">
+                <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 block">
+                  Contact Details *
+                </label>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {/* Full Name */}
                   <div>
                     <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
@@ -2020,10 +1818,10 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     />
                   </div>
 
-                  {/* WhatsApp Mobile Number with +91 indicator */}
+                  {/* WhatsApp Mobile Number */}
                   <div>
                     <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
-                      WhatsApp Mobile Number * (For digital proofs)
+                      WhatsApp Number *
                     </label>
                     <div className="flex">
                       <span className="inline-flex items-center px-3.5 border border-r-0 border-neutral-300 bg-neutral-100 text-neutral-700 text-xs font-bold rounded-l-xl">
@@ -2045,12 +1843,12 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   {/* Preferred Contact Channel */}
                   <div>
                     <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
-                      Preferred Communication Channel
+                      Preferred Channel
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { id: 'whatsapp' as const, label: 'WhatsApp', icon: MessageCircle },
-                        { id: 'phone' as const, label: 'Phone Call', icon: Phone },
+                        { id: 'phone' as const, label: 'Call', icon: Phone },
                         { id: 'email' as const, label: 'Email', icon: Mail }
                       ].map(ch => {
                         const isChActive = preferredContact === ch.id;
@@ -2060,118 +1858,74 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                             key={ch.id}
                             type="button"
                             onClick={() => setPreferredContact(ch.id)}
-                            className={`p-2.5 border-2 rounded-2xl text-center transition-all flex flex-col items-center justify-center min-h-[48px] cursor-pointer ${
+                            className={`p-2 border-2 rounded-2xl text-center transition-all flex items-center justify-center gap-1.5 min-h-[42px] cursor-pointer ${
                               isChActive
                                 ? 'border-[#FF2E2E] bg-red-50/20 text-[#FF2E2E] font-bold ring-2 ring-[#FF2E2E]/20'
                                 : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
                             }`}
                           >
-                            <IconComp className="w-3.5 h-3.5 mb-0.5" />
-                            <span className="text-[11px] font-bold uppercase">{ch.label}</span>
+                            <IconComp className="w-3.5 h-3.5" />
+                            <span className="text-xs font-bold uppercase">{ch.label}</span>
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* 2-Column: Email & City */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* City & Pincode (Optional) */}
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
-                        Email Address (Optional)
-                      </label>
-                      <input
-                        type="email"
-                        inputMode="email"
-                        autoComplete="email"
-                        value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        placeholder="patron@example.com"
-                        className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
-                        Delivery City & Pincode (Optional)
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          placeholder="City (e.g. Tirupati)"
-                          className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
-                        />
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={6}
-                          value={pincode}
-                          onChange={(e) => setPincode(e.target.value)}
-                          placeholder="Pincode (e.g. 517501)"
-                          className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Delivery Street Address (Optional) */}
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
-                      Street Delivery Address (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={addressLine1}
-                      onChange={(e) => setAddressLine1(e.target.value)}
-                      placeholder="Door / Flat No., Apartment, Street, Landmark"
-                      className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
-                    />
-                  </div>
-
-                  {/* Desired Date & Special Requests */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
-                        Needed By Date (Optional)
-                      </label>
-                      <input
-                        type="date"
-                        value={requiredDate}
-                        onChange={(e) => setRequiredDate(e.target.value)}
-                        className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
-                        Special Requests / Notes (Optional)
+                        City (Optional)
                       </label>
                       <input
                         type="text"
-                        value={additionalNotes}
-                        onChange={(e) => setAdditionalNotes(e.target.value)}
-                        placeholder="e.g. Birthday gift, urgent dispatch..."
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="e.g. Tirupati"
+                        className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
+                        Pincode (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={pincode}
+                        onChange={(e) => setPincode(e.target.value)}
+                        placeholder="e.g. 517501"
                         className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                       />
                     </div>
                   </div>
+
+                  {/* Notes (Optional) */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-neutral-500 block mb-1">
+                      Special Requests / Notes (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={additionalNotes}
+                      onChange={(e) => setAdditionalNotes(e.target.value)}
+                      placeholder="e.g. Urgent dispatch, gift packing..."
+                      className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Studio Trust / Zero Risk Guarantee Card */}
-              <div className="p-4 bg-neutral-900 text-white rounded-2xl space-y-1.5 text-xs shadow-md">
-                <div className="flex items-center gap-1.5 text-[#FF2E2E] font-bold uppercase">
-                  <ShieldCheck className="w-4 h-4 shrink-0" />
-                  <span>TH3EE Atelier Patron Assurance</span>
-                </div>
-                <p className="text-neutral-300 text-[11px] leading-relaxed">
-                  <strong>Zero upfront payment required.</strong> Pricing is calculated by our studio team based on your exact print size, ink coverage, and blank cut. We will send an itemised quote and digital proof directly to your WhatsApp. You can negotiate, approve, and pay securely online right through the site!
-                </p>
+              {/* Minimal 1-Line Trust Assurance */}
+              <div className="flex items-center justify-center gap-2 py-2 text-xs text-neutral-500 font-medium">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Zero advance required • Free digital mockup on WhatsApp</span>
               </div>
 
               {/* Step 3 Navigation & Submit CTA */}
-              <div className="pt-3 border-t border-neutral-150 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="pt-2 border-t border-neutral-150 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -2179,27 +1933,27 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-5 py-3 border border-neutral-300 hover:border-black text-xs font-bold uppercase tracking-wider text-neutral-700 transition-colors rounded-full flex items-center justify-center gap-1.5 min-h-[44px] active:scale-95 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 border border-neutral-300 hover:border-black text-xs font-bold uppercase tracking-wider text-neutral-700 transition-colors rounded-full flex items-center justify-center gap-1.5 min-h-[44px] active:scale-95 cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Back to Step 2</span>
+                  <span>Back</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleSubmitRequest}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto rounded-full bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] hover:from-neutral-900 hover:to-black text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 hover:shadow-xl active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-[48px]"
+                  className="w-full sm:w-auto rounded-full bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] hover:from-neutral-900 hover:to-black text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-[48px]"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Submitting Custom Order...</span>
+                      <span>Submitting...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Submit Free Request • Free Mockup</span>
+                      <span>Submit Request</span>
                     </>
                   )}
                 </button>
@@ -2208,173 +1962,6 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
             </div>
           )}
 
-        </div>
-
-        {/* ========================================================================= */}
-        {/* COLLAPSIBLE ATELIER SPECIFICATION SUMMARY (Compact on Mobile) */}
-        {/* ========================================================================= */}
-        <div className="mt-4 sm:mt-6 bg-white border border-neutral-200/90 rounded-3xl p-4 sm:p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-2 pb-2">
-            <div>
-              <span className="text-[10px] font-bold text-[#FF2E2E] uppercase tracking-widest block font-mono">
-                CURRENT SPECIFICATION SUMMARY
-              </span>
-              <h3 className="text-xs sm:text-base font-black uppercase text-neutral-900 tracking-tight">
-                Live Atelier Configuration
-              </h3>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setIsLiveSummaryOpen(!isLiveSummaryOpen)}
-                className="text-[11px] font-bold uppercase px-3 py-1 rounded-full border border-neutral-200 hover:bg-neutral-100 flex items-center gap-1 text-neutral-700 transition-colors cursor-pointer"
-              >
-                <span>{isLiveSummaryOpen ? 'Hide' : 'View'} Details</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isLiveSummaryOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-          </div>
-
-          {/* Collapsible Details */}
-          {isLiveSummaryOpen && (
-            <div className="pt-3 border-t border-neutral-150 mt-2">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-3">
-                {/* 1. Blank & Fit */}
-                <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] uppercase font-bold text-neutral-400">Garment Cut</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveStep(1);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="text-[9px] font-bold uppercase text-[#FF2E2E] hover:underline cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                  <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
-                    {fit} {garmentCategory}
-                  </p>
-                  <p className="text-[10px] text-neutral-500 truncate mt-0.5">
-                    {gsm} • {sleeve}
-                  </p>
-                </div>
-
-                {/* 2. Colorway */}
-                <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] uppercase font-bold text-neutral-400">Colorway</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveStep(1);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="text-[9px] font-bold uppercase text-[#FF2E2E] hover:underline cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span
-                      className="w-3 h-3 rounded-full border border-neutral-400 shrink-0 shadow-2xs"
-                      style={{ backgroundColor: selectedColorHex }}
-                    />
-                    <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
-                      {primaryColor}
-                    </p>
-                  </div>
-                  <p className="text-[10px] text-neutral-500 truncate mt-0.5">
-                    {neckType}
-                  </p>
-                </div>
-
-                {/* 3. Artwork & Placement */}
-                <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] uppercase font-bold text-neutral-400">Placement</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveStep(2);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="text-[9px] font-bold uppercase text-[#FF2E2E] hover:underline cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                  <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
-                    {quickPlacementType === 'front'
-                      ? 'Front Center'
-                      : quickPlacementType === 'back'
-                      ? 'Full Back Canvas'
-                      : quickPlacementType === 'both'
-                      ? 'Front + Back'
-                      : quickPlacementType === 'chest'
-                      ? 'Left Chest'
-                      : quickPlacementType === 'sleeve'
-                      ? 'Sleeve Print'
-                      : 'Custom Zone'}
-                  </p>
-                  <p className="text-[10px] text-neutral-500 truncate mt-0.5">
-                    {uploadedFiles.length > 0
-                      ? `Uploaded (${uploadedFiles[0].fileName})`
-                      : designDescription
-                      ? 'Idea Prompt Set'
-                      : 'Pending in Step 2'}
-                  </p>
-                </div>
-
-                {/* 4. Sizing & Total Pieces */}
-                <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] uppercase font-bold text-neutral-400">Size & Run</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveStep(3);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="text-[9px] font-bold uppercase text-[#FF2E2E] hover:underline cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                  <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
-                    {isAdvancedSizesOpen ? 'Multi-Size Run' : `Size ${singleSize}`}
-                  </p>
-                  <p className="text-[10px] text-[#FF2E2E] font-bold truncate mt-0.5">
-                    {totalQuantity} {totalQuantity === 1 ? 'Piece' : 'Pieces'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Pricing Policy Banner */}
-          <div className="p-3.5 bg-neutral-900 text-white rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs shadow-md mt-2">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#FF2E2E] text-white">
-                  Pricing Policy
-                </span>
-                <span className="text-[11px] sm:text-xs font-bold text-neutral-200">
-                  Calculated by Studio in Admin Panel
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-neutral-300 leading-relaxed max-w-xl">
-                Prices are <strong>never fixed upfront</strong>. Our studio evaluates exact print dimensions and artwork in the admin portal, passes itemised quote to WhatsApp, and you pay securely online right through the site once approved.
-              </p>
-            </div>
-
-            <div className="shrink-0 text-left sm:text-right border-t sm:border-t-0 sm:border-l border-neutral-700 pt-1.5 sm:pt-0 sm:pl-3 w-full sm:w-auto flex sm:flex-col justify-between items-center sm:items-end">
-              <span className="text-[9px] sm:text-[10px] text-neutral-400 uppercase">Upfront Advance</span>
-              <span className="text-xs sm:text-sm font-black text-emerald-400 uppercase tracking-tight">₹0 Required Now</span>
-            </div>
-          </div>
         </div>
 
       </div>
@@ -2431,7 +2018,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               }}
               className="flex-1 rounded-full bg-gradient-to-r from-neutral-900 to-black hover:from-[#FF2E2E] hover:to-[#E51E2B] text-white py-3 px-5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 min-h-[44px] shadow-md active:scale-95 cursor-pointer transition-all"
             >
-              <span>{activeStep === 1 ? 'Next: Add Artwork' : 'Next: Size & Details'}</span>
+              <span>{activeStep === 1 ? 'Next: Artwork' : 'Next: Details'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
@@ -2449,7 +2036,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Submit Free Request</span>
+                  <span>Submit Request</span>
                 </>
               )}
             </button>

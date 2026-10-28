@@ -68,27 +68,22 @@ export const VariantQuantityMatrix: React.FC<VariantQuantityMatrixProps> = ({
   const totalQuantity = variants.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
 
   return (
-    <div className="space-y-5 font-mono">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[#E51E2B]" />
-              <span>Multi-Size & Color Breakdown</span>
-            </label>
-            <p className="text-[11px] text-neutral-500 mt-0.5">
-              Specify different colorway and size allocations for your run in a single request.
-            </p>
-          </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-[#FF2E2E]" />
+            <span>Size & Color Breakdown</span>
+          </label>
 
           <button
             type="button"
             onClick={handleAddRow}
-            className="self-stretch sm:self-auto bg-neutral-900 hover:bg-[#E51E2B] text-white px-4 py-2 sm:py-1.5 text-xs font-bold uppercase tracking-wider transition-all rounded-full flex items-center justify-center gap-1.5 shadow-2xs min-h-[40px] sm:min-h-0 cursor-pointer active:scale-95"
+            className="self-stretch sm:self-auto bg-neutral-900 hover:bg-[#FF2E2E] text-white px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all rounded-full flex items-center justify-center gap-1.5 shadow-2xs min-h-[38px] sm:min-h-0 cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Size / Color Row</span>
+            <span>Add Row</span>
           </button>
         </div>
 
@@ -330,17 +325,17 @@ export const VariantQuantityMatrix: React.FC<VariantQuantityMatrixProps> = ({
       </div>
 
       {/* Intended Use & Delivery Deadline */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
         {/* Intended Use */}
         <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-neutral-800 flex items-center gap-1.5 mb-1.5">
-            <Target className="w-3.5 h-3.5 text-[#E51E2B]" />
-            <span>Intended Order Purpose:</span>
+          <label className="text-xs font-bold uppercase tracking-wider text-neutral-800 flex items-center gap-1.5 mb-1">
+            <Target className="w-3.5 h-3.5 text-[#FF2E2E]" />
+            <span>Order Purpose</span>
           </label>
           <select
             value={intendedUse}
             onChange={(e) => onChangeIntendedUse(e.target.value)}
-            className="w-full p-3 border border-neutral-300 rounded-2xl bg-neutral-50 font-bold uppercase text-xs outline-none focus:border-[#FF2E2E]"
+            className="w-full p-2.5 border border-neutral-300 rounded-xl bg-neutral-50 font-bold uppercase text-xs outline-none focus:border-[#FF2E2E]"
           >
             {INTENDED_USE_OPTIONS.map((opt) => (
               <option key={opt.id} value={opt.id}>
@@ -352,35 +347,31 @@ export const VariantQuantityMatrix: React.FC<VariantQuantityMatrixProps> = ({
 
         {/* Required Delivery Date */}
         <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-neutral-800 flex items-center gap-1.5 mb-1.5">
-            <Calendar className="w-3.5 h-3.5 text-[#E51E2B]" />
-            <span>Required Delivery Date (Optional):</span>
+          <label className="text-xs font-bold uppercase tracking-wider text-neutral-800 flex items-center gap-1.5 mb-1">
+            <Calendar className="w-3.5 h-3.5 text-[#FF2E2E]" />
+            <span>Needed By Date (Optional)</span>
           </label>
           <input
             type="date"
             value={requiredDate}
-            min={new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]} // minimum 3 days out
+            min={new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]}
             onChange={(e) => onChangeRequiredDate(e.target.value)}
-            className="w-full p-3 border border-neutral-300 rounded-2xl bg-neutral-50 text-xs font-bold outline-none focus:border-[#FF2E2E]"
+            className="w-full p-2.5 border border-neutral-300 rounded-xl bg-neutral-50 text-xs font-bold outline-none focus:border-[#FF2E2E]"
           />
-          <div className="mt-1 text-[10px] text-neutral-500 flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
-            <span>Standard Tirupati atelier turnaround is 4–7 business days pan-India.</span>
-          </div>
         </div>
       </div>
 
       {/* Additional Instructions */}
       <div>
-        <label className="text-xs font-bold uppercase tracking-wider text-neutral-800 block mb-1.5">
-          Additional Production & Packaging Notes (Optional):
+        <label className="text-xs font-bold uppercase tracking-wider text-neutral-800 block mb-1">
+          Notes (Optional)
         </label>
         <textarea
           rows={2}
           value={additionalNotes}
           onChange={(e) => onChangeAdditionalNotes(e.target.value)}
-          placeholder="e.g. Individual bag packing, festival deadline, special brand tag requirements, or specific CMYK color matching instructions..."
-          className="w-full p-3 border border-neutral-300 rounded-2xl text-xs bg-neutral-50/50 outline-none focus:border-[#FF2E2E]"
+          placeholder="Special requirements, festival deadline, packaging..."
+          className="w-full p-2.5 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 outline-none focus:border-[#FF2E2E]"
         />
       </div>
     </div>

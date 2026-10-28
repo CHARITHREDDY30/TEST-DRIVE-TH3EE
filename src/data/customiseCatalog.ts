@@ -63,12 +63,26 @@ export const DEFAULT_FIT_OPTIONS: GarmentFitOption[] = [
 export const DEFAULT_COLOR_SWATCHES: ColorSwatch[] = [
   { name: 'Jet Black', hex: '#111111', border: '#222222', badge: 'Signature Core' },
   { name: 'Optical White', hex: '#FFFFFF', border: '#E5E5E5', badge: 'High Contrast' },
-  { name: 'Crimson Maroon', hex: '#58111A', border: '#731622', badge: 'Royal Edition' },
-  { name: 'Vintage Brown', hex: '#3E2723', border: '#4E342E', badge: 'Earthy Hue' },
+  { name: 'Anthracite Charcoal', hex: '#27272A', border: '#3F3F46', badge: 'Deep Slate' },
+  { name: 'Heather Grey', hex: '#8C9298', border: '#9DA3A9', badge: 'Sport Mélange' },
+  { name: 'Light Ash Grey', hex: '#D1D5DB', border: '#E5E7EB', badge: 'Minimal' },
   { name: 'Royal Navy', hex: '#152238', border: '#1C2E4A', badge: 'Classic Atelier' },
-  { name: 'Sage Green', hex: '#5A6B5C', border: '#6B7E6D', badge: 'Mineral Wash' },
+  { name: 'Cobalt Blue', hex: '#1E40AF', border: '#2563EB', badge: 'Electric Hue' },
+  { name: 'Sky Mist Blue', hex: '#7DD3FC', border: '#38BDF8', badge: 'Pastel Street' },
+  { name: 'Sage Olive', hex: '#5A6B5C', border: '#6B7E6D', badge: 'Mineral Wash' },
+  { name: 'Forest Pine', hex: '#1B4332', border: '#2D6A4F', badge: 'Deep Alpine' },
+  { name: 'Military Olive', hex: '#4B5320', border: '#5C6527', badge: 'Tactical' },
+  { name: 'Vintage Brown', hex: '#3E2723', border: '#4E342E', badge: 'Earthy Hue' },
+  { name: 'Mocha Coffee', hex: '#5C4033', border: '#6F4E37', badge: 'Rich Roast' },
   { name: 'Sand Beige', hex: '#D2C2B2', border: '#C2B1A0', badge: 'Subtle Warm' },
-  { name: 'Heather Grey', hex: '#8C9298', border: '#9DA3A9', badge: 'Sport Mélange' }
+  { name: 'Desert Khaki', hex: '#C2B280', border: '#A89765', badge: 'Neutral Tone' },
+  { name: 'Crimson Maroon', hex: '#58111A', border: '#731622', badge: 'Royal Edition' },
+  { name: 'Cherry Red', hex: '#B91C1C', border: '#DC2626', badge: 'Bold Accent' },
+  { name: 'Terracotta Rust', hex: '#9C412C', border: '#B44E36', badge: 'Artisan Clay' },
+  { name: 'Dusty Rose', hex: '#C48B8B', border: '#B37878', badge: 'Blush' },
+  { name: 'Lavender Lilac', hex: '#7C6E8F', border: '#9081A4', badge: 'Vapour' },
+  { name: 'Mustard Ochre', hex: '#C28828', border: '#A87520', badge: 'Warm Glow' },
+  { name: 'Washed Teal', hex: '#2E6F74', border: '#3B8B91', badge: 'Pacific' }
 ];
 
 export const DEFAULT_FABRIC_SPECS: FabricSpec[] = [
