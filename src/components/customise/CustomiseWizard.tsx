@@ -17,6 +17,7 @@ import {
   Loader2,
   Trash2,
   ChevronDown,
+  ChevronUp,
   Layers,
   Plus,
   Minus,
@@ -24,8 +25,14 @@ import {
   Copy,
   Palette,
   Scissors,
-  CheckCheck
+  CheckCheck,
+  RotateCw,
+  Maximize2,
+  Minimize2,
+  Eye,
+  Shirt
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import type {
   CustomDesignSource,
   GarmentFitType,
@@ -42,6 +49,7 @@ import { customiseService, type SubmitCustomRequestPayload } from '../../service
 import { INITIAL_CUSTOMISATION_CATALOG } from '../../data/customiseCatalog';
 import { SizeGuideModal } from './SizeGuideModal';
 import { VariantQuantityMatrix } from './VariantQuantityMatrix';
+import { GarmentSvg } from './GarmentIllustrations';
 
 interface CustomiseWizardProps {
   navigate: (path: string) => void;
@@ -136,6 +144,11 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
   const [activeStep, setActiveStep] = useState<number>(1);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [copiedOrderId, setCopiedOrderId] = useState(false);
+
+  // Live Interactive Garment Studio Preview States
+  const [activePreviewView, setActivePreviewView] = useState<'front' | 'back'>('front');
+  const [isMockupExpandedOnMobile, setIsMockupExpandedOnMobile] = useState<boolean>(true);
+  const [isLiveSummaryOpen, setIsLiveSummaryOpen] = useState<boolean>(false);
 
   // Step 1: Garment & Fabric & Color (Smart Defaults: Oversized, Jet Black, Half Sleeve, Round Neck, 240 GSM)
   const [garmentCategory, setGarmentCategory] = useState<GarmentCategoryType>('T-Shirt');
@@ -253,6 +266,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
     const existingArtKey = uploadedFiles[0]?.fileKey;
 
     if (type === 'front') {
+      setActivePreviewView('front');
       setPlacements([
         {
           placementLocation: 'large_front',
@@ -262,6 +276,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         }
       ]);
     } else if (type === 'back') {
+      setActivePreviewView('back');
       setPlacements([
         {
           placementLocation: 'full_back',
@@ -271,6 +286,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         }
       ]);
     } else if (type === 'both') {
+      setActivePreviewView('front');
       setPlacements([
         {
           placementLocation: 'front_chest',
@@ -288,6 +304,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         }
       ]);
     } else if (type === 'chest') {
+      setActivePreviewView('front');
       setPlacements([
         {
           placementLocation: 'front_chest',
@@ -297,6 +314,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         }
       ]);
     } else if (type === 'sleeve') {
+      setActivePreviewView('front');
       setPlacements([
         {
           placementLocation: 'left_sleeve',
@@ -307,6 +325,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         }
       ]);
     } else if (type === 'custom') {
+      setActivePreviewView('front');
       setPlacements([
         {
           placementLocation: 'custom',
@@ -574,7 +593,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
   };
 
   // =========================================================================
-  // SUCCESS / RECEIPT VIEW
+  // SUCCESS / RECEIPT VIEW (Soft & Modern)
   // =========================================================================
   if (submissionResult) {
     const waUrl = `https://wa.me/919121798653?text=${encodeURIComponent(
@@ -582,15 +601,15 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
     )}`;
 
     return (
-      <div className="w-full bg-[#FAFAFA] min-h-[85vh] py-6 sm:py-16 font-mono">
+      <div className="w-full bg-[#F8F9FA] min-h-[85vh] py-6 sm:py-16 font-sans">
         <div className="max-w-2xl mx-auto px-4 sm:px-6">
-          <div className="bg-white border-2 border-neutral-900 p-5 sm:p-10 shadow-xl rounded-sm text-center">
+          <div className="bg-white border border-neutral-200/90 p-5 sm:p-10 shadow-xl rounded-3xl text-center">
             
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 border border-emerald-200">
-              <CheckCircle2 className="w-8 h-8 sm:w-9 sm:h-9" />
+            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 border border-emerald-200 shadow-sm">
+              <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <span className="inline-block bg-[#E51E2B] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 mb-2">
+            <span className="inline-block bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] text-white text-[10px] font-bold uppercase tracking-widest px-3.5 py-1 rounded-full mb-2 shadow-xs">
               Tirupati Atelier Studio
             </span>
 
@@ -603,52 +622,52 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
             </p>
 
             {/* Reference Number Card with 1-Tap Copy */}
-            <div className="my-5 p-4 sm:p-5 bg-neutral-50 border-2 border-dashed border-neutral-300 rounded-sm w-full text-center">
+            <div className="my-5 p-4 sm:p-5 bg-neutral-50/80 border border-neutral-200 rounded-2xl w-full text-center">
               <span className="text-[10px] uppercase font-bold text-neutral-400 block mb-1">
                 Your Order Reference ID
               </span>
               <div className="flex items-center justify-center gap-2">
-                <span className="text-xl sm:text-2xl font-black text-[#E51E2B] tracking-wider">
+                <span className="text-xl sm:text-2xl font-black text-[#FF2E2E] tracking-wider font-mono">
                   {submissionResult.requestNumber}
                 </span>
                 <button
                   type="button"
                   onClick={handleCopyOrderId}
-                  className="p-1.5 text-neutral-500 hover:text-black bg-neutral-200/70 hover:bg-neutral-300 rounded-xs transition-colors"
+                  className="p-2 text-neutral-500 hover:text-black bg-neutral-200/70 hover:bg-neutral-300 rounded-full transition-colors active:scale-95"
                   title="Copy ID"
                 >
                   {copiedOrderId ? <CheckCheck className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
 
-              <div className="mt-2.5 pt-2.5 border-t border-neutral-200 flex flex-wrap items-center justify-center gap-2 text-[11px] text-neutral-600">
-                <span className="bg-white px-2 py-0.5 rounded-2xs border border-neutral-200">
+              <div className="mt-2.5 pt-2.5 border-t border-neutral-200/70 flex flex-wrap items-center justify-center gap-2 text-[11px] text-neutral-600">
+                <span className="bg-white px-3 py-1 rounded-full border border-neutral-200 shadow-2xs font-bold">
                   {totalQuantity}x {fit} {garmentCategory}
                 </span>
-                <span className="bg-white px-2 py-0.5 rounded-2xs border border-neutral-200">
+                <span className="bg-white px-3 py-1 rounded-full border border-neutral-200 shadow-2xs font-bold">
                   {primaryColor}
                 </span>
-                <span className="bg-white px-2 py-0.5 rounded-2xs border border-neutral-200">
+                <span className="bg-white px-3 py-1 rounded-full border border-neutral-200 shadow-2xs font-bold">
                   {isAdvancedSizesOpen ? 'Multi-Size Run' : `Size ${singleSize}`}
                 </span>
               </div>
             </div>
 
             {/* What to Expect Next (Clear 3 Steps) */}
-            <div className="bg-neutral-900 text-white p-4 rounded-sm text-left my-4 space-y-2.5 text-xs">
-              <span className="font-bold text-[#E51E2B] uppercase tracking-wider block">
+            <div className="bg-neutral-900 text-white p-4 sm:p-5 rounded-2xl text-left my-4 space-y-2.5 text-xs shadow-md">
+              <span className="font-bold text-[#FF2E2E] uppercase tracking-wider block">
                 What Happens Next? (3 Simple Steps)
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-[11px] text-neutral-300">
-                <div className="border-l-2 border-[#E51E2B] pl-2.5 py-0.5">
+                <div className="border-l-2 border-[#FF2E2E] pl-2.5 py-0.5">
                   <strong className="text-white block font-bold">1. Digital Proof Prepared</strong>
                   <span className="text-neutral-400">Our lab checks artwork resolution & prepares realistic mockup preview.</span>
                 </div>
-                <div className="border-l-2 border-[#E51E2B] pl-2.5 py-0.5">
+                <div className="border-l-2 border-[#FF2E2E] pl-2.5 py-0.5">
                   <strong className="text-white block font-bold">2. Quote Sent via WhatsApp</strong>
                   <span className="text-neutral-400">Review print size, itemised cost, and negotiate directly with our team.</span>
                 </div>
-                <div className="border-l-2 border-[#E51E2B] pl-2.5 py-0.5">
+                <div className="border-l-2 border-[#FF2E2E] pl-2.5 py-0.5">
                   <strong className="text-white block font-bold">3. Pay Online on Site</strong>
                   <span className="text-neutral-400">Approve your proof and pay securely online through TH3EE for express delivery.</span>
                 </div>
@@ -661,7 +680,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold text-xs uppercase px-6 py-3.5 tracking-wider flex items-center justify-center gap-2 transition-all shadow-md rounded-xs min-h-[44px]"
+                className="w-full sm:w-auto bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold text-xs uppercase px-6 py-3.5 tracking-wider flex items-center justify-center gap-2 transition-all shadow-md rounded-full active:scale-95 min-h-[46px]"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>Chat with Studio on WhatsApp</span>
@@ -670,7 +689,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               <button
                 type="button"
                 onClick={() => navigate(`/customise/track/${submissionResult.trackingToken}`)}
-                className="w-full sm:w-auto bg-neutral-900 hover:bg-[#E51E2B] text-white font-bold text-xs uppercase px-6 py-3.5 tracking-wider transition-colors rounded-xs min-h-[44px]"
+                className="w-full sm:w-auto bg-neutral-900 hover:bg-[#FF2E2E] text-white font-bold text-xs uppercase px-6 py-3.5 tracking-wider transition-colors rounded-full active:scale-95 min-h-[46px]"
               >
                 Track Live Order Status →
               </button>
@@ -680,7 +699,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="text-xs text-neutral-500 hover:text-black uppercase font-bold tracking-wider"
+                className="text-xs text-neutral-500 hover:text-black uppercase font-bold tracking-wider cursor-pointer"
               >
                 ← Return to Storefront
               </button>
@@ -699,50 +718,174 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
   // MAIN STUDIO EXPERIENCE
   // =========================================================================
   return (
-    <div className="w-full bg-[#FAFAFA] min-h-[90vh] py-4 sm:py-10 pb-28 sm:pb-12 font-mono text-neutral-900">
+    <div className="w-full bg-[#F8F9FA] min-h-[90vh] py-3 sm:py-8 pb-32 sm:pb-16 font-sans text-neutral-900 selection:bg-red-500 selection:text-white">
       <div className="max-w-3xl mx-auto px-3 sm:px-6">
 
-        {/* Minimal Breadcrumb & Trust Banner */}
+        {/* Minimal Breadcrumb & Fast Order Soft Pill */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-wider text-neutral-500 flex items-center space-x-1.5">
-            <button type="button" onClick={() => navigate('/')} className="hover:text-[#E51E2B] transition-colors">Home</button>
+          <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-wider text-neutral-500 flex items-center space-x-1.5 font-mono">
+            <button type="button" onClick={() => navigate('/')} className="hover:text-[#FF2E2E] transition-colors cursor-pointer">Home</button>
             <span>/</span>
             <span className="text-neutral-900 font-bold">Custom Studio</span>
           </nav>
 
-          <span className="bg-[#E51E2B]/10 text-[#E51E2B] border border-[#E51E2B]/20 px-2 py-0.5 text-[10px] font-bold uppercase rounded-full flex items-center gap-1">
-            <Zap className="w-3 h-3 fill-current shrink-0" />
+          <span className="bg-gradient-to-r from-red-50 to-rose-50 text-[#FF2E2E] border border-red-200/80 px-3 py-1 text-[10px] font-bold uppercase rounded-full flex items-center gap-1.5 shadow-2xs">
+            <Zap className="w-3.5 h-3.5 fill-current shrink-0 text-[#FF2E2E]" />
             <span>30-Sec Fast Order • Zero Advance</span>
           </span>
         </div>
 
-        {/* Studio Hero Title (Compact on mobile) */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-4xl font-black uppercase tracking-tight text-neutral-900 leading-tight">
+        {/* Studio Hero Title (Modern, Soft & Compact) */}
+        <div className="mb-3 sm:mb-5">
+          <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-neutral-900 leading-tight">
             TH3EE Custom Apparel Studio
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-600 mt-1 sm:mt-1.5 max-w-2xl leading-relaxed">
-            High-Definition Direct-to-Film (DTF) prints on premium heavyweight cotton. Zero upfront payment. Free digital proof sent to WhatsApp.
+          <p className="text-xs sm:text-sm text-neutral-600 mt-1 max-w-2xl leading-relaxed">
+            Ultra-HD Direct-to-Film (DTF) prints on premium heavyweight cotton. Zero upfront cost • Digital proof sent directly to your WhatsApp.
           </p>
         </div>
 
+        {/* ============================================================= */}
+        {/* INTERACTIVE LIVE GARMENT MOCKUP STAGE (Interactive & Adaptive) */}
+        {/* ============================================================= */}
+        <div className="mb-4 sm:mb-6 bg-gradient-to-b from-white via-neutral-50/70 to-white border border-neutral-200/90 rounded-3xl p-3.5 sm:p-5 shadow-sm relative overflow-hidden transition-all duration-300">
+          {/* Top Bar of Stage: Active Spec Chip + Flip Button + Collapse */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-white border border-neutral-200 text-neutral-900 shadow-2xs">
+                <span
+                  className="w-2.5 h-2.5 rounded-full border border-neutral-300 inline-block shadow-2xs"
+                  style={{ backgroundColor: selectedColorHex }}
+                />
+                <span>{fit} {garmentCategory}</span>
+                <span className="text-neutral-400">•</span>
+                <span className="text-[#FF2E2E]">{primaryColor}</span>
+              </span>
+
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live 360° Studio
+              </span>
+            </div>
+
+            {/* Stage Actions */}
+            <div className="flex items-center gap-1.5">
+              {/* Front / Back Flip Pill Button */}
+              <button
+                type="button"
+                onClick={() => setActivePreviewView(activePreviewView === 'front' ? 'back' : 'front')}
+                className="px-3.5 py-1.5 bg-neutral-900 hover:bg-[#FF2E2E] active:scale-95 text-white rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                title="Flip Garment View"
+              >
+                <RotateCw className="w-3.5 h-3.5 transition-transform duration-300" />
+                <span>{activePreviewView === 'front' ? 'View Back' : 'View Front'}</span>
+              </button>
+
+              {/* Mobile Collapse/Expand Preview */}
+              <button
+                type="button"
+                onClick={() => setIsMockupExpandedOnMobile(!isMockupExpandedOnMobile)}
+                className="sm:hidden p-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-full transition-colors active:scale-90"
+                title={isMockupExpandedOnMobile ? 'Compact Preview' : 'Expand Preview'}
+              >
+                {isMockupExpandedOnMobile ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive Garment SVG Stage */}
+          <AnimatePresence mode="wait">
+            {isMockupExpandedOnMobile && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col items-center justify-center pt-0.5"
+              >
+                {/* SVG Canvas */}
+                <div className="w-full max-w-[270px] sm:max-w-[330px] aspect-[500/520] relative flex items-center justify-center py-0.5">
+                  <GarmentSvg
+                    view={activePreviewView}
+                    fit={fit}
+                    category={garmentCategory}
+                    sleeve={sleeve}
+                    neckType={neckType}
+                    colorHex={selectedColorHex}
+                    selectedPlacements={placements.map(p => p.placementLocation)}
+                    activePlacement={placements[0]?.placementLocation}
+                    artworkPreviewUrl={uploadedFiles[0]?.fileUrl || null}
+                    showHotspots={true}
+                    className="w-full h-full drop-shadow-md transition-all duration-300"
+                  />
+
+                  {/* Active View Floating Pill */}
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-neutral-200/90 px-3 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest text-neutral-600 shadow-xs pointer-events-none whitespace-nowrap">
+                    {activePreviewView === 'front' ? '— Front Center —' : '— Full Back Canvas —'}
+                  </div>
+                </div>
+
+                {/* Instant 1-Tap Color Swatch Tray on Mockup Stage */}
+                <div className="w-full mt-2 pt-2.5 border-t border-neutral-200/70 flex items-center justify-between gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+                  <span className="text-[10px] font-bold uppercase text-neutral-400 shrink-0 pl-1">
+                    Tap Shade:
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0 px-1">
+                    {catalog.colors.slice(0, 8).map(swatch => {
+                      const isSelected = primaryColor === swatch.name;
+                      return (
+                        <button
+                          key={swatch.name}
+                          type="button"
+                          onClick={() => handleSelectColor(swatch)}
+                          title={swatch.name}
+                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-all flex items-center justify-center relative cursor-pointer ${
+                            isSelected
+                              ? 'ring-2 ring-[#FF2E2E] ring-offset-2 scale-110 shadow-sm'
+                              : 'hover:scale-105 opacity-90 hover:opacity-100 border border-neutral-300'
+                          }`}
+                          style={{ backgroundColor: swatch.hex }}
+                        >
+                          {isSelected && (
+                            <Check
+                              className={`w-3.5 h-3.5 ${
+                                ['#111111', '#58111A', '#3E2723', '#152238'].includes(swatch.hex.toUpperCase())
+                                  ? 'text-white'
+                                  : 'text-neutral-900'
+                              }`}
+                              strokeWidth={3}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase text-[#FF2E2E] truncate pr-1">
+                    {primaryColor}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {/* ------------------------------------------------------------- */}
-        {/* MOBILE-FIRST STEP PROGRESS BAR & STEP INDICATORS */}
+        {/* SOFT MOBILE-ADAPTIVE STEP PROGRESS & TABS */}
         {/* ------------------------------------------------------------- */}
         <div className="mb-4 sm:mb-6 space-y-2">
-          {/* Progress Bar */}
-          <div className="w-full bg-neutral-200 h-1.5 rounded-full overflow-hidden">
+          {/* Progress Indicator Bar */}
+          <div className="w-full bg-neutral-200/80 h-1.5 rounded-full overflow-hidden">
             <div
-              className="bg-[#E51E2B] h-full transition-all duration-300"
+              className="bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] h-full transition-all duration-300 rounded-full"
               style={{ width: activeStep === 1 ? '33.3%' : activeStep === 2 ? '66.6%' : '100%' }}
             />
           </div>
 
-          {/* Stepper Tabs */}
+          {/* Stepper Soft Tabs */}
           <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
             {[
-              { step: 1, title: 'Blank & Fit', sub: 'Cut, GSM & Shade' },
-              { step: 2, title: 'Artwork', sub: 'File or Prompt' },
+              { step: 1, title: 'Blank & Shade', sub: 'Cut, GSM & Shade' },
+              { step: 2, title: 'Artwork', sub: 'Upload or Prompt' },
               { step: 3, title: 'Size & Info', sub: 'Run & WhatsApp' }
             ].map(s => {
               const isActive = activeStep === s.step;
@@ -757,21 +900,21 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                   }}
-                  className={`p-2 sm:p-3 border-2 rounded-xs text-left transition-all relative ${
+                  className={`p-2 sm:p-3 rounded-2xl text-left transition-all relative cursor-pointer border ${
                     isActive
-                      ? 'border-[#E51E2B] bg-white shadow-xs ring-1 ring-[#E51E2B]'
+                      ? 'border-[#FF2E2E] bg-white shadow-sm ring-2 ring-[#FF2E2E]/15'
                       : isCompleted
-                      ? 'border-neutral-900 bg-neutral-900 text-white cursor-pointer'
-                      : 'border-neutral-200 bg-white hover:border-neutral-300 text-neutral-500'
+                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                      : 'border-neutral-200 bg-white/80 hover:border-neutral-300 text-neutral-500'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block opacity-75">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block opacity-75 font-mono">
                       0{s.step}
                     </span>
                     {isCompleted && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
                   </div>
-                  <span className={`text-[11px] sm:text-xs font-black uppercase tracking-tight block truncate mt-0.5 ${isActive ? 'text-[#E51E2B]' : ''}`}>
+                  <span className={`text-[11px] sm:text-xs font-black uppercase tracking-tight block truncate mt-0.5 ${isActive ? 'text-[#FF2E2E]' : ''}`}>
                     {s.title}
                   </span>
                   <span className={`text-[9px] hidden sm:block truncate ${isActive ? 'text-neutral-600' : isCompleted ? 'text-neutral-400' : 'text-neutral-400'}`}>
@@ -784,9 +927,9 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         </div>
 
         {/* ------------------------------------------------------------- */}
-        {/* MAIN STUDIO CARD */}
+        {/* MAIN STUDIO CARD (Soft Rounded & Modern) */}
         {/* ------------------------------------------------------------- */}
-        <div className="bg-white border-2 border-neutral-900 rounded-sm p-4 sm:p-8 shadow-sm">
+        <div className="bg-white border border-neutral-200/90 rounded-3xl p-4 sm:p-7 shadow-sm">
 
           {/* ============================================================= */}
           {/* STEP 1: BLANK, SILHOUETTE, SLEEVE, COLLAR, FABRIC & COLORWAY */}
@@ -794,18 +937,18 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
           {activeStep === 1 && (
             <div className="space-y-5 sm:space-y-6">
               <div>
-                <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block mb-1">
+                <span className="text-[10px] font-bold text-[#FF2E2E] uppercase tracking-widest block mb-1">
                   STEP 01 OF 03 • BLANK & SHADE
                 </span>
                 <h2 className="text-lg sm:text-2xl font-black uppercase text-neutral-900 tracking-tight leading-snug">
-                  Choose Your Garment Cut & Colorway
+                  Choose Garment Cut & Colorway
                 </h2>
                 <p className="text-xs text-neutral-600 mt-1">
                   Select your signature streetwear blank. Pre-shrunk, heavyweight luxury cotton with structured drape.
                 </p>
               </div>
 
-              {/* Garment Silhouette Selector (4 Comprehensive Options) */}
+              {/* Garment Silhouette Selector (Clean 2x2 Grid with Soft Cards) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900">
@@ -814,14 +957,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsSizeGuideOpen(true)}
-                    className="text-[10px] text-[#E51E2B] font-bold uppercase underline flex items-center gap-1"
+                    className="text-[10px] text-[#FF2E2E] font-bold uppercase underline flex items-center gap-1 cursor-pointer"
                   >
                     <Ruler className="w-3 h-3" />
                     <span>Size Chart</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                   {GARMENT_SILHOUETTES.map(item => {
                     const isSelected = garmentCategory === item.category && fit === item.fit;
                     return (
@@ -834,27 +977,30 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           setFit(item.fit);
                           setFabric(item.fabric);
                           setGsm(item.gsmText);
+                          if (item.category === 'Hoodie') {
+                            setSleeve('Full Sleeve');
+                          }
                         }}
-                        className={`p-3.5 border-2 rounded-xs cursor-pointer transition-all text-left relative flex flex-col justify-between ${
+                        className={`p-3 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all text-left relative flex flex-col justify-between ${
                           isSelected
-                            ? 'border-[#E51E2B] bg-red-50/20 shadow-xs ring-1 ring-[#E51E2B]'
-                            : 'border-neutral-200 hover:border-neutral-400 bg-white'
+                            ? 'border-[#FF2E2E] bg-red-50/25 shadow-xs ring-2 ring-[#FF2E2E]/20'
+                            : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
                         <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-2xs bg-neutral-100 text-neutral-800">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800">
                               {item.badge}
                             </span>
-                            {isSelected && <Check className="w-4 h-4 text-[#E51E2B]" />}
+                            {isSelected && <Check className="w-4 h-4 text-[#FF2E2E]" />}
                           </div>
-                          <h3 className="text-xs sm:text-sm font-black uppercase text-neutral-900">
+                          <h3 className="text-xs sm:text-sm font-black uppercase text-neutral-900 leading-snug">
                             {item.title}
                           </h3>
-                          <span className="text-[10px] text-[#E51E2B] font-bold block mb-1">
+                          <span className="text-[10px] text-[#FF2E2E] font-bold block mb-1">
                             {item.gsmText}
                           </span>
-                          <p className="text-[11px] text-neutral-500 leading-snug">
+                          <p className="text-[11px] text-neutral-500 leading-snug line-clamp-2">
                             {item.desc}
                           </p>
                         </div>
@@ -864,18 +1010,18 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               </div>
 
-              {/* Sleeve Style & Collar Selection (Mobile-Friendly Segmented Chips) */}
+              {/* Sleeve Style & Collar Selection (Soft Segmented Pills) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {/* Sleeve Style */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                    <Scissors className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    <Scissors className="w-3.5 h-3.5 text-[#FF2E2E]" />
                     <span>Sleeve Style *</span>
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-neutral-100 p-1 rounded-full grid grid-cols-2 gap-1 border border-neutral-200/80">
                     {[
-                      { id: 'Half Sleeve' as SleeveType, label: 'Half Sleeve', note: 'Streetwear' },
-                      { id: 'Full Sleeve' as SleeveType, label: 'Full Sleeve', note: 'Ribbed Cuff' }
+                      { id: 'Half Sleeve' as SleeveType, label: 'Half Sleeve' },
+                      { id: 'Full Sleeve' as SleeveType, label: 'Full Sleeve' }
                     ].map(s => {
                       const isSleeveActive = sleeve === s.id;
                       return (
@@ -883,17 +1029,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           key={s.id}
                           type="button"
                           onClick={() => setSleeve(s.id)}
-                          className={`p-2.5 border-2 rounded-xs text-left transition-all flex flex-col justify-between min-h-[44px] ${
+                          className={`py-2 px-3 rounded-full text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                             isSleeveActive
-                              ? 'border-[#E51E2B] bg-red-50/30 text-neutral-900 ring-1 ring-[#E51E2B]'
-                              : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
+                              ? 'bg-white text-neutral-900 shadow-xs ring-1 ring-black/5'
+                              : 'text-neutral-600 hover:text-neutral-900'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase">{s.label}</span>
-                            {isSleeveActive && <Check className="w-3 h-3 text-[#E51E2B]" />}
-                          </div>
-                          <span className="text-[10px] text-neutral-400">{s.note}</span>
+                          <span>{s.label}</span>
+                          {isSleeveActive && <Check className="w-3 h-3 text-[#FF2E2E]" />}
                         </button>
                       );
                     })}
@@ -903,13 +1046,13 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 {/* Collar Neck Style */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    <Layers className="w-3.5 h-3.5 text-[#FF2E2E]" />
                     <span>Collar Style *</span>
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-neutral-100 p-1 rounded-full grid grid-cols-2 gap-1 border border-neutral-200/80">
                     {[
-                      { id: 'Round Neck' as NeckType, label: 'Crew Neck', note: 'Signature Rib' },
-                      { id: 'Polo Neck' as NeckType, label: 'Polo Collar', note: 'Button Placket' }
+                      { id: 'Round Neck' as NeckType, label: 'Crew Neck' },
+                      { id: 'Polo Neck' as NeckType, label: 'Polo Collar' }
                     ].map(n => {
                       const isNeckActive = neckType === n.id;
                       return (
@@ -917,17 +1060,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           key={n.id}
                           type="button"
                           onClick={() => setNeckType(n.id)}
-                          className={`p-2.5 border-2 rounded-xs text-left transition-all flex flex-col justify-between min-h-[44px] ${
+                          className={`py-2 px-3 rounded-full text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                             isNeckActive
-                              ? 'border-[#E51E2B] bg-red-50/30 text-neutral-900 ring-1 ring-[#E51E2B]'
-                              : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
+                              ? 'bg-white text-neutral-900 shadow-xs ring-1 ring-black/5'
+                              : 'text-neutral-600 hover:text-neutral-900'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase">{n.label}</span>
-                            {isNeckActive && <Check className="w-3 h-3 text-[#E51E2B]" />}
-                          </div>
-                          <span className="text-[10px] text-neutral-400">{n.note}</span>
+                          <span>{n.label}</span>
+                          {isNeckActive && <Check className="w-3 h-3 text-[#FF2E2E]" />}
                         </button>
                       );
                     })}
@@ -935,7 +1075,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               </div>
 
-              {/* Fabric GSM Quick Options */}
+              {/* Fabric GSM Quick Options (Soft Cards) */}
               <div className="space-y-1.5 pt-1">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900">
@@ -961,15 +1101,15 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           setGsm(fab.gsmVal);
                           setFabric(fab.spec);
                         }}
-                        className={`p-2.5 border-2 rounded-xs text-left transition-all ${
+                        className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                           isFabActive
-                            ? 'border-[#E51E2B] bg-red-50/20 text-neutral-900 ring-1 ring-[#E51E2B]'
+                            ? 'border-[#FF2E2E] bg-red-50/20 text-neutral-900 ring-2 ring-[#FF2E2E]/20'
                             : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-0.5">
                           <span className="text-xs font-black uppercase">{fab.gsmVal}</span>
-                          <span className="text-[9px] font-bold uppercase text-[#E51E2B]">{fab.badge}</span>
+                          <span className="text-[9px] font-bold uppercase text-[#FF2E2E]">{fab.badge}</span>
                         </div>
                         <span className="text-[10px] text-neutral-500 block truncate">{fab.label}</span>
                       </button>
@@ -978,14 +1118,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               </div>
 
-              {/* Color Swatch Picker (8 Curated Streetwear Shades) */}
+              {/* Color Swatch Picker (Soft Swatch Bubbles) */}
               <div className="space-y-2 pt-1 border-t border-neutral-150">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                    <Palette className="w-3.5 h-3.5 text-[#E51E2B]" />
+                    <Palette className="w-3.5 h-3.5 text-[#FF2E2E]" />
                     <span>Garment Colorway *</span>
                   </label>
-                  <span className="text-xs font-bold text-[#E51E2B] uppercase">
+                  <span className="text-xs font-bold text-[#FF2E2E] uppercase">
                     {primaryColor}
                   </span>
                 </div>
@@ -998,9 +1138,9 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         key={swatch.name}
                         type="button"
                         onClick={() => handleSelectColor(swatch)}
-                        className={`p-2 sm:p-2.5 border-2 rounded-xs flex items-center gap-2 transition-all text-left min-h-[44px] ${
+                        className={`p-2.5 border-2 rounded-2xl flex items-center gap-2.5 transition-all text-left cursor-pointer min-h-[46px] ${
                           isColorActive
-                            ? 'border-[#E51E2B] bg-red-50/20 ring-1 ring-[#E51E2B]'
+                            ? 'border-[#FF2E2E] bg-red-50/20 ring-2 ring-[#FF2E2E]/20 shadow-2xs'
                             : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
@@ -1013,15 +1153,15 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                             {swatch.name}
                           </span>
                         </div>
-                        {isColorActive && <Check className="w-3.5 h-3.5 text-[#E51E2B] shrink-0" />}
+                        {isColorActive && <Check className="w-3.5 h-3.5 text-[#FF2E2E] shrink-0" />}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Current Configuration Chip */}
-              <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xs flex items-center justify-between text-xs">
+              {/* Current Configuration Soft Chip */}
+              <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl flex items-center justify-between text-xs">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-neutral-400 block">Selected Configuration:</span>
                   <span className="font-bold uppercase text-neutral-900">
@@ -1030,7 +1170,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               </div>
 
-              {/* In-Page Next CTA (Desktop + Mobile fallback) */}
+              {/* In-Page Next Soft Button */}
               <div className="pt-3 border-t border-neutral-150 flex items-center justify-between">
                 <span className="text-xs text-neutral-500">
                   Step 1 of 3: Blank chosen
@@ -1043,7 +1183,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                   }}
-                  className="bg-neutral-900 hover:bg-[#E51E2B] text-white px-6 sm:px-7 py-3 text-xs font-bold uppercase tracking-wider transition-colors rounded-xs flex items-center gap-2 shadow-xs cursor-pointer min-h-[44px]"
+                  className="rounded-full bg-gradient-to-r from-neutral-900 to-black hover:from-[#FF2E2E] hover:to-[#E51E2B] text-white px-7 py-3 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md active:scale-95 cursor-pointer min-h-[44px]"
                 >
                   <span>Next: Add Artwork</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1058,29 +1198,29 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
           {activeStep === 2 && (
             <div className="space-y-5 sm:space-y-6">
               <div>
-                <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block mb-1">
+                <span className="text-[10px] font-bold text-[#FF2E2E] uppercase tracking-widest block mb-1">
                   STEP 02 OF 03 • ARTWORK & PLACEMENT
                 </span>
                 <h2 className="text-lg sm:text-2xl font-black uppercase text-neutral-900 tracking-tight leading-snug">
-                  Upload Design or Describe Your Concept
+                  Upload Design or Describe Concept
                 </h2>
                 <p className="text-xs text-neutral-600 mt-1">
                   Drop your artwork file from your phone, or type an idea for our studio artists to illustrate.
                 </p>
               </div>
 
-              {/* Pathway Toggle (Big, Thumb-Friendly Cards) */}
+              {/* Pathway Toggle (Soft Rounded Cards) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   onClick={() => setDesignSource('have_design')}
-                  className={`p-3.5 border-2 rounded-xs text-left transition-all flex items-center gap-3 min-h-[56px] ${
+                  className={`p-3.5 border-2 rounded-2xl text-left transition-all flex items-center gap-3 cursor-pointer min-h-[56px] ${
                     designSource === 'have_design'
-                      ? 'border-[#E51E2B] bg-red-50/20 text-[#E51E2B] ring-1 ring-[#E51E2B]'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400'
+                      ? 'border-[#FF2E2E] bg-red-50/20 text-[#FF2E2E] ring-2 ring-[#FF2E2E]/20'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
-                  <div className="w-9 h-9 rounded-full bg-neutral-100 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center shrink-0">
                     <Upload className="w-4 h-4 text-neutral-900" />
                   </div>
                   <div>
@@ -1096,13 +1236,13 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 <button
                   type="button"
                   onClick={() => setDesignSource('have_idea')}
-                  className={`p-3.5 border-2 rounded-xs text-left transition-all flex items-center gap-3 min-h-[56px] ${
+                  className={`p-3.5 border-2 rounded-2xl text-left transition-all flex items-center gap-3 cursor-pointer min-h-[56px] ${
                     designSource === 'have_idea'
-                      ? 'border-[#E51E2B] bg-red-50/20 text-[#E51E2B] ring-1 ring-[#E51E2B]'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400'
+                      ? 'border-[#FF2E2E] bg-red-50/20 text-[#FF2E2E] ring-2 ring-[#FF2E2E]/20'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
-                  <div className="w-9 h-9 rounded-full bg-neutral-100 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center shrink-0">
                     <Lightbulb className="w-4 h-4 text-neutral-900" />
                   </div>
                   <div>
@@ -1119,7 +1259,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               {/* PATHWAY A: UPLOAD FILE DROPZONE */}
               {designSource === 'have_design' && (
                 <div className="space-y-3">
-                  <div className="border-2 border-dashed border-neutral-400 hover:border-neutral-900 rounded-sm p-5 sm:p-7 text-center bg-neutral-50/70 transition-colors">
+                  <div className="border-2 border-dashed border-neutral-300 hover:border-neutral-800 rounded-3xl p-5 sm:p-7 text-center bg-neutral-50/60 transition-colors">
                     <input
                       type="file"
                       id="customise-file-upload-input"
@@ -1135,7 +1275,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     >
                       <div className="w-12 h-12 rounded-full bg-white border border-neutral-300 flex items-center justify-center text-neutral-700 mb-2 shadow-2xs">
                         {isUploadingFile ? (
-                          <Loader2 className="w-5 h-5 animate-spin text-[#E51E2B]" />
+                          <Loader2 className="w-5 h-5 animate-spin text-[#FF2E2E]" />
                         ) : (
                           <Upload className="w-5 h-5" />
                         )}
@@ -1151,7 +1291,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
 
                   {/* Resolution Warning */}
                   {fileResolutionWarning && (
-                    <div className="p-3 bg-amber-50 border border-amber-300 rounded-xs text-[11px] text-amber-900 flex items-start gap-2">
+                    <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl text-[11px] text-amber-900 flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                       <span>{fileResolutionWarning}</span>
                     </div>
@@ -1167,17 +1307,17 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         {uploadedFiles.map((f, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center justify-between p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-xs"
+                            className="flex items-center justify-between p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-2xl"
                           >
                             <div className="flex items-center gap-2.5 sm:gap-3 truncate">
                               {f.mimeType?.startsWith('image/') ? (
                                 <img
                                   src={f.fileUrl}
                                   alt=""
-                                  className="w-11 h-11 object-contain rounded-xs border border-neutral-200 bg-white shrink-0 p-1"
+                                  className="w-12 h-12 object-contain rounded-xl border border-neutral-200 bg-white shrink-0 p-1 shadow-2xs"
                                 />
                               ) : (
-                                <div className="w-11 h-11 bg-white border border-neutral-200 flex items-center justify-center text-neutral-600 rounded-xs shrink-0">
+                                <div className="w-12 h-12 bg-white border border-neutral-200 flex items-center justify-center text-neutral-600 rounded-xl shrink-0 shadow-2xs">
                                   <FileText className="w-5 h-5" />
                                 </div>
                               )}
@@ -1195,7 +1335,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                             <button
                               type="button"
                               onClick={() => handleRemoveFile(idx)}
-                              className="text-neutral-400 hover:text-red-600 p-2 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                              className="text-neutral-400 hover:text-red-600 p-2 rounded-full hover:bg-neutral-100 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
                               title="Remove file"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1216,7 +1356,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       value={printingInstructions}
                       onChange={(e) => setPrintingInstructions(e.target.value)}
                       placeholder="e.g. Keep background transparent, center alignment, vintage matte finish..."
-                      className="w-full p-2.5 border border-neutral-300 rounded-xs text-xs bg-neutral-50/50 min-h-[44px]"
+                      className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                     />
                   </div>
                 </div>
@@ -1237,14 +1377,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       value={designDescription}
                       onChange={(e) => setDesignDescription(e.target.value)}
                       placeholder="e.g. Vintage Baahubali typography in Telugu & English with a weathered battle sword emblem on back..."
-                      className="w-full p-3 border border-neutral-300 rounded-xs text-xs bg-neutral-50/50"
+                      className="w-full p-3.5 border border-neutral-300 rounded-2xl text-xs bg-neutral-50/50 focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                     />
                   </div>
 
                   {/* 1-Click Inspiration Chips */}
                   <div>
                     <span className="text-[11px] font-bold uppercase text-neutral-700 block mb-2 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#E51E2B]" />
+                      <Sparkles className="w-3.5 h-3.5 text-[#FF2E2E]" />
                       <span>Or Tap a Popular Concept to Autofill:</span>
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1253,10 +1393,10 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           key={idx}
                           type="button"
                           onClick={() => handleApplyPreset(p)}
-                          className="p-2.5 text-left border border-neutral-200 hover:border-black rounded-xs bg-neutral-50/50 hover:bg-white transition-all min-h-[44px]"
+                          className="p-3 text-left border border-neutral-200 hover:border-black rounded-2xl bg-neutral-50/50 hover:bg-white transition-all cursor-pointer min-h-[44px] active:scale-[0.98]"
                         >
                           <div className="flex items-center gap-1.5">
-                            <span className="text-sm">{p.icon}</span>
+                            <span className="text-base">{p.icon}</span>
                             <span className="text-xs font-bold uppercase text-neutral-900 truncate">
                               {p.label}
                             </span>
@@ -1271,14 +1411,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </div>
               )}
 
-              {/* Print Placement Quick Cards (6 Comprehensive Locations) */}
+              {/* Print Placement Quick Cards (6 Soft Interactive Cards) */}
               <div className="space-y-2 pt-2 border-t border-neutral-150">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 block">
                     Print Location on Garment *
                   </label>
-                  <span className="text-[10px] text-neutral-500 font-mono">
-                    Select where graphic goes
+                  <span className="text-[10px] text-neutral-500">
+                    Live updates on mockup above
                   </span>
                 </div>
 
@@ -1297,16 +1437,16 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         key={loc.id}
                         type="button"
                         onClick={() => handleSelectQuickPlacement(loc.id)}
-                        className={`p-2.5 sm:p-3 border-2 rounded-xs text-left transition-all flex flex-col justify-between min-h-[72px] ${
+                        className={`p-3 border-2 rounded-2xl text-left transition-all flex flex-col justify-between cursor-pointer min-h-[72px] ${
                           isLocActive
-                            ? 'border-[#E51E2B] bg-red-50/20 ring-1 ring-[#E51E2B]'
+                            ? 'border-[#FF2E2E] bg-red-50/20 ring-2 ring-[#FF2E2E]/20 shadow-2xs'
                             : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
                         <div className="flex items-center justify-between text-base mb-1">
                           <span>{loc.icon}</span>
                           {isLocActive ? (
-                            <Check className="w-3.5 h-3.5 text-[#E51E2B]" />
+                            <Check className="w-3.5 h-3.5 text-[#FF2E2E]" />
                           ) : (
                             <span className="text-[8px] uppercase font-bold text-neutral-400">{loc.tag}</span>
                           )}
@@ -1333,7 +1473,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     setActiveStep(1);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="px-4 py-2.5 border border-neutral-300 hover:border-black text-xs font-bold uppercase tracking-wider text-neutral-700 transition-colors rounded-xs flex items-center gap-1.5 min-h-[44px]"
+                  className="px-5 py-2.5 border border-neutral-300 hover:border-black text-xs font-bold uppercase tracking-wider text-neutral-700 transition-colors rounded-full flex items-center gap-1.5 min-h-[44px] active:scale-95 cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back</span>
@@ -1347,7 +1487,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                   }}
-                  className="bg-neutral-900 hover:bg-[#E51E2B] text-white px-6 sm:px-7 py-3 text-xs font-bold uppercase tracking-wider transition-colors rounded-xs flex items-center gap-2 shadow-xs cursor-pointer min-h-[44px]"
+                  className="rounded-full bg-neutral-900 hover:bg-[#FF2E2E] text-white px-7 py-3 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md active:scale-95 cursor-pointer min-h-[44px]"
                 >
                   <span>Next: Size & WhatsApp</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1362,7 +1502,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
           {activeStep === 3 && (
             <div className="space-y-5 sm:space-y-6">
               <div>
-                <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block mb-1">
+                <span className="text-[10px] font-bold text-[#FF2E2E] uppercase tracking-widest block mb-1">
                   STEP 03 OF 03 • SIZE, QUANTITY & CONTACT
                 </span>
                 <h2 className="text-lg sm:text-2xl font-black uppercase text-neutral-900 tracking-tight leading-snug">
@@ -1373,7 +1513,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 </p>
               </div>
 
-              {/* Size Selector Pills (Touch-Friendly Large Tap Targets) */}
+              {/* Size Selector Pills (Soft Touch-Friendly Large Targets) */}
               {!isAdvancedSizesOpen && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -1383,7 +1523,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsSizeGuideOpen(true)}
-                      className="text-[10px] text-[#E51E2B] font-bold uppercase underline flex items-center gap-1"
+                      className="text-[10px] text-[#FF2E2E] font-bold uppercase underline flex items-center gap-1 cursor-pointer"
                     >
                       <Ruler className="w-3 h-3" />
                       <span>Size Guide Chart</span>
@@ -1398,10 +1538,10 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           key={sz}
                           type="button"
                           onClick={() => setSingleSize(sz)}
-                          className={`py-3 border-2 rounded-xs text-xs font-bold uppercase transition-all min-h-[44px] ${
+                          className={`py-3 rounded-full text-xs font-bold uppercase transition-all min-h-[44px] cursor-pointer ${
                             isSizeActive
-                              ? 'border-[#E51E2B] bg-[#E51E2B] text-white shadow-xs'
-                              : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
+                              ? 'bg-[#FF2E2E] text-white shadow-md shadow-red-500/25 scale-105'
+                              : 'bg-white border-2 border-neutral-200 hover:border-neutral-400 text-neutral-800'
                           }`}
                         >
                           {sz}
@@ -1415,7 +1555,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               {/* Quantity Stepper & Quick Quantity Pills */}
               {!isAdvancedSizesOpen && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 sm:p-3.5 bg-neutral-50 border border-neutral-200 rounded-xs">
+                  <div className="flex items-center justify-between p-3 sm:p-3.5 bg-neutral-50/80 border border-neutral-200/90 rounded-2xl">
                     <div>
                       <span className="text-xs font-bold uppercase text-neutral-900 block">
                         Order Quantity:
@@ -1430,7 +1570,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         type="button"
                         onClick={() => setSingleQuantity(Math.max(1, singleQuantity - 1))}
                         disabled={singleQuantity <= 1}
-                        className="w-10 h-10 rounded-xs border border-neutral-300 bg-white flex items-center justify-center hover:bg-neutral-100 disabled:opacity-40 min-h-[40px] min-w-[40px]"
+                        className="w-10 h-10 rounded-full border border-neutral-300 bg-white flex items-center justify-center hover:bg-neutral-100 disabled:opacity-40 min-h-[40px] min-w-[40px] active:scale-90 transition-all cursor-pointer"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
@@ -1440,7 +1580,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       <button
                         type="button"
                         onClick={() => setSingleQuantity(singleQuantity + 1)}
-                        className="w-10 h-10 rounded-xs border border-neutral-300 bg-white flex items-center justify-center hover:bg-neutral-100 min-h-[40px] min-w-[40px]"
+                        className="w-10 h-10 rounded-full border border-neutral-300 bg-white flex items-center justify-center hover:bg-neutral-100 min-h-[40px] min-w-[40px] active:scale-90 transition-all cursor-pointer"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -1455,7 +1595,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         key={qty}
                         type="button"
                         onClick={() => setSingleQuantity(qty)}
-                        className={`px-3 py-1 rounded-2xs border transition-colors shrink-0 ${
+                        className={`px-3 py-1 rounded-full border transition-colors shrink-0 cursor-pointer ${
                           singleQuantity === qty
                             ? 'bg-neutral-900 text-white border-neutral-900'
                             : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
@@ -1469,14 +1609,14 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               )}
 
               {/* Group / Multi-Size Run Accordion Toggle */}
-              <div className="border border-neutral-200 rounded-xs overflow-hidden">
+              <div className="border border-neutral-200 rounded-2xl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setIsAdvancedSizesOpen(!isAdvancedSizesOpen)}
-                  className="w-full p-3 bg-neutral-50/80 hover:bg-neutral-100 flex items-center justify-between text-left transition-colors min-h-[44px]"
+                  className="w-full p-3.5 bg-neutral-50/80 hover:bg-neutral-100 flex items-center justify-between text-left transition-colors min-h-[44px] cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-[#E51E2B] shrink-0" />
+                    <Layers className="w-4 h-4 text-[#FF2E2E] shrink-0" />
                     <span className="text-xs font-bold uppercase text-neutral-900">
                       Ordering for Team, Friends, or Event? (Multi-Size Breakdown)
                     </span>
@@ -1525,7 +1665,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="e.g. Charith Reddy"
-                      className="w-full p-2.5 border border-neutral-300 rounded-xs text-xs bg-neutral-50/40 min-h-[44px]"
+                      className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                       required
                     />
                   </div>
@@ -1536,7 +1676,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       WhatsApp Mobile Number * (For digital proofs)
                     </label>
                     <div className="flex">
-                      <span className="inline-flex items-center px-3 border border-r-0 border-neutral-300 bg-neutral-100 text-neutral-700 text-xs font-bold rounded-l-xs">
+                      <span className="inline-flex items-center px-3.5 border border-r-0 border-neutral-300 bg-neutral-100 text-neutral-700 text-xs font-bold rounded-l-xl">
                         +91
                       </span>
                       <input
@@ -1546,7 +1686,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         placeholder="10-digit mobile number"
-                        className="w-full p-2.5 border border-neutral-300 rounded-r-xs text-xs bg-neutral-50/40 min-h-[44px]"
+                        className="w-full p-3 border border-neutral-300 rounded-r-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                         required
                       />
                     </div>
@@ -1559,9 +1699,9 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { id: 'whatsapp' as const, label: 'WhatsApp', icon: MessageCircle, badge: 'Fastest' },
-                        { id: 'phone' as const, label: 'Phone Call', icon: Phone, badge: 'Voice' },
-                        { id: 'email' as const, label: 'Email', icon: Mail, badge: 'Ledger' }
+                        { id: 'whatsapp' as const, label: 'WhatsApp', icon: MessageCircle },
+                        { id: 'phone' as const, label: 'Phone Call', icon: Phone },
+                        { id: 'email' as const, label: 'Email', icon: Mail }
                       ].map(ch => {
                         const isChActive = preferredContact === ch.id;
                         const IconComp = ch.icon;
@@ -1570,10 +1710,10 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                             key={ch.id}
                             type="button"
                             onClick={() => setPreferredContact(ch.id)}
-                            className={`p-2 border-2 rounded-xs text-center transition-all flex flex-col items-center justify-center min-h-[48px] ${
+                            className={`p-2.5 border-2 rounded-2xl text-center transition-all flex flex-col items-center justify-center min-h-[48px] cursor-pointer ${
                               isChActive
-                                ? 'border-[#E51E2B] bg-red-50/20 text-[#E51E2B] font-bold'
-                                : 'border-neutral-200 bg-white text-neutral-600'
+                                ? 'border-[#FF2E2E] bg-red-50/20 text-[#FF2E2E] font-bold ring-2 ring-[#FF2E2E]/20'
+                                : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
                             }`}
                           >
                             <IconComp className="w-3.5 h-3.5 mb-0.5" />
@@ -1597,7 +1737,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         value={customerEmail}
                         onChange={(e) => setCustomerEmail(e.target.value)}
                         placeholder="patron@example.com"
-                        className="w-full p-2.5 border border-neutral-300 rounded-xs text-xs bg-neutral-50/40 min-h-[44px]"
+                        className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                       />
                     </div>
 
@@ -1611,7 +1751,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                           placeholder="City (e.g. Tirupati)"
-                          className="w-full p-2.5 border border-neutral-300 rounded-xs text-xs bg-neutral-50/40 min-h-[44px]"
+                          className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                         />
                         <input
                           type="text"
@@ -1620,7 +1760,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                           value={pincode}
                           onChange={(e) => setPincode(e.target.value)}
                           placeholder="Pincode (e.g. 517501)"
-                          className="w-full p-2.5 border border-neutral-300 rounded-xs text-xs bg-neutral-50/40 min-h-[44px]"
+                          className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                         />
                       </div>
                     </div>
@@ -1636,7 +1776,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                       value={addressLine1}
                       onChange={(e) => setAddressLine1(e.target.value)}
                       placeholder="Door / Flat No., Apartment, Street, Landmark"
-                      className="w-full p-2.5 border border-neutral-300 rounded-xs text-xs bg-neutral-50/40 min-h-[44px]"
+                      className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                     />
                   </div>
 
@@ -1650,7 +1790,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         type="date"
                         value={requiredDate}
                         onChange={(e) => setRequiredDate(e.target.value)}
-                        className="w-full p-2.5 border border-neutral-300 rounded-xs text-xs bg-neutral-50/40 min-h-[44px]"
+                        className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                       />
                     </div>
                     <div>
@@ -1662,7 +1802,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                         value={additionalNotes}
                         onChange={(e) => setAdditionalNotes(e.target.value)}
                         placeholder="e.g. Birthday gift, urgent dispatch..."
-                        className="w-full p-2.5 border border-neutral-300 rounded-xs text-xs bg-neutral-50/40 min-h-[44px]"
+                        className="w-full p-3 border border-neutral-300 rounded-xl text-xs bg-neutral-50/50 min-h-[44px] focus:border-[#FF2E2E] focus:ring-2 focus:ring-[#FF2E2E]/10"
                       />
                     </div>
                   </div>
@@ -1670,8 +1810,8 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               </div>
 
               {/* Studio Trust / Zero Risk Guarantee Card */}
-              <div className="p-3.5 bg-neutral-900 text-white rounded-xs space-y-1.5 text-xs">
-                <div className="flex items-center gap-1.5 text-[#E51E2B] font-bold uppercase">
+              <div className="p-4 bg-neutral-900 text-white rounded-2xl space-y-1.5 text-xs shadow-md">
+                <div className="flex items-center gap-1.5 text-[#FF2E2E] font-bold uppercase">
                   <ShieldCheck className="w-4 h-4 shrink-0" />
                   <span>TH3EE Atelier Patron Assurance</span>
                 </div>
@@ -1689,7 +1829,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-4 py-2.5 border border-neutral-300 hover:border-black text-xs font-bold uppercase tracking-wider text-neutral-700 transition-colors rounded-xs flex items-center justify-center gap-1.5 min-h-[44px]"
+                  className="w-full sm:w-auto px-5 py-3 border border-neutral-300 hover:border-black text-xs font-bold uppercase tracking-wider text-neutral-700 transition-colors rounded-full flex items-center justify-center gap-1.5 min-h-[44px] active:scale-95 cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Step 2</span>
@@ -1699,7 +1839,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   type="button"
                   onClick={handleSubmitRequest}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto bg-[#E51E2B] hover:bg-black text-white px-7 py-3.5 text-xs font-black uppercase tracking-widest transition-all rounded-xs flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50 min-h-[48px]"
+                  className="w-full sm:w-auto rounded-full bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] hover:from-neutral-900 hover:to-black text-white px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 hover:shadow-xl active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-[48px]"
                 >
                   {isSubmitting ? (
                     <>
@@ -1721,156 +1861,154 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
         </div>
 
         {/* ========================================================================= */}
-        {/* LIVE ATELIER CONFIGURATION SUMMARY */}
+        {/* COLLAPSIBLE ATELIER SPECIFICATION SUMMARY (Compact on Mobile) */}
         {/* ========================================================================= */}
-        <div className="mt-5 sm:mt-6 bg-white border-2 border-neutral-900 rounded-sm p-4 sm:p-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-neutral-200">
+        <div className="mt-4 sm:mt-6 bg-white border border-neutral-200/90 rounded-3xl p-4 sm:p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-2 pb-2">
             <div>
-              <span className="text-[10px] font-bold text-[#E51E2B] uppercase tracking-widest block">
+              <span className="text-[10px] font-bold text-[#FF2E2E] uppercase tracking-widest block font-mono">
                 CURRENT SPECIFICATION SUMMARY
               </span>
               <h3 className="text-xs sm:text-base font-black uppercase text-neutral-900 tracking-tight">
                 Live Atelier Configuration
               </h3>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-neutral-100 text-neutral-700 border border-neutral-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live Dynamic Sync
-              </span>
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => setIsSizeGuideOpen(true)}
-                className="text-[10px] font-bold uppercase text-neutral-600 hover:text-[#E51E2B] underline flex items-center gap-1 cursor-pointer"
+                onClick={() => setIsLiveSummaryOpen(!isLiveSummaryOpen)}
+                className="text-[11px] font-bold uppercase px-3 py-1 rounded-full border border-neutral-200 hover:bg-neutral-100 flex items-center gap-1 text-neutral-700 transition-colors cursor-pointer"
               >
-                <Ruler className="w-3 h-3" />
-                <span>Size Guide</span>
+                <span>{isLiveSummaryOpen ? 'Hide' : 'View'} Details</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isLiveSummaryOpen ? 'rotate-180' : ''}`} />
               </button>
             </div>
           </div>
 
-          {/* Configuration Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 text-xs mb-3">
-            
-            {/* 1. Blank & Fit */}
-            <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-xs">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[9px] uppercase font-bold text-neutral-400">Garment Cut</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveStep(1);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="text-[9px] font-bold uppercase text-[#E51E2B] hover:underline cursor-pointer"
-                >
-                  Edit
-                </button>
-              </div>
-              <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
-                {fit} {garmentCategory}
-              </p>
-              <p className="text-[10px] text-neutral-500 truncate mt-0.5">
-                {gsm} • {sleeve}
-              </p>
-            </div>
+          {/* Collapsible Details */}
+          {isLiveSummaryOpen && (
+            <div className="pt-3 border-t border-neutral-150 mt-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-3">
+                {/* 1. Blank & Fit */}
+                <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] uppercase font-bold text-neutral-400">Garment Cut</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveStep(1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="text-[9px] font-bold uppercase text-[#FF2E2E] hover:underline cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
+                    {fit} {garmentCategory}
+                  </p>
+                  <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                    {gsm} • {sleeve}
+                  </p>
+                </div>
 
-            {/* 2. Colorway */}
-            <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-xs">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[9px] uppercase font-bold text-neutral-400">Colorway</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveStep(1);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="text-[9px] font-bold uppercase text-[#E51E2B] hover:underline cursor-pointer"
-                >
-                  Edit
-                </button>
-              </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span
-                  className="w-3 h-3 rounded-full border border-neutral-400 shrink-0 shadow-2xs"
-                  style={{ backgroundColor: selectedColorHex }}
-                />
-                <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
-                  {primaryColor}
-                </p>
-              </div>
-              <p className="text-[10px] text-neutral-500 truncate mt-0.5">
-                {neckType}
-              </p>
-            </div>
+                {/* 2. Colorway */}
+                <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] uppercase font-bold text-neutral-400">Colorway</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveStep(1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="text-[9px] font-bold uppercase text-[#FF2E2E] hover:underline cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span
+                      className="w-3 h-3 rounded-full border border-neutral-400 shrink-0 shadow-2xs"
+                      style={{ backgroundColor: selectedColorHex }}
+                    />
+                    <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
+                      {primaryColor}
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                    {neckType}
+                  </p>
+                </div>
 
-            {/* 3. Artwork & Placement */}
-            <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-xs">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[9px] uppercase font-bold text-neutral-400">Placement</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveStep(2);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="text-[9px] font-bold uppercase text-[#E51E2B] hover:underline cursor-pointer"
-                >
-                  Edit
-                </button>
-              </div>
-              <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
-                {quickPlacementType === 'front'
-                  ? 'Front Center'
-                  : quickPlacementType === 'back'
-                  ? 'Full Back Canvas'
-                  : quickPlacementType === 'both'
-                  ? 'Front + Back'
-                  : quickPlacementType === 'chest'
-                  ? 'Left Chest'
-                  : quickPlacementType === 'sleeve'
-                  ? 'Sleeve Print'
-                  : 'Custom Zone'}
-              </p>
-              <p className="text-[10px] text-neutral-500 truncate mt-0.5">
-                {uploadedFiles.length > 0
-                  ? `Uploaded (${uploadedFiles[0].fileName})`
-                  : designDescription
-                  ? 'Idea Prompt Set'
-                  : 'Pending in Step 2'}
-              </p>
-            </div>
+                {/* 3. Artwork & Placement */}
+                <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] uppercase font-bold text-neutral-400">Placement</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveStep(2);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="text-[9px] font-bold uppercase text-[#FF2E2E] hover:underline cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
+                    {quickPlacementType === 'front'
+                      ? 'Front Center'
+                      : quickPlacementType === 'back'
+                      ? 'Full Back Canvas'
+                      : quickPlacementType === 'both'
+                      ? 'Front + Back'
+                      : quickPlacementType === 'chest'
+                      ? 'Left Chest'
+                      : quickPlacementType === 'sleeve'
+                      ? 'Sleeve Print'
+                      : 'Custom Zone'}
+                  </p>
+                  <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                    {uploadedFiles.length > 0
+                      ? `Uploaded (${uploadedFiles[0].fileName})`
+                      : designDescription
+                      ? 'Idea Prompt Set'
+                      : 'Pending in Step 2'}
+                  </p>
+                </div>
 
-            {/* 4. Sizing & Total Pieces */}
-            <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-xs">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[9px] uppercase font-bold text-neutral-400">Size & Run</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveStep(3);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="text-[9px] font-bold uppercase text-[#E51E2B] hover:underline cursor-pointer"
-                >
-                  Edit
-                </button>
+                {/* 4. Sizing & Total Pieces */}
+                <div className="p-3 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] uppercase font-bold text-neutral-400">Size & Run</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveStep(3);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="text-[9px] font-bold uppercase text-[#FF2E2E] hover:underline cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
+                    {isAdvancedSizesOpen ? 'Multi-Size Run' : `Size ${singleSize}`}
+                  </p>
+                  <p className="text-[10px] text-[#FF2E2E] font-bold truncate mt-0.5">
+                    {totalQuantity} {totalQuantity === 1 ? 'Piece' : 'Pieces'}
+                  </p>
+                </div>
               </div>
-              <p className="font-black uppercase text-neutral-900 truncate text-[11px] sm:text-xs">
-                {isAdvancedSizesOpen ? 'Multi-Size Run' : `Size ${singleSize}`}
-              </p>
-              <p className="text-[10px] text-[#E51E2B] font-bold truncate mt-0.5">
-                {totalQuantity} {totalQuantity === 1 ? 'Piece' : 'Pieces'}
-              </p>
             </div>
-
-          </div>
+          )}
 
           {/* Pricing Policy Banner */}
-          <div className="p-3 bg-neutral-900 text-white rounded-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
+          <div className="p-3.5 bg-neutral-900 text-white rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs shadow-md mt-2">
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-2xs bg-[#E51E2B] text-white">
+                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#FF2E2E] text-white">
                   Pricing Policy
                 </span>
                 <span className="text-[11px] sm:text-xs font-bold text-neutral-200">
@@ -1892,20 +2030,26 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* MOBILE STICKY BOTTOM ACTION BAR (Effortless 1-Thumb Navigation) */}
+      {/* MOBILE FLOATING STICKY ACTION BAR (Modern Soft Pill Design) */}
       {/* ------------------------------------------------------------- */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-300 p-2.5 sm:hidden shadow-xl pb-[calc(0.6rem+env(safe-area-inset-bottom))]">
-        <div className="flex items-center justify-between gap-2 mb-1.5 px-0.5">
-          <div className="truncate flex-1">
-            <span className="text-[9px] uppercase font-bold text-neutral-400 block truncate">
-              Step {activeStep}/3: {activeStep === 1 ? 'Blank & Shade' : activeStep === 2 ? 'Artwork & Placement' : 'Size & Details'}
-            </span>
-            <span className="text-[11px] font-black uppercase text-neutral-900 truncate block">
-              {currentSummaryShort}
-            </span>
+      <div className="fixed bottom-3 left-3 right-3 z-40 bg-white/95 backdrop-blur-xl border border-neutral-200/90 shadow-2xl rounded-3xl p-3 sm:hidden pb-[calc(0.7rem+env(safe-area-inset-bottom))]">
+        <div className="flex items-center justify-between gap-2 mb-2 px-1">
+          <div className="truncate flex-1 flex items-center gap-2">
+            <span
+              className="w-3.5 h-3.5 rounded-full border border-neutral-300 shrink-0 shadow-2xs"
+              style={{ backgroundColor: selectedColorHex }}
+            />
+            <div className="truncate">
+              <span className="text-[9px] uppercase font-bold text-neutral-400 block truncate leading-none">
+                Step {activeStep}/3 • {fit}
+              </span>
+              <span className="text-[11px] font-black uppercase text-neutral-900 truncate block mt-0.5">
+                {primaryColor} • {garmentCategory}
+              </span>
+            </div>
           </div>
 
-          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
+          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0 shadow-2xs">
             ₹0 Now
           </span>
         </div>
@@ -1919,7 +2063,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               disabled={isSubmitting}
-              className="px-3 py-2.5 border border-neutral-300 bg-white text-neutral-800 text-xs font-bold uppercase rounded-xs flex items-center justify-center gap-1 min-h-[44px] shrink-0"
+              className="px-4 py-2.5 border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold uppercase rounded-full flex items-center justify-center gap-1 min-h-[44px] shrink-0 active:scale-95 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back</span>
@@ -1935,7 +2079,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
-              className="flex-1 bg-neutral-900 hover:bg-[#E51E2B] text-white py-2.5 px-4 text-xs font-black uppercase tracking-wider rounded-xs flex items-center justify-center gap-2 min-h-[44px] shadow-sm"
+              className="flex-1 rounded-full bg-gradient-to-r from-neutral-900 to-black hover:from-[#FF2E2E] hover:to-[#E51E2B] text-white py-3 px-5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 min-h-[44px] shadow-md active:scale-95 cursor-pointer transition-all"
             >
               <span>{activeStep === 1 ? 'Next: Add Artwork' : 'Next: Size & Details'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -1945,7 +2089,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               type="button"
               onClick={handleSubmitRequest}
               disabled={isSubmitting}
-              className="flex-1 bg-[#E51E2B] hover:bg-black text-white py-2.5 px-4 text-xs font-black uppercase tracking-wider rounded-xs flex items-center justify-center gap-2 min-h-[44px] shadow-md disabled:opacity-50"
+              className="flex-1 rounded-full bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] text-white py-3 px-5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 min-h-[44px] shadow-lg shadow-red-500/25 active:scale-95 cursor-pointer disabled:opacity-50 transition-all"
             >
               {isSubmitting ? (
                 <>
@@ -1955,7 +2099,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Submit Free Order Request</span>
+                  <span>Submit Free Request</span>
                 </>
               )}
             </button>

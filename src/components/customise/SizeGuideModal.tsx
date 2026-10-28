@@ -48,13 +48,13 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
 
       {/* Modal Container */}
-      <div className="relative bg-white border-2 border-neutral-900 w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl p-5 sm:p-8 z-10 flex flex-col justify-between">
+      <div className="relative bg-white border border-neutral-200/90 rounded-3xl w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl p-5 sm:p-8 z-10 flex flex-col justify-between font-sans">
         
         {/* Header */}
         <div>
           <div className="flex items-start justify-between border-b border-neutral-200 pb-4 mb-5">
             <div>
-              <div className="inline-flex items-center gap-1.5 bg-[#E51E2B] text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 py-0.5 mb-1.5">
+              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-1.5 shadow-2xs font-mono">
                 <Ruler className="w-3 h-3" />
                 <span>Atelier Sizing Guide</span>
               </div>
@@ -68,7 +68,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-neutral-500 hover:text-black hover:bg-neutral-100 rounded-xs transition-colors"
+              className="p-2 text-neutral-500 hover:text-black hover:bg-neutral-100 rounded-full transition-colors cursor-pointer"
               aria-label="Close Size Guide"
             >
               <X className="w-5 h-5" />
@@ -76,9 +76,9 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
           </div>
 
           {/* Unit Toggle & Fit Tabs */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 bg-neutral-50 p-2 border border-neutral-200 rounded-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 bg-neutral-50/80 p-2 border border-neutral-200/80 rounded-2xl">
             {/* Fit Selector Tabs */}
-            <div className="flex gap-1 overflow-x-auto pb-1 sm:pb-0">
+            <div className="flex gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
               {fitOptions.map((f) => {
                 const isActive = activeTabFit === f.id;
                 return (
@@ -86,26 +86,26 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
                     key={f.id}
                     type="button"
                     onClick={() => setActiveTabFit(f.id)}
-                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors rounded-xs flex items-center gap-1.5 ${
+                    className={`px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors rounded-full flex items-center gap-1.5 cursor-pointer ${
                       isActive
                         ? 'bg-neutral-900 text-white shadow-xs'
                         : 'text-neutral-600 hover:text-black hover:bg-neutral-200/60'
                     }`}
                   >
                     <span>{f.name}</span>
-                    {isActive && <Check className="w-3 h-3 text-[#E51E2B]" />}
+                    {isActive && <Check className="w-3 h-3 text-[#FF2E2E]" />}
                   </button>
                 );
               })}
             </div>
 
             {/* Unit Switcher */}
-            <div className="flex items-center self-end sm:self-center gap-1 bg-white border border-neutral-300 p-0.5 rounded-xs text-xs font-bold">
+            <div className="flex items-center self-end sm:self-center gap-1 bg-white border border-neutral-300 p-0.5 rounded-full text-xs font-bold shadow-2xs">
               <button
                 type="button"
                 onClick={() => setUnit('in')}
-                className={`px-2.5 py-1 uppercase rounded-xs transition-colors ${
-                  unit === 'in' ? 'bg-[#E51E2B] text-white' : 'text-neutral-600 hover:text-black'
+                className={`px-3 py-1 uppercase rounded-full transition-colors cursor-pointer ${
+                  unit === 'in' ? 'bg-[#FF2E2E] text-white shadow-xs' : 'text-neutral-600 hover:text-black'
                 }`}
               >
                 Inches (in)
@@ -113,8 +113,8 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
               <button
                 type="button"
                 onClick={() => setUnit('cm')}
-                className={`px-2.5 py-1 uppercase rounded-xs transition-colors ${
-                  unit === 'cm' ? 'bg-[#E51E2B] text-white' : 'text-neutral-600 hover:text-black'
+                className={`px-3 py-1 uppercase rounded-full transition-colors cursor-pointer ${
+                  unit === 'cm' ? 'bg-[#FF2E2E] text-white shadow-xs' : 'text-neutral-600 hover:text-black'
                 }`}
               >
                 Centimetres (cm)
@@ -285,7 +285,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
                 onSelectFit(activeTabFit);
                 onClose();
               }}
-              className="w-full sm:w-auto bg-[#E51E2B] hover:bg-black text-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors shadow-xs"
+              className="w-full sm:w-auto rounded-full bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] hover:from-black hover:to-neutral-900 text-white px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
             >
               Apply {activeTabFit} to My Garment
             </button>
@@ -298,7 +298,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors"
+            className="w-full sm:w-auto rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 cursor-pointer"
           >
             Got It, Back to Customise
           </button>

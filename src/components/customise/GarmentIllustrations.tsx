@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GarmentFitType, SleeveType, NeckType } from '../../types/customise';
+import type { GarmentFitType, SleeveType, NeckType, GarmentCategoryType } from '../../types/customise';
 
 interface GarmentSvgProps {
   view: 'front' | 'back';
@@ -13,6 +13,7 @@ interface GarmentSvgProps {
   className?: string;
   showHotspots?: boolean;
   artworkPreviewUrl?: string | null;
+  category?: GarmentCategoryType;
 }
 
 export const GarmentSvg: React.FC<GarmentSvgProps> = ({
@@ -26,16 +27,18 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
   onSelectPlacement,
   className = 'w-full h-auto',
   showHotspots = true,
-  artworkPreviewUrl = null
+  artworkPreviewUrl = null,
+  category = 'T-Shirt'
 }) => {
   // Determine silhouette geometry parameters based on fit
   // Oversized: dropped shoulders, wide torso, longer half-sleeve
   // Regular Fit: standard shoulder slope, tapered body
   // Boxy Fit: wide chest, cropped length
-  const isOversized = fit === 'Oversized';
+  const isHoodie = category === 'Hoodie';
+  const isOversized = fit === 'Oversized' || isHoodie;
   const isBoxy = fit === 'Boxy Fit';
-  const isFullSleeve = sleeve === 'Full Sleeve';
-  const isPolo = neckType === 'Polo Neck';
+  const isFullSleeve = sleeve === 'Full Sleeve' || isHoodie;
+  const isPolo = neckType === 'Polo Neck' && !isHoodie;
 
   // Adjust SVG paths based on fit
   let bodyLeftX = 140;
@@ -277,6 +280,43 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
                 <circle cx="250" cy="195" r="2.5" fill="#FFFFFF" stroke="#333333" strokeWidth="1" />
               </g>
             )}
+
+            {/* Hoodie Hood Draping, Drawstrings & Kangaroo Pouch */}
+            {isHoodie && (
+              <g id="hoodie-features">
+                {/* Double Layer Hood Collar Drape */}
+                <path
+                  d="M 180 92 C 195 48 305 48 320 92 C 300 135 200 135 180 92 Z"
+                  fill={colorHex}
+                  stroke={outlineColor}
+                  strokeWidth="2.2"
+                />
+                <path
+                  d="M 210 88 C 228 65 272 65 290 88 C 280 115 220 115 210 88 Z"
+                  fill={innerCollarColor}
+                  opacity="0.8"
+                />
+                {/* White Aglet Drawstrings */}
+                <path d="M 232 120 L 230 178" stroke="#F5F5F5" strokeWidth="2.5" strokeLinecap="round" />
+                <circle cx="230" cy="180" r="2.5" fill="#C0C0C0" stroke="#333" strokeWidth="0.5" />
+                <path d="M 268 120 L 270 178" stroke="#F5F5F5" strokeWidth="2.5" strokeLinecap="round" />
+                <circle cx="270" cy="180" r="2.5" fill="#C0C0C0" stroke="#333" strokeWidth="0.5" />
+
+                {/* Kangaroo Pocket */}
+                <path
+                  d="M 175 410 L 205 365 L 295 365 L 325 410 L 315 450 L 185 450 Z"
+                  fill={colorHex}
+                  stroke={outlineColor}
+                  strokeWidth="2"
+                />
+                <path
+                  d="M 205 365 L 295 365"
+                  stroke={seamColor}
+                  strokeWidth="1.5"
+                  strokeDasharray="3 2"
+                />
+              </g>
+            )}
           </>
         ) : (
           /* Back View Collar */
@@ -296,6 +336,19 @@ export const GarmentSvg: React.FC<GarmentSvgProps> = ({
             />
             {/* Atelier Nape Loop / Hanger Tag */}
             <rect x="244" y="99" width="12" height="6" fill="#E51E2B" rx="1" />
+
+            {/* Back Hood Silhouette for Hoodie */}
+            {isHoodie && (
+              <g id="back-hood-drape">
+                <path
+                  d="M 185 92 C 205 50 295 50 315 92 C 322 135 305 160 250 165 C 195 160 178 135 185 92 Z"
+                  fill={colorHex}
+                  stroke={outlineColor}
+                  strokeWidth="2.2"
+                />
+                <line x1="250" y1="88" x2="250" y2="160" stroke={seamColor} strokeWidth="1.5" strokeDasharray="3 2" />
+              </g>
+            )}
           </>
         )}
       </g>
