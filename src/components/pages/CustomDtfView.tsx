@@ -36,18 +36,17 @@ export const CustomDtfView: React.FC<CustomDtfViewProps> = ({ navigate, storeBra
           </p>
 
           <div className="mt-6 sm:mt-8 flex flex-wrap gap-3">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-[#25D366] hover:bg-[#1EBE5D] text-white font-mono font-bold text-xs uppercase px-6 py-3 tracking-wider flex items-center gap-2 shadow-xs transition-colors"
+            <button
+              type="button"
+              onClick={() => navigate('/customise')}
+              className="bg-[#E51E2B] hover:bg-black text-white font-mono font-bold text-xs uppercase px-7 py-3.5 tracking-wider flex items-center gap-2 shadow-md transition-all rounded-full cursor-pointer active:scale-95"
             >
-              <span>Order Custom DTF on WhatsApp</span>
-            </a>
+              <span>Launch In-App Custom Studio →</span>
+            </button>
             <button
               type="button"
               onClick={() => navigate('/shop')}
-              className="bg-black hover:bg-[#E51E2B] text-white font-mono font-bold text-xs uppercase px-6 py-3 tracking-wider shadow-xs transition-colors"
+              className="bg-black hover:bg-[#E51E2B] text-white font-mono font-bold text-xs uppercase px-6 py-3 tracking-wider shadow-xs transition-colors rounded-full"
             >
               Browse Catalog Drops
             </button>
@@ -120,14 +119,13 @@ export const CustomDtfView: React.FC<CustomDtfViewProps> = ({ navigate, storeBra
           <p className="text-xs sm:text-sm text-neutral-600 mt-2 max-w-md mx-auto">
             Whether for personal statements, brand merchandise, or festival drops, the TH3EE Tirupati atelier handles it with precision.
           </p>
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block mt-5 bg-[#E51E2B] hover:bg-black text-white font-mono font-bold text-xs uppercase px-8 py-3 tracking-widest transition-colors shadow-xs"
+          <button
+            type="button"
+            onClick={() => navigate('/customise')}
+            className="inline-block mt-5 bg-[#E51E2B] hover:bg-black text-white font-mono font-bold text-xs uppercase px-8 py-3.5 tracking-widest transition-all shadow-md rounded-full cursor-pointer active:scale-95"
           >
-            Start Your Custom DTF Order
-          </a>
+            Start Your In-App Custom Order →
+          </button>
         </div>
 
       </div>

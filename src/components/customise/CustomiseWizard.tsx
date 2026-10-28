@@ -128,6 +128,15 @@ const GARMENT_SILHOUETTES = [
     gsmText: '380 GSM Brushed Fleece',
     fabric: '380 GSM Heavyweight Brushed Fleece',
     desc: 'Double-layered hood, kangaroo pouch, thick winter fleece warmth.'
+  },
+  {
+    category: 'T-Shirt' as GarmentCategoryType,
+    fit: 'Regular Fit' as GarmentFitType,
+    title: 'Polo Street Tee',
+    badge: 'Smart Collar',
+    gsmText: '220 GSM Pique Cotton',
+    fabric: '220 GSM Combed Pique Cotton',
+    desc: 'Ribbed collar with structured placket for refined casual streetwear.'
   }
 ];
 
@@ -569,9 +578,11 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
 
       showNotification({
         type: 'success',
-        message: `Order request ${result.requestNumber} registered! Digital proof being prepared.`
+        message: `Order request ${result.requestNumber} registered! Opening your live order ledger.`
       });
 
+      // Directly navigate into the in-app tracking and quote payment page
+      navigate(`/customise/track/${result.trackingToken}`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       showNotification({
@@ -593,13 +604,9 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
   };
 
   // =========================================================================
-  // SUCCESS / RECEIPT VIEW (Soft & Modern)
+  // SUCCESS / RECEIPT VIEW (In-App Order Tracker & Zero-Redirect)
   // =========================================================================
   if (submissionResult) {
-    const waUrl = `https://wa.me/919121798653?text=${encodeURIComponent(
-      `Hi TH3EE Studio! I just submitted custom order #${submissionResult.requestNumber} for ${totalQuantity}x ${fit} ${garmentCategory} (${primaryColor}, Size ${singleSize}). Please evaluate print dimensions and pass my quote and digital proof!`
-    )}`;
-
     return (
       <div className="w-full bg-[#F8F9FA] min-h-[85vh] py-6 sm:py-16 font-sans">
         <div className="max-w-2xl mx-auto px-4 sm:px-6">
@@ -614,11 +621,11 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
             </span>
 
             <h1 className="text-xl sm:text-3xl font-black uppercase text-neutral-900 tracking-tight leading-tight">
-              Custom Order Received!
+              Custom Order Submitted In-App!
             </h1>
 
             <p className="mt-2 text-xs sm:text-sm text-neutral-600 max-w-lg mx-auto leading-relaxed">
-              Your custom piece is in queue. Our studio team will evaluate your artwork dimensions, calculate exact print sizing, and pass your itemised quote directly to WhatsApp.
+              Your custom garment specifications have been registered directly in the Atelier Admin Portal. Our studio is reviewing your artwork sizing. Once the quote is prepared, it will appear right on your in-app tracking page for instant online payment.
             </p>
 
             {/* Reference Number Card with 1-Tap Copy */}
@@ -633,7 +640,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyOrderId}
-                  className="p-2 text-neutral-500 hover:text-black bg-neutral-200/70 hover:bg-neutral-300 rounded-full transition-colors active:scale-95"
+                  className="p-2 text-neutral-500 hover:text-black bg-neutral-200/70 hover:bg-neutral-300 rounded-full transition-colors active:scale-95 cursor-pointer"
                   title="Copy ID"
                 >
                   {copiedOrderId ? <CheckCheck className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
@@ -653,45 +660,44 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
               </div>
             </div>
 
-            {/* What to Expect Next (Clear 3 Steps) */}
+            {/* What to Expect Next (Clear In-App 3 Steps) */}
             <div className="bg-neutral-900 text-white p-4 sm:p-5 rounded-2xl text-left my-4 space-y-2.5 text-xs shadow-md">
               <span className="font-bold text-[#FF2E2E] uppercase tracking-wider block">
-                What Happens Next? (3 Simple Steps)
+                What Happens Next (100% Inside This Site)
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-[11px] text-neutral-300">
                 <div className="border-l-2 border-[#FF2E2E] pl-2.5 py-0.5">
-                  <strong className="text-white block font-bold">1. Digital Proof Prepared</strong>
-                  <span className="text-neutral-400">Our lab checks artwork resolution & prepares realistic mockup preview.</span>
+                  <strong className="text-white block font-bold">1. Studio Admin Review</strong>
+                  <span className="text-neutral-400">Our studio team reviews artwork dimensions in the Admin Portal.</span>
                 </div>
                 <div className="border-l-2 border-[#FF2E2E] pl-2.5 py-0.5">
-                  <strong className="text-white block font-bold">2. Quote Sent via WhatsApp</strong>
-                  <span className="text-neutral-400">Review print size, itemised cost, and negotiate directly with our team.</span>
+                  <strong className="text-white block font-bold">2. Quotation Published In-App</strong>
+                  <span className="text-neutral-400">Your itemised price and digital proof appear directly on your live tracking page.</span>
                 </div>
                 <div className="border-l-2 border-[#FF2E2E] pl-2.5 py-0.5">
                   <strong className="text-white block font-bold">3. Pay Online on Site</strong>
-                  <span className="text-neutral-400">Approve your proof and pay securely online through TH3EE for express delivery.</span>
+                  <span className="text-neutral-400">Review quote and pay securely online via Razorpay (UPI, Cards, NetBanking) to begin production.</span>
                 </div>
               </div>
             </div>
 
-            {/* Actions */}
+            {/* In-App Actions */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 mt-5">
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold text-xs uppercase px-6 py-3.5 tracking-wider flex items-center justify-center gap-2 transition-all shadow-md rounded-full active:scale-95 min-h-[46px]"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Chat with Studio on WhatsApp</span>
-              </a>
-
               <button
                 type="button"
                 onClick={() => navigate(`/customise/track/${submissionResult.trackingToken}`)}
-                className="w-full sm:w-auto bg-neutral-900 hover:bg-[#FF2E2E] text-white font-bold text-xs uppercase px-6 py-3.5 tracking-wider transition-colors rounded-full active:scale-95 min-h-[46px]"
+                className="w-full sm:w-auto bg-gradient-to-r from-[#FF2E2E] to-[#E51E2B] text-white font-bold text-xs uppercase px-8 py-3.5 tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-500/25 rounded-full active:scale-95 min-h-[46px] cursor-pointer"
               >
-                Track Live Order Status →
+                <Eye className="w-4 h-4" />
+                <span>Track Live Order & View In-App Quote →</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="w-full sm:w-auto bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs uppercase px-6 py-3.5 tracking-wider transition-colors rounded-full active:scale-95 min-h-[46px] cursor-pointer"
+              >
+                Return to Storefront
               </button>
             </div>
 
@@ -701,7 +707,7 @@ export const CustomiseWizard: React.FC<CustomiseWizardProps> = ({
                 onClick={() => navigate('/')}
                 className="text-xs text-neutral-500 hover:text-black uppercase font-bold tracking-wider cursor-pointer"
               >
-                ← Return to Storefront
+                ← Back to Home
               </button>
             </div>
 
