@@ -126,14 +126,6 @@ export const INITIAL_UNIVERSE_CATEGORIES: UniverseCategory[] = [
     subcategories: [{ name: "All Festival", code: "FST", color: "bg-rose-600", text: "text-white" }]
   },
   {
-    id: "customise",
-    title: "CUSTOMISE",
-    subtitle: "BESPOKE STUDIO",
-    bgGradient: "from-neutral-900/90 via-stone-900/80 to-neutral-950",
-    image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600&auto=format&fit=crop&q=80",
-    subcategories: [{ name: "All Custom", code: "CST", color: "bg-neutral-700", text: "text-white" }]
-  },
-  {
     id: "college",
     title: "COLLEGE",
     subtitle: "CAMPUS NOSTALGIA",

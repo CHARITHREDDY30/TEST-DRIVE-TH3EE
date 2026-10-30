@@ -252,6 +252,15 @@ function Truck({ className = "w-4 h-4" }) {
   );
 }
 
+function Smartphone({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+      <path d="M12 18h.01"/>
+    </svg>
+  );
+}
+
 function Check({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1542,18 +1551,6 @@ export default function App() {
               )}
             </button>
 
-            <button 
-              type="button"
-              onClick={function() { navigate("/customise"); }} 
-              className={`py-5 xl:py-6 relative transition-colors whitespace-nowrap flex items-center gap-1.5 ${routeState.view === "customise" ? "text-[#E51E2B] font-bold" : "text-neutral-700 hover:text-black"}`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#E51E2B]" />
-              <span>Customise</span>
-              {routeState.view === "customise" && (
-                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#E51E2B]" />
-              )}
-            </button>
-
             <div className="relative py-5 xl:py-6" ref={categoriesDropdownRef}>
               <button 
                 type="button"
@@ -2071,11 +2068,50 @@ export default function App() {
         )}
 
         {(routeState.view === "customise" || routeState.view === "custom-dtf") && !routeState.slug && (
-          <CustomiseWizard 
-            navigate={navigate}
-            currentUser={currentUser}
-            showNotification={showNotification}
-          />
+          <>
+            {/* Mobile View: Active Customise Studio */}
+            <div className="block md:hidden">
+              <CustomiseWizard 
+                navigate={navigate}
+                currentUser={currentUser}
+                showNotification={showNotification}
+              />
+            </div>
+
+            {/* Desktop and Other Views: Clean mobile-exclusive notice */}
+            <div className="hidden md:flex flex-col items-center justify-center min-h-[65vh] px-4 py-16 text-center bg-[#FAFAFA]">
+              <div className="max-w-md w-full bg-white border border-neutral-200 rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col items-center">
+                <div className="w-16 h-16 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center mb-5 text-[#FF2E2E]">
+                  <Smartphone className="w-8 h-8" />
+                </div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#E51E2B] mb-1">
+                  Mobile Exclusive Experience
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
+                  Custom Studio
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed mb-6">
+                  The TH3EE Custom Apparel Studio is designed exclusively for mobile view. Please open this page on your smartphone or switch your browser to mobile view to design your custom piece.
+                </p>
+                <div className="flex flex-col w-full gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/shop')}
+                    className="w-full py-3 bg-neutral-900 hover:bg-[#E51E2B] text-white text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+                  >
+                    Explore Ready Drops
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-mono font-semibold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+                  >
+                    Back to Home
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         {routeState.view === "about" && (
@@ -4349,7 +4385,7 @@ function StoreFooter({
           <div className="space-y-2">
             <span className="font-bold uppercase tracking-wider text-neutral-900 block mb-2 text-[11px]">Collections & Studio</span>
             <div className="flex flex-col space-y-2 text-neutral-600 font-medium">
-              <button type="button" onClick={function() { navigate("/customise"); }} className="text-left text-[#E51E2B] font-bold hover:underline transition-colors">Customise Apparel Studio</button>
+              <button type="button" onClick={function() { navigate("/customise"); }} className="text-left text-[#E51E2B] font-bold hover:underline transition-colors block md:hidden">Customise Apparel Studio</button>
               <button type="button" onClick={function() { navigate("/about"); }} className="text-left hover:text-[#E51E2B] transition-colors">About TH3EE Label</button>
               <button type="button" onClick={function() { navigate("/shop?universe=tfi&subcategory=Baahubali"); }} className="text-left hover:text-[#E51E2B] transition-colors">Baahubali & TFI Cult Cinema</button>
               <button type="button" onClick={function() { navigate("/shop?universe=anime"); }} className="text-left hover:text-[#E51E2B] transition-colors">Anime Shonen Saga Drops</button>
