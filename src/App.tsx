@@ -2448,6 +2448,34 @@ function HomePageView({
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const touchStartXRef = useRef(0);
 
+  const dropsCarouselRef = useRef<HTMLDivElement>(null);
+  const [canScrollDropsLeft, setCanScrollDropsLeft] = useState(false);
+  const [canScrollDropsRight, setCanScrollDropsRight] = useState(true);
+
+  const checkDropsScroll = useCallback(() => {
+    if (!dropsCarouselRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = dropsCarouselRef.current;
+    setCanScrollDropsLeft(scrollLeft > 8);
+    setCanScrollDropsRight(scrollLeft < scrollWidth - clientWidth - 8);
+  }, []);
+
+  useEffect(() => {
+    checkDropsScroll();
+    const handleResize = () => checkDropsScroll();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [checkDropsScroll, productsList]);
+
+  const scrollDrops = (direction: 'left' | 'right') => {
+    if (!dropsCarouselRef.current) return;
+    const container = dropsCarouselRef.current;
+    const scrollAmount = container.clientWidth * 0.82;
+    container.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  };
+
   useEffect(function() {
     if (typeof window === 'undefined') return;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -2742,14 +2770,38 @@ function HomePageView({
         </div>
       </section>
 
-      {/* Featured Drops */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full">
-        <div className="flex justify-between items-center mb-6 sm:mb-8">
+      {/* Featured Drops Carousel */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full relative">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
             <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-widest text-[#E51E2B] font-bold block mb-1">CURATED ATELIER SELECTION</span>
             <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-neutral-900 font-mono">Featured Heavyweight Drops</h2>
           </div>
-          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-end sm:self-auto">
+            {/* Header Navigation Arrows */}
+            <div className="flex items-center gap-1.5 mr-1">
+              <button
+                type="button"
+                onClick={() => scrollDrops('left')}
+                disabled={!canScrollDropsLeft}
+                className="w-8 h-8 rounded-full border border-neutral-300 hover:border-black hover:bg-neutral-100 flex items-center justify-center transition-all text-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                aria-label="Previous drops"
+                title="Previous drops"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollDrops('right')}
+                disabled={!canScrollDropsRight}
+                className="w-8 h-8 rounded-full border border-neutral-300 hover:border-black hover:bg-neutral-100 flex items-center justify-center transition-all text-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                aria-label="Next drops"
+                title="Next drops"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
             {onShareCollection && (
               <button 
                 type="button"
@@ -2773,20 +2825,55 @@ function HomePageView({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 xs:gap-3.5 sm:gap-8 items-stretch">
-          {productsList.slice(0, 6).map(function(prod, idx) {
-            return (
-              <div key={prod.id} className={idx >= 4 ? "block sm:hidden h-full" : "h-full"}>
-                <ProductCard 
-                  product={prod} 
-                  navigate={navigate} 
-                  addToBag={addToBag} 
-                  onQuickView={setQuickViewItem}
-                  onShare={onShare}
-                />
-              </div>
-            );
-          })}
+        {/* Carousel Container with Floating Arrows */}
+        <div className="relative group/carousel">
+          {/* Floating Left Arrow (Desktop / Tablet) */}
+          {canScrollDropsLeft && (
+            <button
+              type="button"
+              onClick={() => scrollDrops('left')}
+              className="hidden md:flex absolute -left-4 lg:-left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-white/95 hover:bg-white text-neutral-900 shadow-md border border-neutral-200 items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Floating Right Arrow (Desktop / Tablet) */}
+          {canScrollDropsRight && (
+            <button
+              type="button"
+              onClick={() => scrollDrops('right')}
+              className="hidden md:flex absolute -right-4 lg:-right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-white/95 hover:bg-white text-neutral-900 shadow-md border border-neutral-200 items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Carousel Track */}
+          <div 
+            ref={dropsCarouselRef}
+            onScroll={checkDropsScroll}
+            className="flex gap-3 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 px-1 -mx-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {productsList.map(function(prod: any) {
+              return (
+                <div 
+                  key={prod.id} 
+                  className="w-[260px] xs:w-[280px] sm:w-[310px] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.15rem)] shrink-0 snap-start flex flex-col self-stretch"
+                >
+                  <ProductCard 
+                    product={prod} 
+                    navigate={navigate} 
+                    addToBag={addToBag} 
+                    onQuickView={setQuickViewItem}
+                    onShare={onShare}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
