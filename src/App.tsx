@@ -3288,30 +3288,81 @@ function OrderViaWhatsAppButton({
 function ProductCard({ product, navigate, addToBag, onQuickView = function() {}, onShare = function() {} }: any) {
   const [selectedColor, setSelectedColor] = useState((product.colors && product.colors[0] && product.colors[0].name) || "Standard");
   const [selectedSize, setSelectedSize] = useState("L");
-  const colorObj = (product.colors && product.colors.find(function(c) { return c.name === selectedColor; })) || (product.colors && product.colors[0]);
-  const cardImage = (colorObj && colorObj.images && colorObj.images[0]) || (product.images && product.images[0]) || product.image;
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const touchStartXRef = useRef(0);
+
+  const colorObj = (product.colors && product.colors.find(function(c: any) { return c.name === selectedColor; })) || (product.colors && product.colors[0]);
+
+  // Aggregate all available images for this product and selected color
+  const productImages: string[] = useMemo(function() {
+    let imgs: string[] = [];
+    if (colorObj && Array.isArray(colorObj.images) && colorObj.images.length > 0) {
+      imgs = colorObj.images.filter(function(img: any) { return typeof img === 'string' && img.trim().length > 0; });
+    }
+    if (imgs.length === 0 && Array.isArray(product.images) && product.images.length > 0) {
+      imgs = product.images.filter(function(img: any) { return typeof img === 'string' && img.trim().length > 0; });
+    }
+    if (imgs.length === 0 && product.image) {
+      imgs = [product.image];
+    }
+    return imgs.length > 0 ? imgs : [GLOBAL_DEFAULT_IMAGE];
+  }, [colorObj, product.images, product.image]);
+
+  useEffect(function() {
+    setActiveImageIdx(0);
+  }, [selectedColor, product.id]);
+
+  const currentCardImage = productImages[activeImageIdx] || productImages[0] || product.image;
+  const hasMultipleImages = productImages.length > 1;
 
   const sellingPrice = Number(product.price);
   const originalPrice = product.originalPrice != null && Number(product.originalPrice) > 0 ? Number(product.originalPrice) : null;
   const hasDiscount = originalPrice !== null && originalPrice > sellingPrice;
   const isOutOfStock = product.inStock === false;
 
+  const handlePrevImage = function(e: React.MouseEvent) {
+    e.stopPropagation();
+    setActiveImageIdx(function(prev) { return (prev - 1 + productImages.length) % productImages.length; });
+  };
+
+  const handleNextImage = function(e: React.MouseEvent) {
+    e.stopPropagation();
+    setActiveImageIdx(function(prev) { return (prev + 1) % productImages.length; });
+  };
+
+  const handleTouchStart = function(e: React.TouchEvent) {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = function(e: React.TouchEvent) {
+    if (!hasMultipleImages) return;
+    const diff = touchStartXRef.current - e.changedTouches[0].clientX;
+    if (diff > 35) {
+      setActiveImageIdx(function(prev) { return (prev + 1) % productImages.length; });
+    } else if (diff < -35) {
+      setActiveImageIdx(function(prev) { return (prev - 1 + productImages.length) % productImages.length; });
+    }
+  };
+
   return (
     <div className="group flex flex-col justify-between bg-white border border-neutral-200 hover:border-neutral-400 transition-all font-mono shadow-2xs h-full w-full overflow-hidden rounded-2xl">
       <div>
         <div 
           onClick={function() { navigate("/products/" + product.slug + "?color=" + encodeURIComponent(selectedColor)); }}
-          className="aspect-[3/4] overflow-hidden bg-neutral-100 cursor-pointer relative w-full"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="aspect-[3/4] overflow-hidden bg-neutral-100 cursor-pointer relative w-full select-none"
         >
           <img 
-            src={resolveProductImageUrl(cardImage)} 
+            key={currentCardImage}
+            src={resolveProductImageUrl(currentCardImage)} 
             onError={handleImageLoadError}
             alt={product.name} 
             loading="lazy"
             className={"w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 block " + (isOutOfStock ? "opacity-80 grayscale-[25%]" : "")} 
           />
           {product.badge && (
-            <span className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 bg-[#E51E2B] text-white text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-wider rounded-md">
+            <span className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 bg-[#E51E2B] text-white text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-wider rounded-md z-10 shadow-2xs">
               {product.badge}
             </span>
           )}
@@ -3322,13 +3373,62 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {},
             </span>
           )}
 
+          {/* Product Image Carousel Controls (< and > arrows) */}
+          {hasMultipleImages && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                className="absolute left-1.5 sm:left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 hover:bg-white text-neutral-800 shadow-md border border-neutral-200/80 flex items-center justify-center transition-all opacity-85 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+                title="Previous image"
+                aria-label="Previous product image"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-800" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNextImage}
+                className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 hover:bg-white text-neutral-800 shadow-md border border-neutral-200/80 flex items-center justify-center transition-all opacity-85 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+                title="Next image"
+                aria-label="Next product image"
+              >
+                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-800" />
+              </button>
+
+              {/* Centered Pagination Dots (exactly like dzcommune.com) */}
+              <div className="absolute bottom-2 inset-x-0 flex items-center justify-center z-20 pointer-events-none">
+                <div className="flex items-center gap-1 bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded-full pointer-events-auto shadow-2xs">
+                  {productImages.map(function(_, idx) {
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={function(e) {
+                          e.stopPropagation();
+                          setActiveImageIdx(idx);
+                        }}
+                        className={"transition-all rounded-full cursor-pointer " + (
+                          idx === activeImageIdx
+                            ? "w-3 sm:w-3.5 h-1.5 bg-white shadow-xs"
+                            : "w-1.5 h-1.5 bg-white/50 hover:bg-white/80"
+                        )}
+                        aria-label={"View image " + (idx + 1)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Action buttons (Share & Quick View) */}
-          <div className="absolute bottom-2 sm:bottom-2.5 right-2 sm:right-2.5 flex items-center gap-1 sm:gap-1.5 z-10">
+          <div className="absolute bottom-2 sm:bottom-2.5 right-2 sm:right-2.5 flex items-center gap-1 sm:gap-1.5 z-20">
             {onShare && (
               <button 
                 type="button"
                 onClick={function(e) { e.stopPropagation(); onShare(product); }}
-                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer rounded-lg"
+                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer rounded-lg opacity-85 sm:opacity-0 sm:group-hover:opacity-100"
                 title="Share Drop"
                 aria-label="Share Drop"
               >
@@ -3339,7 +3439,7 @@ function ProductCard({ product, navigate, addToBag, onQuickView = function() {},
               <button 
                 type="button"
                 onClick={function(e) { e.stopPropagation(); onQuickView(product); }}
-                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer rounded-lg"
+                className="bg-white/95 hover:bg-[#E51E2B] hover:text-white text-neutral-800 p-1.5 sm:p-2 shadow-xs transition-colors cursor-pointer rounded-lg opacity-85 sm:opacity-0 sm:group-hover:opacity-100"
                 title="Quick View"
                 aria-label="Quick View"
               >
