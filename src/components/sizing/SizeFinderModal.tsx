@@ -98,24 +98,77 @@ export const SizeFinderModal: React.FC<SizeFinderModalProps> = ({
   const [activeComparisonSize, setActiveComparisonSize] = useState<string>('L');
   const [calculationError, setCalculationError] = useState<string>('');
 
-  // Prevent background scrolling when open & load sizing data
+  // Prevent background scrolling when open & load sizing data with robust scroll lock
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      setActiveModalTab(initialTab);
-      // Load product size chart
-      sizingService.getSizeChartForProduct(product).then(chart => {
-        setProductChart(chart);
-      });
-    } else {
-      document.body.style.overflow = '';
+    if (!isOpen) {
       setStep(1);
       setCalculationError('');
+      return;
     }
-    return () => {
-      document.body.style.overflow = '';
+
+    setActiveModalTab(initialTab);
+    // Load product size chart
+    sizingService.getSizeChartForProduct(product).then(chart => {
+      setProductChart(chart);
+    });
+
+    // 1. Calculate scrollbar width so locking doesn't produce horizontal layout shifts
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    // 2. Capture exact vertical scroll position before locking
+    const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    // 3. Save prior inline styles to restore cleanly on unmount / modal close
+    const originalBodyStyles = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+      overflow: document.body.style.overflow,
+      paddingRight: document.body.style.paddingRight,
     };
-  }, [isOpen, product, initialTab]);
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    // 4. Lock background page scroll completely (works across desktop, mobile touch, trackpads)
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    // 5. Close on Escape key press
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+
+      // Restore body and html inline styles
+      document.body.style.position = originalBodyStyles.position;
+      document.body.style.top = originalBodyStyles.top;
+      document.body.style.left = originalBodyStyles.left;
+      document.body.style.right = originalBodyStyles.right;
+      document.body.style.width = originalBodyStyles.width;
+      document.body.style.overflow = originalBodyStyles.overflow;
+      document.body.style.paddingRight = originalBodyStyles.paddingRight;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+
+      // Restore exact scroll position immediately
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen, product, initialTab, onClose]);
 
   // Keep feet/inches in sync with cm
   const updateHeightCm = (newCm: number) => {
@@ -209,16 +262,29 @@ export const SizeFinderModal: React.FC<SizeFinderModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="size-finder-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-xs font-mono"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-hidden overscroll-none"
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+      {/* Subtle Semi-Transparent Backdrop Overlay (rgba(0, 0, 0, 0.42) + 2px blur) */}
+      <div
+        className="absolute inset-0 transition-opacity cursor-pointer"
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.42)',
+          backdropFilter: 'blur(2px)',
+          WebkitBackdropFilter: 'blur(2px)',
+        }}
+        onClick={onClose}
+        onTouchMove={(e) => e.preventDefault()}
+        onWheel={(e) => e.preventDefault()}
+        aria-hidden="true"
+      />
 
-      {/* Main Container */}
-      <div className="relative bg-[#FAFAF8] border border-neutral-300 text-neutral-900 rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col justify-between z-10 transition-all font-sans">
-        
-        {/* Sticky Header */}
-        <div className="sticky top-0 bg-[#FAFAF8]/95 backdrop-blur-md px-5 sm:px-8 pt-5 pb-4 border-b border-neutral-200/90 z-20 space-y-3">
+      {/* Main Modal Card */}
+      <div
+        className="relative bg-[#FAFAF8] border border-neutral-300 text-neutral-900 rounded-3xl w-full max-w-2xl max-h-[92dvh] sm:max-h-[88vh] shadow-2xl flex flex-col z-10 font-sans overflow-hidden transition-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Pinned Modal Header */}
+        <div className="shrink-0 bg-[#FAFAF8] px-5 sm:px-8 pt-5 pb-4 border-b border-neutral-200/90 z-20 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#E51E2B] animate-pulse" />
@@ -316,8 +382,12 @@ export const SizeFinderModal: React.FC<SizeFinderModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-5 sm:p-8 space-y-6">
+        {/* Scrollable Modal Body (isolated internal scroll, overscroll contained) */}
+        <div
+          className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6 overscroll-contain"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           
           {/* ======================================================== */}
           {/* TAB 2: RAW GARMENT SIZE CHART SPECIFICATION TABLE       */}
