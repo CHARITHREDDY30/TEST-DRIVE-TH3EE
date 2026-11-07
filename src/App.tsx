@@ -75,6 +75,8 @@ import { CustomDtfView } from './components/pages/CustomDtfView';
 import { CustomiseWizard } from './components/customise/CustomiseWizard';
 import { CustomOrderTrackingView } from './components/customise/CustomOrderTrackingView';
 import { AdminCustomOrdersManager } from './components/admin/AdminCustomOrdersManager';
+import { AdminSizeChartManager } from './components/admin/AdminSizeChartManager';
+import { SizeFinderModal } from './components/sizing/SizeFinderModal';
 import { AboutView } from './components/pages/AboutView';
 import { NotFoundView } from './components/common/NotFoundView';
 import type { AuthUser } from './types/auth';
@@ -87,6 +89,17 @@ function LayoutDashboard({ className = "w-4 h-4" }: { className?: string }) {
       <rect width="7" height="5" x="14" y="3" rx="1"/>
       <rect width="7" height="9" x="14" y="12" rx="1"/>
       <rect width="7" height="5" x="3" y="16" rx="1"/>
+    </svg>
+  );
+}
+
+function Ruler({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m21.3 15.3-7.6-7.6a1 1 0 0 0-1.4 0l-7 7a1 1 0 0 0 0 1.4l7.6 7.6a1 1 0 0 0 1.4 0l7-7a1 1 0 0 0 0-1.4Z"/>
+      <path d="m14.5 12.5 2-2"/>
+      <path d="m11.5 15.5 2-2"/>
+      <path d="m8.5 18.5 2-2"/>
     </svg>
   );
 }
@@ -3605,6 +3618,8 @@ function ProductDetailInner({
 }: any) {
   const [chosenColor, setChosenColor] = useState(initialColor || (product.colors && product.colors[0] && product.colors[0].name) || "Standard");
   const [chosenSize, setChosenSize] = useState("L");
+  const [isSizeFinderOpen, setIsSizeFinderOpen] = useState(false);
+  const [sizeFinderInitialTab, setSizeFinderInitialTab] = useState<'finder' | 'chart'>('finder');
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
 
   const activeColorObj = (product.colors && product.colors.find(function(c) { return c.name === chosenColor; })) || (product.colors && product.colors[0]);
@@ -3797,9 +3812,23 @@ function ProductDetailInner({
           <div className="space-y-2 pt-2 border-t border-neutral-200">
             <div className="flex justify-between items-center">
               <span className="text-xs uppercase font-bold text-neutral-700 block">SELECT SIZE</span>
-              {!product.inStock && (
-                <span className="text-[10px] font-mono font-bold text-red-600 uppercase">ALL SIZES CURRENTLY OUT OF STOCK</span>
-              )}
+              <div className="flex items-center gap-3">
+                {!product.inStock && (
+                  <span className="text-[10px] font-mono font-bold text-red-600 uppercase">ALL SIZES CURRENTLY OUT OF STOCK</span>
+                )}
+                <button
+                  type="button"
+                  onClick={function() {
+                    setSizeFinderInitialTab('chart');
+                    setIsSizeFinderOpen(true);
+                  }}
+                  className="text-[11px] font-mono font-bold uppercase text-neutral-600 hover:text-black hover:text-[#E51E2B] transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-2"
+                  title="View flat garment measurement specs"
+                >
+                  <Ruler className="w-3 h-3" />
+                  <span>Size Guide</span>
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
               {AVAILABLE_GLOBAL_SIZES.map(function(s) {
@@ -3819,6 +3848,43 @@ function ProductDetailInner({
                   </button>
                 );
               })}
+            </div>
+
+            {/* PHASE 1: Premium FIND MY SIZE option */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={function() {
+                  setSizeFinderInitialTab('finder');
+                  setIsSizeFinderOpen(true);
+                }}
+                className="w-full bg-[#FAF9F5] hover:bg-[#F5F4EE] active:bg-[#ECEBE4] border border-neutral-300 hover:border-black rounded-2xl p-3 sm:p-3.5 flex items-center justify-between transition-all group cursor-pointer text-left shadow-2xs"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200 flex items-center justify-center text-neutral-900 group-hover:text-[#E51E2B] transition-colors shrink-0 shadow-2xs">
+                    <Ruler className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-900 group-hover:text-[#E51E2B] transition-colors">
+                        Find My Size
+                      </span>
+                      <span className="bg-[#E51E2B]/10 text-[#E51E2B] text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
+                        Smart Fit
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-sans text-neutral-500 truncate mt-0.5">
+                      Not sure about your size? Let us help you find your perfect fit.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-neutral-400 group-hover:text-neutral-900 transition-colors pl-2 shrink-0">
+                  <span className="hidden sm:inline text-[10px] font-mono font-bold uppercase tracking-wider">
+                    Measure
+                  </span>
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </button>
             </div>
           </div>
 
@@ -4066,6 +4132,22 @@ function ProductDetailInner({
           </div>
         </section>
       )}
+
+      {/* Smart Size Finder & Fit Recommendation System */}
+      <SizeFinderModal
+        isOpen={isSizeFinderOpen}
+        onClose={function() { setIsSizeFinderOpen(false); }}
+        product={product}
+        selectedColor={chosenColor}
+        currentSelectedSize={chosenSize}
+        initialTab={sizeFinderInitialTab}
+        onSelectSize={function(size) {
+          setChosenSize(size);
+          if (showNotification) {
+            showNotification(`Size ${size} selected based on your fit recommendation.`, 'success');
+          }
+        }}
+      />
     </div>
   );
 }
@@ -6214,6 +6296,7 @@ function SecretAtelierAdminView({
           { id: "delivery", label: "Delivery & Distance Fees", icon: Truck },
           { id: "orders", label: "Orders & Tracking (" + ordersList.length + ")", icon: Truck },
           { id: "custom_orders", label: "Custom Orders", icon: Sparkles },
+          { id: "size_charts", label: "Size Charts & Fit", icon: Ruler },
           { id: "coupons", label: "Coupons (" + couponsList.length + ")", icon: Tag },
           { id: "loyalty", label: "Reward Club", icon: Award },
           { id: "reports", label: "Sales & Performance", icon: BarChart3 },
@@ -7189,6 +7272,14 @@ function SecretAtelierAdminView({
         <AdminCustomOrdersManager 
           currentUser={adminUser}
           navigate={navigate}
+          showNotification={showNotification}
+        />
+      )}
+
+      {/* TAB: SIZE CHARTS & FIT */}
+      {activeTab === "size_charts" && (
+        <AdminSizeChartManager
+          products={productsList}
           showNotification={showNotification}
         />
       )}
